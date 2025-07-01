@@ -15,26 +15,30 @@ jobs:
       - name: Zip
         run: |
           mkdir -p output
-          zip -r output/release.xpi extension/*
+          cd extension
+          zip -r ../output/release.xpi ./*
+          cd ..
 
       - name: updates.json
         run: |
           VERSION=$(jq -r '.version' extension/manifest.json)
           EXT=$(jq -r '.browser_specific_settings.gecko.id' extension/manifest.json)
-          cat <<EOF > output/updates.json
-{
-  "addons": {
-    "$EXT": {
-      "updates": [
-        {
-          "version": "$VERSION",
-          "update_link": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/release.xpi"
-        }
-      ]
-    }
-  }
-}
-EOF
+          REPOWNER="${{ github.repository_owner }}"
+          REPPNAME="${{ github.event.repository.name }}"
+          cat > output/updates.json <<EOF 
+          {
+            "addons": {
+              "$EXT": {
+                "updates": [
+                  {
+                    "version": "$VERSION",
+                    "update_link": "https://$REPOWNER.github.io/$REPNAME/release.xpi"
+                  }
+                ]
+              }
+            }
+          }
+          EOF
       
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
