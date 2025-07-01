@@ -50,5 +50,5 @@ jobs:
           git config --global user.email = "none@autobuild"
           git checkout -b versions
           git add output/*
-          git commit -m "new version"
+          git commit -m "new release"
           git push --force origin versions
