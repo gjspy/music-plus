@@ -42,15 +42,20 @@ jobs:
       
       - name: Deploy
         run: |
-          ls
-          ls output
           cat output/updates.json
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
           git config --global user.name = "autobuild"
           git config --global user.email = "none@autobuild"
           git checkout -b versions
           git rm -rf . || true
+          ls
+          ls output
           cp -r output/* .
+          ls
+          ls output
+          rm -r output
           git add .
           git commit -m "new release"
           git push --force origin versions
+          ls
+          ls output
