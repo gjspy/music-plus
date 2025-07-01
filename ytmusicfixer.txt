@@ -1,0 +1,8 @@
+make better suggestions?
+ - remix button:
+  - ask user "select as many of these you want me to use"
+   - gives recent playlists, albums, artists to use.
+
+autoplay - "queue-item"s dont have videos. is why is different.
+"queue-item" = dom-if elem for _Data
+"video-wrapper" = children[0] (primaryrenderer)

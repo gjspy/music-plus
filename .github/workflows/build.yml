@@ -1,0 +1,43 @@
+name: Build and Deploy extension files
+
+on:
+  push:
+    branches: [main]
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Zip
+        run: |
+          mkdir -p output
+          zip -r output/release.xpi extension/*
+
+      - name: updates.json
+        run: |
+          VERSION=$(jq -r '.version' extension/manifest.json)
+          EXT=$(jq -r '.browser_specific_settings.gecko.id' extension/manifest.json)
+          cat <<EOF > output/updates.json {
+            "addons": {
+              "$EXT": {
+                "updates": [
+                  {
+                    "version": "$VERSION",
+                    "update_link": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/release.xpi"
+                  }
+                ]
+              }
+            }
+          }
+          EOF
+      
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+          publish_branch: versions

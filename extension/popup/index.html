@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="../../globalstyles.css">
+	<link rel="icon" href="../../icons/96.png">
+</head>
+
+<style>
+	body {
+		overflow: clip clip;
+	}
+	#main-cont {
+		width: 200px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	#header {
+		width: 100%;
+		text-align: center;
+		margin: 0;
+	}
+	#debug-cont {
+		max-width: 200px;
+		gap: 0px;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	.danger {
+		background-color: red;
+	}
+
+	.btn-cont {
+		width: 100%;
+		gap: 0px;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	button {
+		flex: auto;
+	}
+
+
+	textarea {
+		margin-top: 10px;
+		width: 100%;
+		max-width: 100%;
+
+	}
+
+	#error {
+		max-width: 100%;
+		width: 100%;
+
+		word-break: break-all;
+		word-wrap: break-word;
+	}
+</style>
+
+<body>
+	<a id="go-back" style="font-variant: normal; cursor:pointer" hidden>←</a>
+
+	<div id="main-cont">
+		<h1 id="header">YTMusic+</h1>
+
+		<div class="btn-cont" id="main-btns">
+			<button type="button" id="upd-pl-ics">Append To Cache</button>
+			<button type="button" id="clr-cache">Clear Cache</button>
+			<button type="button" id="toggle-active" style="display: none;"></button>
+			<button type="button" id="tab-toggle" style="width: 100%;"></button>
+			
+			<button type="button" id="debug" style="margin-top: 22px;">Debug Actions</button>
+		</div>
+
+		<div id="debug-cont" style="display: none;">
+			<button id="r-dmp">Dump Raw Storage</button>
+			<button id="c-dmp">Dump Clean Storage</button>
+			<button id="rm-order" class="danger">Remove Order + Folders</button>
+			<button id="clr-strg" class="danger">Actually Clear Storage (Danger)</button>
+			<button id="cln-strg">Clean Storage (Semi-Danger)</button>
+			<textarea rows="6" cols="25" id="run-code-input" placeholder="Paste in JSON to fully replace storage with. No undo. **MUST BE CLEAN STORAGE, NOT RAW**"></textarea>
+			<button id="run-code-mw" style="flex: 1; display: none;">throw eval csp</button>
+			<button id="run-code-bkg" style="flex: 1;">Set Storage to textarea value</button>
+		</div>
+
+		<a id="error" style="text-align: left; word-break: keep-all;"></a>
+	</div>
+
+	<ul id="lists"></ul>
+	
+	<script type="module" src="./popup.js"></script>
+</body>
+</html>
