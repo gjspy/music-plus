@@ -24,7 +24,7 @@ jobs:
           VERSION=$(jq -r '.version' extension/manifest.json)
           EXT=$(jq -r '.browser_specific_settings.gecko.id' extension/manifest.json)
           REPOWNER="${{ github.repository_owner }}"
-          REPPNAME="${{ github.event.repository.name }}"
+          REPONAME="${{ github.event.repository.name }}"
           cat > output/updates.json <<EOF 
           {
             "addons": {
@@ -32,7 +32,7 @@ jobs:
                 "updates": [
                   {
                     "version": "$VERSION",
-                    "update_link": "https://$REPOWNER.github.io/$REPNAME/release.xpi"
+                    "update_link": "https://$REPOWNER.github.io/$REPONAME/release.xpi"
                   }
                 ]
               }
