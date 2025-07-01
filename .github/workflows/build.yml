@@ -42,10 +42,12 @@ jobs:
       
       - name: Deploy
         run: |
+          ls
+          ls output
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
           git config --global user.name = "autobuild"
           git config --global user.email = "none@autobuild"
           git checkout -b versions
           git add output/*
           git commit -m new version
-          git push --force origin version
+          git push --force origin versions
