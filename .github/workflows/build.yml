@@ -49,6 +49,8 @@ jobs:
           git config --global user.name = "autobuild"
           git config --global user.email = "none@autobuild"
           git checkout -b versions
-          git add output/*
-          git commit -m "new release."
+          git rm -rf . || true
+          cp -r output/* .
+          git add .
+          git commit -m "new release"
           git push --force origin versions
