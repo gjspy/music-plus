@@ -44,10 +44,11 @@ jobs:
         run: |
           ls
           ls output
+          cat output/updates.json
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
           git config --global user.name = "autobuild"
           git config --global user.email = "none@autobuild"
           git checkout -b versions
           git add output/*
-          git commit -m new version
+          git commit -m "new version"
           git push --force origin versions
