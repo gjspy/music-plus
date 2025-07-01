@@ -1,17 +1,17 @@
 {
 	"manifest_version": 3,
-	"name": "YTMUSIC TEST",
-	"version": "1.1",
+	"name": "YTMUSIC Fixer",
+	"version": "2.31",
   
-	"description": "TEST BUILD: Provides additional features to the Youtube Music site.",
+	"description": "Provides additional features to the Youtube Music site.",
 
 	"icons": {
-		"96": "icons/testlogo.png"
+		"96": "icons/musicemoji.png"
 	},
 
 	"content_scripts": [
 		{
-			"matches":["*://music.youtube.com/*"],
+			"matches": ["*://music.youtube.com/*"],
 			"css": ["inject.css"],
 			"run_at": "document_start"
 		},
@@ -24,39 +24,38 @@
 	],
 
 	"background": {
-		"page":"background/bkgPage.html"
+		"page": "background/bkgPage.html"
 	},
 
-	"web_accessible_resources": [
-		{
-			"matches":["*://music.youtube.com/*"],
-			"resources": ["utils.js"]
-		}
-	],
+	"web_accessible_resources": [{
+		"matches": ["*://music.youtube.com/*"],
+		"resources": ["utils.js"]
+	}],
 
 	"host_permissions": [
-		"*://music.youtube.com/*"
+		
 	],
 
-	"permissions":[
+	"permissions": [
 		"tabs",
 		"storage",
 		"activeTab",
 		"unlimitedStorage",
-		"scripting"
+		"scripting",
+		"*://music.youtube.com/*"
 	],
 
 	"browser_specific_settings": {
 		"gecko": {
-			"id": "sitefixer@test",
+			"id": "sitefixer@ultra",
 			"strict_min_version": "42.0",
 			"update_url": "https://gjspy.github.io/music-plus/updates.json"
 		}
 	},
 
 	"action": {
-		"default_icon":"icons/testlogo.png",
-		"default_title":"YTMUSIC Test",
-		"default_popup":"popup/index.html"
+		"default_icon": "icons/musicemoji.png",
+		"default_title": "YTMUSIC+",
+		"default_popup": "popup/index.html"
 	}	  
 }
