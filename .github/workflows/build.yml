@@ -21,10 +21,8 @@ jobs:
           mv extension/manifest.json manifest_test.json -f
           mv manifest_main.json extension/manifest.json -f
           git add .
-          git commit -m "fixed thing"
+          git commit --amend --no-edit
           git push --force origin main
-          ls
-          cat extension/manifest.json
 
   build:
     runs-on: ubuntu-latest
