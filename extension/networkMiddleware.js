@@ -334,7 +334,7 @@ class MiddlewareEditors {
 		return response;
 	};
 
-	static SpecialFunctions = {
+	static SmallTasks = {
 		"/youtubei/v1/playlist/create": function PlaylistCreateCommand(request, response) {
 			let gathered = {
 				name: request.body.title,
@@ -370,7 +370,7 @@ class MiddlewareEditors {
 	static C_PAGE_TYPE_PRIVATE_ALBUM(response, id, cache) {
 		// need to edit album subtitleTwo total minutes based on contents.
 
-		let albumLike = this._ConvertOldAlbumPageToNew(response, id,cache);
+		let albumLike = this._ConvertOldAlbumPageToNew(response, id, cache);
 		let newResp = this.MUSIC_PAGE_TYPE_ALBUM(albumLike, id, cache);
 
 		return newResp;
@@ -446,8 +446,8 @@ async function FetchModifyResponse(request, oldResp) {
 	};
 
 
-	if (MiddlewareEditors.SpecialFunctions[urlObj.pathname]) {
-		let newResp = MiddlewareEditors.SpecialFunctions[urlObj.pathname](request, respBody);
+	if (MiddlewareEditors.SmallTasks[urlObj.pathname]) {
+		let newResp = MiddlewareEditors.SmallTasks[urlObj.pathname](request, respBody);
 
 		return newResp || oldResp;
 	};
