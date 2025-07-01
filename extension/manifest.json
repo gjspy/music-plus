@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "YTMUSIC Fixer",
-	"version": "2.3",
+	"version": "2.31",
   
 	"description": "Provides additional features to the Youtube Music site.",
 
@@ -33,7 +33,7 @@
 	}],
 
 	"host_permissions": [
-		"*://music.youtube.com/*"
+		
 	],
 
 	"permissions": [
@@ -41,7 +41,8 @@
 		"storage",
 		"activeTab",
 		"unlimitedStorage",
-		"scripting"
+		"scripting",
+		"*://music.youtube.com/*"
 	],
 
 	"browser_specific_settings": {
