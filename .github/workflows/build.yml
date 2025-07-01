@@ -5,6 +5,22 @@ on:
     branches: [main]
   
 jobs:
+  manifest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+    
+      - name: Swap main/test manifest
+        run: |
+          mv extension/manifest.json manifest_test.json
+          mv manifest_main.json extension/manifest.json
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global user.name = "autobuild"
+          git config --global user.email = "github-actions[bot]@users.noreply.github.com"
+          git commit --amend --no-edit
+
   build:
     runs-on: ubuntu-latest
 
