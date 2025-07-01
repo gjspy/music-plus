@@ -15,13 +15,14 @@ jobs:
       - name: Swap main/test manifest
         run: |
           git fetch origin
-          mv extension/manifest.json manifest_test.json
-          mv manifest_main.json extension/manifest.json
+          mv extension/manifest.json manifest_test.json -f
+          mv manifest_main.json extension/manifest.json -f
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
           git config --global user.name = "autobuild"
           git config --global user.email = "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit --amend --no-edit
+          git commit -m "fixed thing"
+          cat extension/manifest.json
 
   build:
     runs-on: ubuntu-latest
