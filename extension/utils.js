@@ -193,6 +193,19 @@ class Utils {
 	};
 
 
+	static UDigDict(dict, sequence) {
+		let data = dict;
+
+		for (let k of sequence) {
+			data = data[k];
+
+			if (!data) return data;
+		};
+
+		return data;
+	};
+
+
 
 	// recursively check that every dir has the keys it should
 	static UCheckHasKeys(cont, shouldHave) {
@@ -978,6 +991,10 @@ class Utils {
 
 				} else if (type === "MUSIC_PAGE_TYPE_USER_CHANNEL") {
 					baseData.creator = data.name;
+
+				} else if (type === "MUSIC_PAGE_TYPE_ALBUM") {
+					baseData.album = data;
+
 				};
 
 				baseData.creatorNavigationEndpoint = artist[0].navigationEndpoint;
@@ -1210,13 +1227,66 @@ class Utils {
 	};
 
 	static USoftClearQueue() {
-		c = this.UGetPolymerController();
+		this.UGetPolymerController();
 
-		polymerController.store.dispatch({
+		let s = polymerController.store;
+
+		console.log("soft clear");
+
+		s.dispatch({
+			type: "CLEAR_STEERING_CHIPS" 
+		}); // remove?
+
+		s.dispatch({
+			type: "SET_IS_INFINITE",
+			payload: !1
+		});
+
+		s.dispatch({
+			type: "SET_QUEUE_CONTEXT_PARAMS",
+			payload: "" 
+		}); // remove?
+
+		s.dispatch({
+			type: "SET_WATCH_NEXT_TYPE",
+			payload: null
+		});
+
+		s.dispatch({
+			type: "HAS_SHOWN_AUTOPLAY",
+			payload: !1
+		});
+
+		s.dispatch({
+			type: "SET_IS_FETCHING_CHIP_STEER",
+			payload: !1
+		});
+
+		/*s.dispatch({
+			type: "SET_HEADER",
+			payload: null
+		})*/
+
+		s.dispatch({
 			type: "CLEAR",
 			payload: [
 				polymerController.queue.getCurrentItemIndex()
 			]
+		});
+
+		s.dispatch({
+			type: 'SET_IS_RAAR_ENABLED',
+			payload: !1
+		});
+
+		s.dispatch({
+			type: 'SET_PLAYER_PAGE_WATCH_NEXT_AUTOMIX_PARAMS',
+			payload: "NONE"
+		});
+
+		s.dispatch({
+			type: "SET_IS_PREFETCHING_CONTINUATIONS",
+			payload: !1
 		});
 		
 		/*VERY BAD, spams multiple web requests to server queue.

@@ -851,6 +851,10 @@ async function EWCacheData(data) {
 		case "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE": // private releases
 			storable = EWCacheCreateStorableFromItemsList(data, {});
 			break;
+		
+		case "MUSIC_VIDEO_TYPE_ATV":
+			storable = data;
+			break;
 
 		default:
 			console.warn("What is this value of store.getState() browsePageType for EWcachePage", data.type);

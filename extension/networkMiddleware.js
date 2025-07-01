@@ -4,8 +4,9 @@ MiddlewareEditors = class MiddlewareEditors {
 		"/youtubei/v1/playlist/create",
 		"/youtubei/v1/playlist/delete",
 		"/youtubei/v1/like/like",
-		"/youtubei/v1/like/removelike"//,
-		//"/youtubei/v1/next"
+		"/youtubei/v1/like/removelike",
+		"/youtubei/v1/next",
+		"/youtubei/v1/player"
 	];
 
 	static _ShouldModifyURL(url) {
@@ -334,6 +335,8 @@ MiddlewareEditors = class MiddlewareEditors {
 				func: "playlist-create",
 				data: gathered
 			});
+
+			return response;
 		},
 
 		"/youtubei/v1/playlist/delete": function PlaylistDeleteCommand(request, response) {
@@ -345,11 +348,133 @@ MiddlewareEditors = class MiddlewareEditors {
 				func: "playlist-delete",
 				data: gathered
 			});
+
+			return response;
+		},
+
+		"/youtubei/v1/player": function CacheVideoViews(request, response) {
+			let gathered = {
+				id: response.videoDetails.videoId,
+				views: Number(response.videoDetails.viewCount),
+				type: response.videoDetails.musicVideoType
+			};
+
+			UDispatchEventToEW({
+				func: "cache-data",
+				data: gathered
+			});
+
+			return response;
 		}
-		/*"/youtubei/v1/next": function test(request, response) {
-			response.playerOverlays.playerOverlayRenderer.browserMediaSession.browserMediaSessionRenderer.album.runs[0].text = "thisisfunny";
-			return response
-		}*/
+	};
+
+
+	static SmallTasksRequireCache = {
+		"/youtubei/v1/next": function TidyQueueNextItems(request, response, cache) {
+			let playlistPanelContents = UDigDict(response, [
+				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
+				"watchNextTabbedResultsRenderer", "tabs", 0,
+				"tabRenderer", "content", "musicQueueRenderer",
+				"content", "playlistPanelRenderer", "contents"
+			]);
+
+			if (!playlistPanelContents) return response;
+
+			for (let item of playlistPanelContents) {
+				let videoRenderer = item.playlistPanelVideoRenderer
+					|| UDigDict(item, ["playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"]);
+
+				if (!videoRenderer) continue;
+
+				let longBylineData = UGetDataFromSubtitleRuns({}, videoRenderer.longBylineText);
+
+				let songCacheData = cache[videoRenderer.videoId];
+				let albumId = (longBylineData.album) ? longBylineData.album.id :
+							  (songCacheData) ? songCacheData.album : undefined;
+				let albumCacheData = (albumId) ? cache[albumId] : {};
+
+				let artistId = (longBylineData.artists) ? longBylineData.artists[0].id :
+							   (songCacheData) ? songCacheData.artists[0] : undefined;
+				let artistCacheData = (artistId) ? cache[artistId] : {};
+
+				if (albumCacheData && albumCacheData.year && !longBylineData.yearStr) {
+					videoRenderer.longBylineText.runs.push(
+						{ text: U_YT_DOT },
+						{ text: String(albumCacheData.year)}
+					);
+				};
+
+				if ((albumCacheData && albumCacheData.private === true) || (artistCacheData && artistCacheData.private === true)) {
+
+					for (let run of videoRenderer.longBylineText.runs) {
+						if (!run.navigationEndpoint) continue;
+						
+						let type = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"]);
+						if (!type) continue;
+
+						if (!type || type === "MUSIC_PAGE_TYPE_UNKNOWN") {
+							let id = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseId"]);
+							if (!id) continue;
+
+							type = UGetBrowsePageTypeFromBrowseId(id, false, true);
+						};
+
+						let counterpartId, counterpartData;
+
+
+						if (type.includes("ALBUM") && albumCacheData.privateCounterparts.length > 0) {
+							counterpartId = albumCacheData.privateCounterparts[0];
+							counterpartData = cache[counterpartId];
+						};
+
+						if (type === "C_PAGE_TYPE_PRIVATE_ARTIST" && artistCacheData.privateCounterparts.length > 0) {
+							counterpartId = artistCacheData.privateCounterparts[0];
+							counterpartData = cache[counterpartId];
+
+							if (counterpartId && item.shortBylineText) {
+								item.shortBylineText.runs[0] = {
+									text: (counterpartData) ? counterpartData.name : run.text
+								}
+							};							
+						};
+
+						if (!counterpartId) continue;
+
+						run.text = (counterpartData) ? counterpartData.name : run.text;
+						run.navigationEndpoint = UBuildEndpoint({
+							navType: "browse",
+							id: counterpartId
+						});						
+					};
+
+				};
+			};
+			
+
+			let headerButtons = UDigDict(response, [
+				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
+				"watchNextTabbedResultsRenderer", "tabs", 0,
+				"tabRenderer", "content", "musicQueueRenderer",
+				"header", "musicQueueHeaderRenderer", "buttons"
+			]);
+
+			if (!headerButtons) return;
+
+			headerButtons.push({
+				chipCloudChipRenderer: {
+					style: { styleType: "STYLE_DEFAULT" },
+					text: { runs: [ {text: "Clear Queue Actually" } ] },
+					navigationEndpoint: { dismissQueueCommand: {} },
+					icon: { iconType: "DISMISS_QUEUE" },
+					accessibilityData: { accessibilityData: { label: "Clear Queue" } },
+					isSelected: false,
+					uniqueId: "Clear"
+				}
+			});
+
+			return response;
+
+		}
 	};
 
 
@@ -387,18 +512,15 @@ MiddlewareEditors = class MiddlewareEditors {
 
 }
 
-async function FetchModifyResponse(request, oldResp) {
+async function FetchModifyResponse(request, oldResp, xhr) {
 	console.log(request.url);
+
 	if (
-		oldResp.status !== 200 ||
-		!(oldResp.headers.get("Content-Type") || "").includes("application/json") ||
+		(!xhr && oldResp.status !== 200) ||
+		(!xhr && !(oldResp.headers.get("Content-Type") || "").includes("application/json")) ||
 		!request ||
-		request.method !== "POST" ||
-		//!request.url.includes("browse") ||
-		//!MiddlewareEditors._ShouldModifyURL(request.url) ||
-		!request.body
-		//MiddlewareEditors.urlsToEdit.indexOf(request.urlObj.pathname) === -1
-		//(!request.body.browseId && !request.body.continuation)
+		!request.body ||
+		request.method !== "POST"
 	) {
 		return oldResp;
 	};
@@ -414,14 +536,20 @@ async function FetchModifyResponse(request, oldResp) {
 	console.log("passed tests, modifying", request.url);
 
 	let changed = false;
-	let clonedResp = oldResp.clone();
-	let respText = await clonedResp.text();
+	let clonedResp = (!xhr) ? oldResp.clone() : undefined;
+	let respText = (xhr) ? structuredClone(oldResp.responseText) : (await clonedResp.text());
 
 	let respBody = JSON.parse(respText);
 	let toCacheOriginal = structuredClone(respBody);
 
 	let browseId = request.body.browseId ||
 		UGetBrowseIdFromResponseContext(toCacheOriginal.responseContext);
+	
+	let responseIsContinuation = !!(
+		request.body.continuation ||
+		urlObj.searchParams.get("ctoken") ||
+		urlObj.searchParams.get("continuation")
+	);
 	
 	let cParams = (UBrowseParamsByRequest || {})[browseId];
 
@@ -431,42 +559,43 @@ async function FetchModifyResponse(request, oldResp) {
 		delete cParams;
 	};
 
+	console.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation);
+
 
 	if (MiddlewareEditors.SmallTasks[urlObj.pathname]) {
-		let newResp = MiddlewareEditors.SmallTasks[urlObj.pathname](request, respBody);
-
-		return newResp || oldResp;
-	};
-
-	
-	if (!browseId) return oldResp;
-
-	let pageType = UGetBrowsePageTypeFromBrowseId(browseId);	
-
-
-	let continuationInRequest = request.body.continuation ||
-		urlObj.searchParams.get("ctoken") ||
-		urlObj.searchParams.get("continuation");
-
-
-	let responseIsContinuation = !!continuationInRequest;
-
-
-	console.log("ORIGINAL RESP", browseId, respBody, "continuation:", continuationInRequest);
-
-
-	// EDITING FOR INITIAL PAGE DATAS
-	if (!responseIsContinuation && MiddlewareEditors[pageType]) {
-		let cache = await UMWStorageGet("cache") || {};
-
-		respBody = MiddlewareEditors[pageType](respBody, browseId, cache);
-
+		respBody = MiddlewareEditors.SmallTasks[urlObj.pathname](request, respBody);
 		changed = true;
 	};
 
+
+	if (MiddlewareEditors.SmallTasksRequireCache[urlObj.pathname]) {
+		let cache = await UMWStorageGet("cache") || {};
+
+		respBody = MiddlewareEditors.SmallTasksRequireCache[urlObj.pathname](request, respBody, cache);
+		changed = true;
+	};
+
+	let pageType;
+	if (!changed && browseId && !responseIsContinuation) {
+		pageType = UGetBrowsePageTypeFromBrowseId(browseId);
+
+		if (!MiddlewareEditors[pageType]) return oldResp;
+
+		let cache = await UMWStorageGet("cache") || {};
+
+		respBody = MiddlewareEditors[pageType](respBody, browseId, cache);
+		changed = true;
+	};
+
+	if (!changed) return oldResp;
+
 	console.log("NEW RESP BODY", respBody);
 
+	if (!respBody) return oldResp;
+
 	setTimeout(function() { // CACHE ORIGINAL!
+		if (!browseId) return;
+
 		let contents = toCacheOriginal.contents;
 
 		if (toCacheOriginal.onResponseReceivedActions) {
@@ -491,8 +620,25 @@ async function FetchModifyResponse(request, oldResp) {
 
 	if (changed) {
 		respBody.cMusicFixerExtChangedResponse = true;
+		let finalStr = JSON.stringify(respBody);
 
-		return new Response(JSON.stringify(respBody), {
+		if (xhr) {
+			Object.defineProperty(oldResp, "responseText", {
+				get() {
+					return finalStr;
+				}
+			});
+
+			Object.defineProperty(oldResp, "response", {
+				get() {
+					return finalStr;
+				}
+			});
+
+			return oldResp;
+		};
+
+		return new Response(finalStr, {
 			headers: clonedResp.headers,
 			ok: clonedResp.ok,
 			redirected: clonedResp.redirected,
@@ -543,14 +689,10 @@ async function newFetch(resource, options) {
 
 			};
 			
-		} catch (err){
-			//console.warn("ERR GETTING BODY", request.url, resourceIsStr, err);
-			//console.log("errGettingBody", resource, options, reqText);
-		};
+		} catch {};
 	};
 
 	let response = await originalFetch(resource, options);
-	//console.log(".fetch response", response);
 
 	try {
 		response = await FetchModifyResponse(request, response);
@@ -571,6 +713,19 @@ Object.defineProperty(window, "originalFetch", {
 	configurable: false
 });
 
+Object.defineProperty(window, "originalXHROpen", {
+	value: XMLHttpRequest.prototype.open,
+	writable: false,
+	configurable: false
+});
+
+Object.defineProperty(window, "originalXHRSend", {
+	value: XMLHttpRequest.prototype.send,
+	writable: false,
+	configurable: false
+});
+
+
 window.fetch = async function(resource, opts) {
 	try {
 		return await newFetch(resource, opts);
@@ -580,6 +735,37 @@ window.fetch = async function(resource, opts) {
 		return await originalFetch(resource, opts);
 
 	};
+};
+
+XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+	this._url = url;
+	this._method = method;
+
+	if (url.startsWith("/")) {
+		this._url = "https://music.youtube.com" + url; 
+	};
+
+	return originalXHROpen.apply(this, arguments);
+};
+
+XMLHttpRequest.prototype.send = function(body) {
+	const xhr = this;
+
+	const originalOnReadyStateEvent = xhr.onreadystatechange;
+
+	xhr.onreadystatechange = async function() {
+		if (xhr.readyState === 4 && xhr.status === 200) {
+			await FetchModifyResponse({
+				url: xhr._url,
+				method: xhr._method,
+				body: body
+			}, xhr, true);
+		};
+
+		if (originalOnReadyStateEvent) originalOnReadyStateEvent.apply(this, arguments);
+	};
+
+	return originalXHRSend.apply(this, arguments);
 };
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = window.fetch, non clonable.)
