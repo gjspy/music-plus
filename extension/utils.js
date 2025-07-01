@@ -90,7 +90,8 @@ class Utils {
 			lengthSec: -1,
 			id: "",
 			badges: [],
-			type: ""
+			type: "",
+			views: 0
 		},
 		USER_CHANNEL: {
 			name: "",

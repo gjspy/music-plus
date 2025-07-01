@@ -1,11 +1,11 @@
-class MiddlewareEditors {
+MiddlewareEditors = class MiddlewareEditors {
 	static urlsToEdit = [
 		"/youtubei/v1/browse",
 		"/youtubei/v1/playlist/create",
 		"/youtubei/v1/playlist/delete",
 		"/youtubei/v1/like/like",
-		"/youtubei/v1/like/removelike",
-		"/youtubei/v1/next"
+		"/youtubei/v1/like/removelike"//,
+		//"/youtubei/v1/next"
 	];
 
 	static _ShouldModifyURL(url) {
@@ -79,12 +79,13 @@ class MiddlewareEditors {
 		let creator = ((subtitleOneData.artists) ? subtitleOneData.artists[0] : undefined) || subtitleOneData.creator;
 		let cachedCreator = cache[creator.id];
 
+		// DOING COUNTERPART STUFF, LINK TO MAIN ARTIST PAGE
 		if (cachedCreator.privateCounterparts && cachedCreator.privateCounterparts.length > 0) {
 
 			for (let counterpart of cachedCreator.privateCounterparts) {
-				if (!cache[counterpart.id]) continue;
+				if (!cache[counterpart]) continue;
 
-				cachedCreator = cache[counterpart.id];
+				cachedCreator = cache[counterpart];
 				break;
 			};
 
@@ -106,7 +107,10 @@ class MiddlewareEditors {
 			}
 
 			if (creator.id !== U_VARIOUS_ARTISTS_EXTID) {
-				straplineTextOne.runs[0].navigationEndpoint = subtitleOneData.creatorNavigationEndpoint;
+				straplineTextOne.runs[0].navigationEndpoint = UBuildEndpoint({
+					navType: "browse",
+					id: cachedCreator.id
+				})
 			};		
 			
 			
@@ -135,39 +139,8 @@ class MiddlewareEditors {
 		delete oldButtons.topLevel.Download.downloadButtonRenderer.command.offlinePlaylistEndpoint.onAddCommand.clickTrackingParams;
 		delete oldButtons.topLevel.Download.downloadButtonRenderer.command.offlinePlaylistEndpoint.offlineability.offlineabilityRenderer.clickTrackingParams;
 
-		/*delete oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer.text;
-		delete oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer.trackingParams;
-		delete oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer.serviceEndpoint.clickTrackingParams;
-		delete oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer.serviceEndpoint.queueAddEndpoint.commands[0].clickTrackingParams;
-		delete oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer.serviceEndpoint.queueAddEndpoint.commands[0].addToToastAction.item.notificationTextRenderer.trackingParams;
-		delete oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer.serviceEndpoint.queueAddEndpoint.commands[0].addToToastAction.clickTrackingParams;
-		delete oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer.serviceEndpoint.queueAddEndpoint.queueTarget.onEmptyQueue.clickTrackingParams;*/
-
 		let buttons = [
-			//{
-				/*buttonRenderer: {
-					style: "STYLE_DARK_ON_WHITE",
-					//size: "SIZE_DEFAULT",
-					isDisabled: false,
-					icon: {
-						iconType: "ADD_TO_REMOTE_QUEUE" // QUEUE_PLAY_NEXT DOESNT WORK!!
-					},
-					accessibility: {
-						label: "Play next"
-					},
-					accessibilityData: {
-						accessibilityData: {
-							label: "Play next"
-						}
-					},
-					command: oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer.serviceEndpoint
-				},*/
-				//downloadButtonRenderer: oldButtons.topLevel.Download // SHOWS BUTTON BUT STILL NO INTERACTION!!!!
-			//},
-			//{
-			//	buttonRenderer: oldButtons.menu.ADD_TO_REMOTE_QUEUE.menuServiceItemRenderer
-			//}, MYSTERY!! IRDK WHY IT DOESNT WORK, BUT DOES THROUGH MENU. EXACTLY THE SAME EVERYHTING!!
-			oldButtons.topLevel.Download, // THIS WORKS!!!!!!! :)
+			oldButtons.topLevel.Download,
 			{
 				buttonRenderer: {
 					style: "STYLE_DARK_ON_WHITE", // white with border
@@ -306,6 +279,19 @@ class MiddlewareEditors {
 			listItem = listItem.musicResponsiveListItemRenderer;
 
 			listItem.overlay.musicItemThumbnailOverlayRenderer.background.verticalGradient.gradientLayerColors = layerColors;
+			
+			/*let i = -1; KEEP THIS, FOR WHEN WE CAN ADD OUR OWN VIEW COUNTS!!
+			for (let flexColumn of listItem.flexColumns) {
+				i ++;
+
+				let runs = flexColumn.musicResponsiveListItemFlexColumnRenderer.text.runs;
+				if (!runs || runs.length === 0) continue;
+				if (!runs[0].navigationEndpoint) continue;
+
+				if ((runs[0].navigationEndpoint.browseEndpoint || {}).browseId === id) {
+					delete listItem.flexColumns[i]; // delete run that says album name
+				};
+			};*/
 		}
 
 
@@ -359,11 +345,11 @@ class MiddlewareEditors {
 				func: "playlist-delete",
 				data: gathered
 			});
-		},
-		"/youtubei/v1/next": function test(request, response) {
+		}
+		/*"/youtubei/v1/next": function test(request, response) {
 			response.playerOverlays.playerOverlayRenderer.browserMediaSession.browserMediaSessionRenderer.album.runs[0].text = "thisisfunny";
 			return response
-		}
+		}*/
 	};
 
 
@@ -471,9 +457,9 @@ async function FetchModifyResponse(request, oldResp) {
 
 	// EDITING FOR INITIAL PAGE DATAS
 	if (!responseIsContinuation && MiddlewareEditors[pageType]) {
-		let cache = await UMWStorageGet("cache");
+		let cache = await UMWStorageGet("cache") || {};
 
-		respBody = MiddlewareEditors[pageType](respBody, cache);
+		respBody = MiddlewareEditors[pageType](respBody, browseId, cache);
 
 		changed = true;
 	};
@@ -597,159 +583,3 @@ window.fetch = async function(resource, opts) {
 };
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = window.fetch, non clonable.)
-
-
-// XHR version, YTMusic uses this for some things, nothign useful.
-// fetch used for browsing, videoplayback, qoe
-// XHR for heartbeat, watchtime, verify_session, log_event. (not needed), PLAYER: gives some info about video
-
-/*const originalOpen = XMLHttpRequest.prototype.open;
-const originalSend = XMLHttpRequest.prototype.send;
-
-
-function OnReadyStateChange() {
-	console.log(this);
-	console.log(this.getResponseHeader("Content-Type"));
-	
-	if (
-		this.readyState !== 4 ||
-		this.status !== 200 ||
-		!this.getResponseHeader("Content-Type").includes("application/json") ||
-		!this._request ||
-		this._request.method !== "POST" ||
-		!this._request.url.includes("browse") ||
-		!this._request.body ||
-		!this._request.body.browseId
-	) {
-		return;
-	};
-	
-	let response = JSON.parse(this.responseText);
-	console.log(response);
-	
-	if (this._request.body.browseId.includes("privately_owned")) {
-		response.background = {
-			musicThumbnailRenderer: {
-				thumbnail: {
-					thumbnails: response.header.musicDetailHeaderRenderer.thumbnail.croppedSquareThumbnailRenderer.thumbnail.thumbnails
-				},
-				thumbnailCrop: "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
-				thumbnailScale: "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED"
-			}
-		}
-	}
-	
-	// use middleware for custom album names, cusotm links to other places	
-}
-
-XMLHttpRequest.prototype.open = function(method, url, asynchronous, user, password) {
-	//console.log(".open", this);
-	this._request = {
-		method: method,
-		url: url
-	};
-	
-	originalOpen.apply(this, arguments);
-}
-
-XMLHttpRequest.prototype.send = function(body) {
-	//console.log(".send",this);
-	if (this._request.method === "POST" && body && typeof(body) === "string") {
-		this._request.body = JSON.parse(body);
-	};
-	
-	this.addEventListener("readystatechange", OnReadyStateChange);
-	
-	originalSend.apply(this, arguments);
-};*/
-
-
-
-	//for (let match of respText.matchAll(/"navigationEndpoint":{.*?"browseEndpoint":{.*?"browseId":"(.*?)"/g)) {
-	////	let data = cache[match[1]];
-	//	if (!data) continue;
-//
-//
-	//};
-
-
-/*
-
-function _RegisterContinuations(originalResp, browseId, pageType, responseIsContinuation) {
-		let continuations = [];
-
-		let listItems, continuationItemRenderer;
-
-		switch (pageType + String(responseIsContinuation)) {
-			case "MUSIC_PAGE_TYPE_PLAYLISTfalse":
-				// this continuation returns carousel after listitems. dont need it.
-				//let mainContentContinuation = originalResp.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer.continuations;
-				
-				listItems = originalResp.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer.contents[0].musicPlaylistShelfRenderer.contents;
-				continuationItemRenderer = listItems[listItems.length - 1].continuationItemRenderer;
-				if (!continuationItemRenderer) return;
-
-				continuations.push(continuationItemRenderer.continuationEndpoint.continuationCommand.token);
-
-				break;
-
-			case "MUSIC_PAGE_TYPE_PLAYLISTtrue":
-				listItems = originalResp.onResponseReceivedActions[0].appendContinuationItemsAction.continuationItems;
-				continuationItemRenderer = listItems[listItems.length - 1].continuationItemRenderer;
-				if (!continuationItemRenderer) return;
-
-				continuations.push(continuationItemRenderer.continuationEndpoint.continuationCommand.token);
-
-				break;
-
-
-			case "MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHYfalse":
-				let sectionListRenderer = originalResp.contents.singleColumnBrowseResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer;
-
-				let sortingOpts = sectionListRenderer.header.musicSideAlignedItemRenderer.endItems[0]
-					.musicSortFilterButtonRenderer.menu.musicMultiSelectMenuRenderer.options
-					.map( v => v.musicMultiSelectMenuItemRenderer.selectedCommand
-						.commandExecutorCommand.commands
-						.filter( v => v.browseSectionListReloadEndpoint !== undefined )[0]
-						.browseSectionListReloadEndpoint.continuation.reloadContinuationData.continuation
-					);
-				
-				continuations.push(...sortingOpts);
-
-				let chips = sectionListRenderer.header.musicSideAlignedItemRenderer.startItems[0]
-					.chipCloudRenderer.chips
-					.map( v => v.chipCloudChipRenderer.navigationEndpoint.browseSectionListReloadEndpoint
-						.continuation.reloadContinuationData.continuation
-					);
-
-				continuations.push(...chips);
-
-				let gridContinuations = sectionListRenderer.contents[0].gridRenderer.continuations;
-				if (gridContinuations) {
-					gridContinuations = gridContinuations.map( v => v.nextContinuationData.continuation );
-
-					continuations.push(...gridContinuations);
-				};
-			
-			case "MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHYtrue":
-				continuations = window.cacheContinuations[browseId];
-
-
-
-		};
-
-		window.cacheContinuations[browseId] = continuations;
-	};
-
-	function _GetBrowseIdFromContinuation(continuation) {
-		let values = Object.values(window.cacheContinuations);
-		return Object.keys(window.cacheContinuations)[values.indexOf(values.filter(v => v.includes(continuation))[0])];
-	};*///if (!browseId) {
-	//	if (!continuationInRequest) return oldResp;
-
-		//browseId = _GetBrowseIdFromContinuation(continuationInRequest);
-	//	browseId = 
-	//	console.log("new browseId", browseId);
-
-	//	if (!browseId) return oldResp;
-	//};
