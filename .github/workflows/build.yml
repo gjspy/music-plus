@@ -18,8 +18,7 @@ jobs:
           git config --global user.name = "autobuild"
           git config --global user.email = "github-actions[bot]@users.noreply.github.com"
           git fetch origin main
-          mv extension/manifest.json manifest_test.json -f
-          mv manifest_main.json extension/manifest.json -f
+          cp manifest_main.json extension/manifest.json -f
           git add .
           git commit --amend --no-edit
           git push --force origin main
