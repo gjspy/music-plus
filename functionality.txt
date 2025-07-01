@@ -1,0 +1,245 @@
+eventual functionality:
+
+# nice sidebar - save albums, custom icons, folders for playlists + custom sorting
+# playlists, open in new tab with middle mouse!!
+# replace (your) channel name with "" or "you"?
+# fix background
+# player-bar-background
+# playlist page, dont cut off name
+sorting playlists nicely
+hide "added to [x] playlist" popup cus it doesnt like to
+"up next" in player, be able to hover over suggested music + get "add to playlist" popup
+search for song to find where it is in ur library
+export playlists (even just as txt)
+new library page: have "albums" shelf, "playlists" shelf, and "artists" shelf.
+clear queue + better buttons
+spotify-like blend between songs?
+reorganise playlist by removing all and adding back 1 by 1
+"add to playlist" make all squares.
+song quiz
+auto cache
+song tags!!!!!!
+banned songs to auto-skip
+playback speed changer/petch
+album masks!!!!!!!!!!!!!!!!!!!!!!
+remove disable miniplayer for kids songs
+player page remove "Related" tab
+sidebar: remove "Home" "Explore" "Library" text, only icons, one row, add History
+IGNORE TAB!!!
+custom artist page, choose which elements to put on which pages, custom titles (eps, albums, singles, allow mix n match pages)
+make entire new player page custom!!
+
+
+DOING: separators for sidebar, move CFMore to a separate window when rearranging, allow dragging into it to store temporarily
+
+todo:
+	make popup title a row like any other
+	
+	change folder icon - select playlist menu
+
+	fix when on artist/home page, margins are incorrect
+	    - when page has elems with incorrect page-type: loop thru every elem with attribute and change to correct one.
+
+	hover over audio controls fullscreen gives gery bkg, give it .c-player
+	
+
+	make artist albums sort by year, bcs they dont correctly.
+	fix inf load after clicking end of song but going back
+	remove (feat...) ? put elswhere, playerapi videldetails doesnt have it..
+
+	border-radius issues fixed on player page, but now fix them on playlist page please :)
+
+	player page fixes dont work on laptop with small csreen or half sized page (50/50 sreen)
+	on playlist delete, wrong sidebar elem deletes.
+
+	on remove sidebar elems, correctly fires injectMyPaperItems, but does not do editFeatures (button disappears), also, when doing inject, is the data up-to-date? (NO, WHEN IT REALOADS, SIDEBARELEMS WRONG ORDER!!)
+
+	2024 recap made for .  .
+	//top right when click to see your name etc, yt-img-shadow is too wide, pushes away
+	organise "more elements" ino albums, palylists, keep order placed in though in those categories
+	make it faster, feels sluggish with all playlists
+	region bottom half ish cant drag into, oob, why?
+
+	FOLDER ICONS!!!! PLEASE!!
+	// carousel section of sidebar: artist icons only
+
+	// homepage, before scrolling main body, if you scroll sidebar is bad (editing shows most)
+
+	setting custom uploads as singles
+	auto caching!!
+
+	prompt when cannot save to sync, so you can save json and upload custom. (will have to save to local, add functionality to get data from either.)
+
+	BUG: can insert carousel into carousel and sep into carousel
+	INSERTING my songs to real albums
+	DELETE SEP button not appearing
+
+	naming albums/singles
+	artist page hiding/showing albums
+	addeding/removing from queue
+	// clear queue button clean
+	volume adjustment for custom songs
+	swapping songs in albums (my custom instead of theirs)
+	//right click automix items, drag into queue
+	better queue dragging
+	playerApi.setLoop
+	skip areas (paladin)
+	tags (song ratings, add to playlists)
+	"add to playlist" all square, in paper item order.
+	adding custom albums to artist pages
+	hiding bad artist albums (taylor)
+	remove made for kids features, allow adding to playlist, miniplayer
+	track my own "songs on repeat" (getState().queue.responsiveSignals.videoInteraction shows skip or playthrough? do this every song change)
+	custom automix
+	customise your profile more
+	autoupdate outdated playlist icons after caching
+	ban songs from automix (non-TV)
+	add to queue button on sidebar
+	idea from github ytmusic player
+	"Twenty One Pilots" -> "twenty one pilots"
+	speed/pitch, and save per song instance in playlist
+	completely custom dragging (fix dragging last elem of pl only)
+	custom LYRICS (for custom songs, or overwrite normal) (INTERCEPT network request so they insert for us?)
+	custom private release page (like normal album)
+	dont fade out if is same album based on cache
+	POTENTIAL ISSUE: CACHING AFTER MIDDLEWARE HAS ACTED. IS THAT BAD? -> CALL CACHING FROM MIDDLEWARE! THEN CAN STILL EDIT!
+	cache non-editableHeaderRenderer playlist (non-self-owned)
+	for auto loading into sorted by recency for artist, in middleware, in modifyResponse, call new request to browse with continuation found from dropdownItem, ten return that as the original data. dont forget to make the dropdown enabled if thats encessary?
+	STORE MODIFICATION SEPARATE (NOT IN CACHE), SO COULD BE IN SYNC? DONT WANT CLEAR CACHE TO REMOVE MODIFICATION!!
+	add links to subtitles with 3+ artists. (do this in middleware!)
+	utils separate for mw and bkg, also clean namespace in mw.
+	hide playlists from uploads that arent 100% uploads?
+	SIDEBAR ADD TO QUEUE BUTTON!! NEXT TO SHUFFLE!!
+	keep skips and hidden songs separate. (eg shake it off, skip but still show) [still allow clicking icon to play, dont remove from queue like that]
+	remove "delete from playlist" and "delete song" menuRenderer buttons from queue
+	custom automix for uploads (yt doesnt put any)
+	drag multipleitems in playlist
+	improve popstate event for navigation
+	could fully redo site if can figure out api secure id
+	2202+ elvis reeleases
+	playlist loaded by youtube shouldnt automatically go to top of sidebar, december recap keeps poppingup even tho i drag into cfmore (no longer store contents of cfmroe)
+	sidebar middle click private release donesnt work? (ts), always use /browse/..., never playlis?list=...
+	"build to queue" button, for repeated "play next", click once = "play next", click twice = play after first song added,...
+	pages where subtitle is 3+ people, add navigationEndpoints
+	pin artists to sidebar, play radios
+	make loop button go bold when clicked once
+	who believes in angels: hide artist flexcolumn if included in facepile
+	MAKE HOME, EXPLORE & LIB NEW-TABBABLE
+	NORMAL YOUTUBE player request with body /watch?v=mtndpp8U0KA&list=RDMM&start_radio=1&rv=nHDf1iq-yC0, RadioMyMix!! Use for better automix?
+	make bookmarks which u can click and it insta plays (have url sarchParams for c extension!!)
+	youtube back button, sick of clicking back and going to player page (remove these from history, function shouldProduceHistoryEntry or something?)
+	sleep timer, pause after 1hr, this song,..
+	offline mode, diff sidebar for only downloads??!
+	player bar subtitle runs doesnt contain year for custom uploads, fix this ez
+	https://github.com/th-ch/youtube-music?tab=readme-ov-file#available-plugins https://github.com/th-ch/youtube-music/tree/master/src/plugins
+	FOR ARTIST "SONGS" LIST, AUTO SORT BY N OF PLAYS, HAVE CHIP RENDERER WITH CUSTOM CONTINUATION WHICH MIDDLEWARE CATCHES AND DOESNT CALL, USE THIS TO SORT BETWEEN ORIGINAL ORDER AND NOT
+
+
+	https://music.youtube.com/browse/MPADUCERrDZ8oN0U_n9MphMKERcg
+	doing browse/[browseId for artist discography] gives you ALL singles AND ALBUMS!!
+	browseId.match("^MPAD(UC.*)"), capture group = channel id!!!!!!
+
+	custom automix + create custom radio mixes:
+	POST https://music.youtube.com/youtubei/v1/playlist/create
+	request body: {title: "test", videoIds:["dsab","faskb","asdfj"]}
+
+	make stuff not editable [wrap all in (...code)()] so keeps local scope.
+	o = controllerProxy.onVideoProgress;
+	controllerProxy.onVideoProgress = function(e) {
+		console.log(e - last);
+		last = e
+		o.call(this);
+	}
+	when batch changing queue (call store.dispatch), await response before calling  next? thinking mostly for bulk move items in playlist.
+
+	CACHING, UPDATE ON CLICK OF BUTTON (EG SAVE PLAYLIST)
+
+	make utils separate for client/server
+
+	TESTING: SYNC STORAGE LIMITS, HAVING "SYNCCONTENTS" STORED IN LOCAL
+	downlaodable json storage
+
+to cache:
+	playlist/album page:
+		playlist metadata
+		songs: metadata, navEndpoint/playEndpoint
+	artist:
+		discography: albums, eps, and singles: metadata so can create own buttons
+	
+
+
+good bkg: https://lh3.googleusercontent.com/gP-rqVOBO3v93xd1fMYuOHc1iTM28UvQijoh8jhT5OcqC0KfZSrEQ4CXJvMc8W-pkJLUSaPWlDpVr0w=w1500-h844-l90-rj
+
+done:
+	sidebar:
+		custom paper elements showing images and more useful information
+		reorganise it, moving playlists where you want them
+		folders to contain playlists (or other folders!)
+		extra playlists that youtube doesn't load in (>50) added.
+		any albums saved to your library added.
+		filtering names and subtitles to what you want them to be called.
+		hiding elements
+		our paper items added/removed when you create/delete a playlist without a refresh.
+		can open playlists in new tab with middle mouse!!
+		separators with/without titles depending what you want.
+		rearranging elements by moving them to a temporary overflow
+		carousel elements to have icons only which are still interactable.
+	
+	fixed background gradient on album pages.
+	player-bar has nicer background.
+	player-slider has nice background or better gradient.
+	player-page shares the nice background
+	sidebar can share the nice background, but nowadays is better, it is default to transparent, so:
+		- it shares bkg of palyer page when open
+		- shares bkg of whatever other page when player closed.
+	hovering over an element on the sidebar gives a nice effect - hiding text behind for play buttons. (!!!!)
+
+	sync AND local storage
+		sync used for configs
+		local used for cache
+
+bugs fixed:
+	patch 1:
+
+	# bkg cont opacity 0 when fading out bad
+	#speaker icon secondary queue on song img
+	dragging:
+		# dragging down to move elem, keeps auto scrolling down when let go quickly
+		# allow to close folder
+		#? still causes going to href!!!
+		# glitching sometimes when scrolling too fast?
+	# LOOP SINGLE SONG BREAKS FADING
+	#DONT RUN SCROLL THING EVERY 10MS
+	# FINISH FIXING PLAYLIST PAGE WITH DUMB CREATOR, doesnt update attribure if navigate from playlist -> plalist.
+	#!!!!!!!!DONT FADE OUT IF NEXT SONG IS FROM SAME ALBUm
+	#CHANGE PROGRESS BAR GETTING DIST FROM LEFT TO player-page ytmusic-tabs-renderer.__dataHost.playerUiService.playerApi.getCurrentTime()
+	#ITS WHEN WRAPPER IS CLICKED (SMALL COUPLE PIXELS BELOW PAPER ITEM)
+	#make sidebar buttons reappear when youtube refreshes and hides them all (edit btn also goes)
+	#when dragging folder, let go and it opens. (also when editing allow closure of active playlist??)
+    #playlist page, play first song, border radius bad
+    #guide-wrapper backdrop-filter: blur(6px); (artist pages are a problem)
+	#?fix pausing before playling if stopping ublock doesnt
+	#run mwpagechangedriven on inital load (eg after refresh)
+	#mini guide does not bige bkg-cont player bkg of paper item
+	#folders dont hide even tho hidden has saved
+	#add padding 2px to bottom of side panel of player page
+	#fix sometimes black player page, using getItems() will help.
+	#remove coloured-sidebar attribute, will never use again, change to palyer-page-open, and use simpler found version whatever it was
+	#make player bkg nicer, less saturated, look at everyday is christmas for example, blur(30px) only
+	#fix when sidebar disappears, just redo bcs they destroy container, make all new buttons effect
+	#FIX SORT-BY SCROLLBAR
+	#on change of album art, document.querySelector("ytmusic-player-bar").playerApi.seekTo(0)
+	#fix search result page or library scroll down, tabs bar
+	#background fading does not work when player page closed. DUE TO CSS TRANSITIONS FOR OPENING/CLOSING PAGE
+	Xdont do mopacity for playe rpag ebkg, just change bkg to black!!! *****
+	#(when faded out, didebar play button overlaps text)
+	Xplayer bar progress bar whats happening - are we transitioning or not
+	player bkg stuff desont work for "the urban electric" (green edition): REMOVE "if (!nextThumb) return;"
+	
+
+
+
+how this works:
+	content script injected (iso)
+	messages background to start code, which normally would be in cs
+	background injects individual functions into main/iso layers.

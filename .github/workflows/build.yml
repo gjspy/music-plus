@@ -1,0 +1,72 @@
+name: Build and Deploy extension files
+
+on:
+  push:
+    branches: [main]
+  
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+    
+      - name: Swap main/test manifest
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global user.name = "autobuild"
+          git config --global user.email = "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          cp manifest_main.json extension/manifest.json -f
+          git add .
+          git commit --amend --no-edit
+          git push --force origin main
+
+  build:
+    runs-on: ubuntu-latest
+    needs: manifest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Zip
+        run: |
+          mkdir -p output
+          cd extension
+          zip -r ../output/release.xpi ./*
+          cd ..
+
+      - name: updates.json and Deploy
+        run: |
+          VERSION=$(jq -r '.version' extension/manifest.json)
+          EXT=$(jq -r '.browser_specific_settings.gecko.id' extension/manifest.json)
+          REPOWNER="${{ github.repository_owner }}"
+          REPONAME="${{ github.event.repository.name }}"
+          cat > output/updates.json <<EOF 
+          {
+            "addons": {
+              "$EXT": {
+                "updates": [
+                  {
+                    "version": "$VERSION",
+                    "update_link": "https://$REPOWNER.github.io/$REPONAME/release.xpi"
+                  }
+                ]
+              }
+            }
+          }
+          EOF
+
+          cat output/updates.json
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global user.name = "autobuild"
+          git config --global user.email = "github-actions[bot]@users.noreply.github.com"
+          git checkout -b versions
+          git rm -rf . || true
+          cp -r output/* .
+          rm -r output
+          git add .
+          git commit -m "release $VERSION"
+          git push --force origin versions

@@ -1,0 +1,59 @@
+{
+	"manifest_version": 3,
+	"name": "YTMUSIC TEST",
+	"version": "1.1",
+  
+	"description": "TEST BUILD: Provides additional features to the Youtube Music site.",
+
+	"icons": {
+		"96": "icons/testlogo.png"
+	},
+
+	"content_scripts": [
+		{
+			"matches": ["*://music.youtube.com/*"],
+			"css": ["inject.css"],
+			"run_at": "document_start"
+		},
+		{
+			"matches": ["*://music.youtube.com/*"],
+			"js": ["contentScript.js"],
+			"world": "ISOLATED",
+			"run_at": "document_idle"
+		}
+	],
+
+	"background": {
+		"page": "background/bkgPage.html"
+	},
+
+	"web_accessible_resources": [{
+		"matches": ["*://music.youtube.com/*"],
+		"resources": ["utils.js"]
+	}],
+
+	"host_permissions": [
+		"*://music.youtube.com/*"
+	],
+
+	"permissions": [
+		"tabs",
+		"storage",
+		"activeTab",
+		"unlimitedStorage",
+		"scripting"
+	],
+
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "sitefixer@test",
+			"strict_min_version": "42.0"
+		}
+	},
+
+	"action": {
+		"default_icon":"icons/testlogo.png",
+		"default_title":"YTMUSIC Test",
+		"default_popup":"popup/index.html"
+	}	  
+}

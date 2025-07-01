@@ -1,0 +1,769 @@
+why eventdrven timeout?
+
+find primary version of alternate albums.
+store alternate albums separately, not just alternate: [], have an entry for them.
+//not using albumdatafromsubtitle for artists. should be, i ebtter, has info other than id [should be fixed]
+//check various artists stores consistently, and nto storing separate entry for them. unless want to?
+
+CACHE MULTIPLE ARTISTS PER ALBUM (WHO BELIEVES IN ANGELS) (WILL BE VERY EASY TO DO, JUST PLS CHANGE NETWORKMIDDLEWARE!)
+
+AFTER EDITING C_PRIVATE_ALBUM TO LOOK LIKE NORMAL ALBUM, OD WE SWAP BACK PAGE TYPE? IF SO, HOW? IS BASED ON BROWSEID.!!
+
+
+//PRIVATE ALBUM NEW PAGE:
+//	header:
+//		left 2 buttons not showing icons
+//		"play next" endpoint doesnt work? shows toast ele, does not add to queue (DOES work going through menu)
+//	contents:
+/-		each item, remove album name from flexcolumns
+//		fix playbutton, is too black
+//		look at fixing not showing when playing? dont think its an issue actually here, new page is correct!!
+/-		custom "x plays" for flexcolumn!!!
+
+//FINISH CLEANING CACHING, REMOVING CONTENTLENGTH N STUFF (ONLY DOES RAW RESP FROM MIDDLEWARE NOW)
+//	NEED TO FINISH GRIDRENDERER
+//	liked and badges not working listitem
+
+//FEmusic_library_corpus_track_artists - listitems!
+
+//WHAT IS CREATORNAVENDPOINT FOR IN TWOITEMRENDERER?
+//CACHING ON CLICK AND UPDATE SIDEBAR BASED ON NEW CACHE!! -> WILL NEED TO FULLY UPDATE INSERT() WITH NEW CACHING!! NO MORE CACHE.PLAYLIST!!
+//what happens when anvigate t channel
+improve eventdriven stuff, stop console spam
+//CACHE ON INITAL OPEN OF PAGE (NEW TAB)
+
+//FEmusic_liked_albums FEmusic_liked_playlists FEmusic_library_corpus_track_artists FEmusic_liked_videos
+//FEmusic_liked_playlists [no specification for private, which makes sense] FEmusic_library_privately_owned_releases FEmusic_library_privately_owned_artists FEmusic_library_privately_owned_tracks
+
+
+//CHECK DOWNLOADS, MAKE SURE IT DOESNT ERR (STILL DONT WANT TO DO IT)
+
+//CLEAR QUEUE BUTTON DELETES when changing queue, eg clicking a new play button which refreshes queue.
+//[DISMISS_QUEUE SVG EXISTS]
+
+
+//TEXT RUNS FOR SIDEBAR PAPERITEM SUBTITLES!! SO CAN NAV TO CREATOR ETC!!
+//SUBTITLE BADGES!!
+
+//when editing anything to do with caching,need to come back to insert to fix metadata for subtitle.
+
+//sidebar paperelem still add if no cache inf, just have title / subtitle ? ? and no img obvs
+//MAKE IT /browse!!
+
+/.REMOVED let fakeInfo = savedCustomConfigs.fakeNames[id]; from _CreateNewPaperItem. will be overhauled for custom infos.
+//NEED TO DO NAVIGATION OF PAPERELEMS AGAIN (NOT STORING WHOLE PLAYENDPOINTS OR NAVENDPOINTS)
+
+//FIX ALL DOMUATIONWATCHER (get it to do sidebaredit also)
+
+playerBar -> musicApp
+
+//UAddToClass(customTemplateElem, "c-template"); CHECK SIDEBAREDIT, INSTEAD OF c-tempaltes, templates > c-paper-wrapper
+
+DONE IN NEW  INJECTPAPERITEMS:
+	elems now use /browse, so can point anywhere
+	newTabbable primarybuttons (home, explore, lib)
+	mfId (microformat), from ALBUM CACHING
+	cfmore is more efficient, no longer on sidebar, just for editing purposes
+	automatic subtitles
+	seps allowed in carousel for styling
+	carousels allowed in folders
+	subtitleRuns for navigating to artists
+	artists can be added to sidebar
+	elems will appear even if only id is present, no detail. can click to update through cache
+	elems live update when cache is edited
+
+
+LETS TRY and have ZERO DOMMutationWatchers.
+YTMusic is always much smoother when the extension isnt running. try and figure out why!
+
+//lots of TODOS in injectPaperItems.
+//FIX INJECTIONTARGET in BKG SCRIPT TO ALLOW MULTI TAB :)
+
+//WHEN GENERATING CFMORE LATER IN EDIT, SHOW FOLDERS NOT IN PAPERORDER!
+TAB IGNORING DOES NOT WORK :(
+
+//folders and carousels and separators
+primaryelements keeping active attribute since wrapping in a.c-paper-wrapper
+//respond to savedplaybutton/playerbar, need to be able to click paperitem to pause ETC
+//ADD "ADD TO QUEUE" BUTTON!!! (thumbnail overlay?)
+//clean up bkgscript, insertcss whats happening?
+//todos in injectPaperItems
+//addNewAndSave
+//look at artists being there!! playing radio types. selecting mfid as the radio!
+//NULL IN CACHE ARTIST DISCOG!! COMING FROM PLAYLIST ITEM
+//CHECk that papers load even if only have id (click on and cache updates it)
+//NEED TO ADD NON USED FOLDERS TO OVF, AND USE CREATEFOLDER NOT CREATEELEM
+//HOW TO GET MFID FOR PRIVATE ALBUM? IS THERE ONE? WHAT IS IT?
+//on live update of cache when got, readd play button if mid is not undefined!!
+/?GET MFID FROM TWOROWITEMRENDERER AND WHATEVER U CAN (ONLY ALBUM, PRIV ALBUM????)
+//ADDING EDIT BUTTONS TO OVFELEMS OH MY FUCK
+//(ON PLAYLIST ADD
+LISTITEM SAVE
+//AND PLAYLIST DELETE!) -> DO BY NETWORK!
+//find all global injectionTargets and delete
+//look at weird dragging combos (no sep in cfmore, no sep in carousel, etc)
+//saveorder in utils check is ok
+//check deleting folders, hiding elems, deleting sep
+//PROBABLY PROBLEM IF CACHE NAVIGATE AND EDITING, DONT WANT TO REFRESH CONT IF EDITING
+/X(refresh cont after ending edit?)
+//ON YOUTUBE SIDEBAR REFRESH!! (ALSO REFRESHES PRIMARY BUTTONS, NEED TO WRAP IN <A> AGAIN)
+//FEmusic_liked_playlists etc, any page with gridRenderer do
+//BROWSING IS SLOW!!
+//RADIOS dont cache, browsePageTypeFromBrowseId issue RD types
+/Xmultiple reading to storage at once? need queue
+//need to set draggingCarousel to false on next click
+//WORKING ON SHELFRENDERER, ERRORS IN BROWSER console
+/XALSO ANOTHER THING I TESTED ERRORED? WHAT WAS IT?
+BROWSEID PARAMS IN newFetch, FOR BUTTON TO "LOAD ORIGINAL"
+how do alterante albums work? cache separately i hope, how will they appear when making sidebar?
+allow to select primary ver of album
+
+STORE DATA IN MYSQL DB!!
+
+for adding to sidebar, have pane for "non saved" items, but do by search,, dont create all the elems
+for songs with too many plays (we are never ever getting back together 1b tv), see video detail from playerResponse.
+	- this returns viewCount for this instance, not including non-explicit/deluxe album/other alts of song. (for "we are never." the original is included in the sum with tv.)
+	- on select lyric (css:select) in lyrics pane,, popup window like spotify thing that people always tweet
+
+https://music.youtube.com/youtubei/v1/guide?prettyPrint=false FOR REFRESHING GUIDE, EVENT FOR DOING MINE AGAIN
+body: fetchLiveState: true
+
+QUEUE NAV CMD, CAN have videoIds: [...] IN REQUEST, WORKS WITH ENDPOINT
+"queueAddEndpoint":{
+	"queueInsertPosition":"INSERT_AT_END",
+	"commands":[{"addToToastAction":{"item":{"notificationTextRenderer":{"successResponseText":{"runs":[{"text":"4 songs added to queue"}]}}}}}],
+	"queueTargets":[{"videoId":"2tVs8JVU48M"},{"videoId":"5CbWqM0K2v8"},{"videoId":"_vjfkBSTpyk"},{"videoId":"s-QGeo_dpn4"}]
+}
+
+WATCH NEXT IS ALL YOU NEED. playerApi.updateVideoData, sort by this.
+
+EDITING ALBUMS:
+	- private version, change songs based on it
+	- deluxe versions of albums, use base songs
+	- priv album, send 
+
+ARTISTS:
+	- add private uploads to their album playerPageFeatures
+	- auto sort discog by age
+	- custom names (twenty one pilots)
+
+RATINGS:
+	- add to playlist
+	- skips
+
+SONGS:
+	- add lyrics to private
+	- edit lyrics
+
+
+//dragging carousel into carousel
+//folders in cfmore
+
+/XREDO BUTTONS (AND CAN DO WITHOUT ENDING EDIT MODE NOW?)
+
+//clicking private release doesnt have browsepagetype
+//getting mfid for private release
+
+update eventdriven & playerPageFeatures.
+
+save "privateCounterparts" separate, in edits sect, not cache? or should be cache because is automatic?
+add isDeleted to playlist, will get removed once cache is _CollectTwoRowDataFromGridRenderer
+
+CLEAR QUEUE BUTTON DOESNT CLEAR SERVER QUEUE.
+CLICK IT, THEN ADD SOMETHING ELSE TO THE QUEUE, THEN SHUFFLE IT.
+SERVER RETURNS QUEUE WHICH HAS STUFF FROM OLD QUEUE IN IT!!
+
+
+playerBar.inst.__data.currentItem has what we want!!
+look at tracking player instead of next. try editing then calling console.trace() and log that, to see where we are.. need this!!
+
+***** PLAYER BAR DATA IS ON api/next CALL. CONTENTS>singlEColumnMusicWeatchENxtResultsRenderer.tabbedRenderer.watchNextTabbedResultsRenderer.tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents[x].playlistPanelVideoRenderer.longBylineText!!!
+
+
+MAKE MINI WINDOW FOR TABLET, YT MUSIC WIDGET, make it auto appear on login and fill screen, using firefox as desktop backgorund ish user showcase mode smth
+sidebar carousel paper items, make play buttons appear after a delay of hovering
+(can animate visibility, not display. replace display: none with visibility: hidden)
+
+
+
+
+
+
+https://music.youtube.com/youtubei/v1/like/like?prettyPrint=false
+https://music.youtube.com/youtubei/v1/like/removelike?prettyPrint=false
+request.target.playlistId	"OLAK5uy_kktoFfdjO2SZ5AWq4trzLx7bWj9HdfVeU"
+
+https://music.youtube.com/youtubei/v1/playlist/create?prettyPrint=false
+request.title = "test"
+response.playlistID "PL..."
+
+https://music.youtube.com/youtubei/v1/playlist/delete?prettyPrint=false
+request.playlistId = "PL..."
+
+a.handleCommand.call({hostElement: musicApp}, UBuildEndpoint({
+    navType: "queueAdd",
+    playlistId: "PLvyOHVv_irfe-_BHteUXBnzKPMGk3YaFE",
+    position: "end"
+})).then((e) => console.log(e)).catch((e) => console.log(e))
+
+ F5.prototype.handleCommand(UBuildEndpoint({
+    navType: "queueAdd",
+    playlistId: "PLvyOHVv_irfe-_BHteUXBnzKPMGk3YaFE",
+    position: "end"
+})) 
+ b = document.createElement("ytmusic-menu-service-item-renderer").controllerProxy.handleCommand 
+b.call(polymerController, UBuildEndpoint({
+    navType: "queueAdd",
+    playlistId: "PLvyOHVv_irfe-_BHteUXBnzKPMGk3YaFE",
+    position: "end"
+})) WORKS
+
+ a = document.createElement("ytmusic-menu-service-item-renderer").handleCommand 
+
+F5.prototype.handleCommand = function (a) { NEED THIS, HAPPENS WHEN CLICKING MENUSERVICEITEM :(
+
+
+var awb = function (a, b) { interesting!!
+      for (var c = [], d = m(Mf(b, Ir, 1)), e = d.next(); !e.done; e = d.next()) e = nvb(Wf(e.value, 1)),
+      (e = a.fetchCommand(e, b.getController())) &&
+      c.push(e);
+      if (c.length === 0) throw Error('HandleSetMediaItemsRequest: no commands.');
+      return a.JSC$11963_mediaPlayerController.handleCommand(c[0]).then(function () {
+        return $vb()
+      })
+    };
+
+
+
+function UNavigate(navigationEndpointOuterDict) {
+		if (!window.polymerController) this.UGetPolymerController();
+
+		// "outerDict" = requires "endpoint type";
+		// eg param: {
+		//	browseEndpoint:{
+		//		browseId:"VLLM",
+		//		browseEndpointContextSupportedConfigs:{
+		//			browseEndpointContextMusicConfig: {
+		//				pageType: "MUSIC_PAGE_TYPE_PLAYLIST"
+		//			}
+		//		}
+		//	}
+		//}
+		// HAVE TESTED, DOES REQUIRE BROWSECONFIGS
+
+
+		//polymerController.handleNavigateAction({
+		//	navigateAction: {
+		//		endpoint: navigationEndpointOuterDict
+		//	}
+		//});
+	
+	//musicApp.handleServiceEndpoint(
+	//	navigationEndpointOuterDict
+	//)
+	musicApp.polymerController.handleCommandExecutorCommand({
+		commandExecutorCommand:{commands:[navigationEndpointOuterDict]}})
+	
+
+	//a = polymerController.handleServiceEndpoint(
+	//	
+	//)
+	
+	};
+//document.addEventListener("yt-service-request-completed", (e) => {console.log("YES",e)})
+document.querySelector("ytmusic-player-bar")
+e = UBuildEndpoint({
+	navType: "queueAdd",
+	playlistId: "PLvyOHVv_irfe-_BHteUXBnzKPMGk3YaFE",
+	position: "end"
+})
+//e = UBuildEndpoint({
+//	navType: "browse",
+//	id: "VLLM"
+//})
+
+UNavigate(e);polymerController
+
+
+k.navigate = function (a) {
+      a = xZ({
+        browseEndpoint: {
+          browseId: a
+        }
+      });
+      this.navigator.navigate(a);
+      this.isGuidePersistent ||
+      (this.guideCollapsed = !0)
+    };
+
+k = ytmusic-app
+
+/*base = innerApi.cGetDefaultEndpoint()
+base.JSC$9501_innertubePath = ""
+base.data = {
+	params: "wAEB",
+	videoId: "QAo_Ycocl1E",
+	playlistId: "RDAMVMQAo_Ycocl1E",//,
+	watchEndpointMusicSupportedConfigs: {
+		watchEndpointMusicConfig: {
+			musicVideoType: "MUSIC_VIDEO_TYPE_ATV"
+		}
+	}
+}
+console.log(base);
+innerApi.navigate(base);*/
+con = innerApi.cGetDefaultEndpoint().constructor; // yZ.constrctor = hZ.constructor = cZ
+innerApi.playerController.playEndpoint();
+
+// WORKS!: endp = new con({browseId: "VLLM"}, void 0);
+//app = document.querySelector("ytmusic-app")
+//innerApi.playerController
+
+function xZ(a) {
+      var b = null;
+      if (H(a, CI)) {
+        var c = H(a, CI);
+        !c.videoId &&
+        c.playlistId ? b = new wZ(c, a.clickTrackingParams) : c &&
+        (b = new mZ(c, a.clickTrackingParams))
+      } else if (H(a, zG)) b = new hZ(H(a, zG), a.clickTrackingParams);
+       else if (H(a, YI)) b = new rZ(H(a, YI), a.clickTrackingParams);
+       else if (H(a, DI)) b = new wZ(H(a, DI), a.clickTrackingParams);
+       else if (H(a, xI)) b = new gZ(H(a, xI), a.clickTrackingParams);
+       else if (H(a, AG)) b = new t2a(H(a, AG), a.clickTrackingParams);
+       else if (H(a, PJ)) b = new v2a(H(a, PJ), a.clickTrackingParams);
+       else if (H(a, QJ)) b = new w2a(H(a, QJ), a.clickTrackingParams);
+       else if (H(a, yI)) b = new kZ(H(a, yI), a.clickTrackingParams);
+       else if (H(a, AI)) b = new qZ(H(a, AI), a.clickTrackingParams);
+       else if (H(a, DHa)) b = new s2a(H(a, DHa), a.clickTrackingParams);
+       else if (H(a, zw)) b = new vZ(H(a, zw), a.clickTrackingParams);
+       else if (H(a, CG)) b = new jZ(H(a, CG), a.clickTrackingParams);
+       else if (H(a, fGa)) b = new uZ(H(a, fGa), a.clickTrackingParams);
+       else if (H(a, eGa)) b = new tZ(H(a, eGa), a.clickTrackingParams);
+       else if (H(a, zI)) b = new u2a(H(a, zI), a.clickTrackingParams);
+       else if (H(a, xG)) b = new eZ(H(a, xG), a.clickTrackingParams);
+       else if (H(a, wI)) b = new fZ(H(a, wI), a.clickTrackingParams);
+       else if (H(a, WH)) b = new lZ(H(a, WH), a.clickTrackingParams);
+       else if (H(a, YH)) H(a, YH).watchEndpoint ? b = new nZ(H(a, YH), a.clickTrackingParams) : (
+        c = Error(
+          'MusicWatchFormBinderCommandEndpoint is missing WatchEndpoint: ' + JSON.stringify(a)
+        ),
+        cq(c)
+      );
+}
+WORKS:!!!
+
+base = innerApi.cGetDefaultEndpoint();
+console.log(base);
+/*innerApi.playerController.playEndpoint({
+	params: "wAEB",
+	videoId: "QAo_Ycocl1E",
+	playlistId: "RDAMVMQAo_Ycocl1E",//,
+	watchEndpointMusicSupportedConfigs: {
+		watchEndpointMusicConfig: {
+			musicVideoType: "MUSIC_VIDEO_TYPE_ATV"
+		}
+	}
+}, base)//xZ, y2a
+*/
+innerApi.handleNavigationEvent({
+	JSC$5231_event_:{
+		detail:{
+			endpoint:{
+				watchEndpoint:{
+					playlistId: "LM"//, // 
+				
+				}
+				
+			}
+		}
+	}
+})
+innerApi.handleNavigationEvent({
+	JSC$5231_event_:{
+		detail:{
+			endpoint:{
+				browseEndpoint:{
+					browseId: "FEmusic_home"//,
+				//	videoId: "z1N52_9FSOs"
+					//watchEndpointMusicSupportedConfig watchEndpointMusicConfig
+				}
+				
+			}
+		}
+	}
+})
+
+THIS WORK:::::::::!!
+document.querySelector("ytmusic-app").handleNavigateAction({
+	navigateAction: {endpoint:{browseEndpoint:{
+					browseId: "VLPLvyOHVv_irfeEGgAwQtpQ4tPTKT3D5YJA",//
+					browseEndpointContextSupportedConfigs:{                                                 browseEndpointContextMusicConfig: {pageType:"MUSIC_PAGE_TYPE_PLAYLIST"}
+									}
+					}}
+}});
+
+
+
+function y2a(a) {
+      a = a.replace(document.baseURI || '', '');
+      var b = Nu(a);
+      a = b.JSC$6327_path_.split('/');
+      switch (a[0]) {
+        case 'channel':
+          a = {
+            browseEndpoint: {
+              browseId: a.length > 1 ? a[1] : 'FEmusic_home',
+              browseEndpointContextSupportedConfigs: {
+                browseEndpointContextMusicConfig: {
+                  pageType: 'MUSIC_PAGE_TYPE_ARTIST'
+                }
+              }
+            }
+          };
+          break;
+        case 'charts':
+          a = {
+            browseEndpoint: {
+              browseId: 'FEmusic_charts'
+            }
+          };
+          break;
+        case 'explore':
+          a = {
+            browseEndpoint: {
+              browseId: 'FEmusic_explore'
+            }
+          };
+          break;
+        case 'listen_again':
+          a = {
+            browseEndpoint: {
+              browseId: 'FEmusic_listen_again'
+            }
+          };
+          break;
+        case 'mixed_for_you':
+          a = {
+            browseEndpoint: {
+              browseId: 'FEmusic_mixed_for_you'
+            }
+          };
+          break;
+        case 'moods_and_genres':
+          a = {
+            browseEndpoint: {
+              browseId: 'FEmusic_moods_and_genres'
+            }
+          };
+          break;
+        case 'new_releases':
+          b = 'FEmusic_new_releases';
+          a.length > 1 &&
+          a[1] === 'albums' ? b = 'FEmusic_new_releases_albums' : a.length > 1 &&
+          a[1] === 'videos' &&
+          (b = 'FEmusic_new_releases_videos');
+          a = {
+            browseEndpoint: {
+              browseId: b
+            }
+          };
+          break;
+        case 'podcasts':
+          b = 'FEmusic_non_music_audio';
+          a.length > 1 &&
+          a[1] === 'popular_episodes' ? b = 'FEmusic_top_non_music_audio_episodes' :
+          a.length > 1 &&
+          a[1] === 'popular_shows' &&
+          (b = 'FEmusic_top_non_music_audio_shows');
+          a = {
+            browseEndpoint: {
+              browseId: b
+            }
+          };
+          break;
+        case 'library':
+          switch (a[1]) {
+            case 'albums':
+              a = 'FEmusic_liked_albums';
+              break;
+            case 'artists':
+              a = 'FEmusic_library_corpus_track_artists';
+              break;
+            case 'playlists':
+              a = 'FEmusic_liked_playlists';
+              break;
+            case 'podcasts':
+              a = 'FEmusic_library_non_music_audio_list';
+              break;
+            case 'podcast_channels':
+              a = 'FEmusic_library_non_music_audio_channels_list';
+              break;
+            case 'songs':
+              a = 'FEmusic_liked_videos';
+              break;
+            case 'subscriptions':
+              a = 'FEmusic_library_corpus_artists';
+              break;
+            case 'uploaded_albums':
+              a = 'FEmusic_library_privately_owned_releases';
+              break;
+            case 'uploaded_artists':
+              a = 'FEmusic_library_privately_owned_artists';
+              break;
+            case 'uploaded_songs':
+              a = 'FEmusic_library_privately_owned_tracks';
+              break;
+            default:
+              a = 'FEmusic_library_landing';
+          }
+          a = {
+            browseEndpoint: {
+              browseId: a
+            }
+          };
+          break;
+        case 'hotlist':
+          a = {
+            browseEndpoint: {
+              browseId: 'FEmusic_explore'
+            }
+          };
+          break;
+        case 'search':
+          a = b.JSC$6327_queryData_.get('q', '');
+          a = decodeURIComponent(a.replace(/\+/g, ' '));
+          a = a.trim() ?
+          {
+            searchEndpoint: {
+              query: a
+            }
+          }
+           : {
+            browseEndpoint: {
+              browseId: 'FEmusic_home'
+            }
+          };
+          break;
+        case 'playlist':
+          a = {
+            browseEndpoint: {
+              browseId: b.JSC$6327_queryData_.get('list', 'FEmusic_home'),
+              browseEndpointContextSupportedConfigs: {
+                browseEndpointContextMusicConfig: {
+                  pageType: 'MUSIC_PAGE_TYPE_PLAYLIST'
+                }
+              }
+            }
+          };
+          break;
+        case 'listen':
+        case 'watch':
+          a = b.JSC$6327_queryData_.get('v', '');
+          b = b.JSC$6327_queryData_.get('list', '');
+          a = a ||
+          b ? {
+            watchEndpoint: {
+              videoId: a,
+              playlistId: b
+            }
+          }
+           : {
+            browseEndpoint: {
+              browseId: 'FEmusic_home'
+            }
+          };
+          break;
+        case 'settings':
+          a = {
+            applicationSettingsEndpoint: {
+            }
+          };
+          break;
+        case 'premium':
+        case 'youtube_premium':
+        case 'musicpremium':
+        case 'music_premium':
+          a = (a.length > 1 ? a[a.length - 1] : '') === 'offers' ? {
+            browseEndpoint: {
+              browseId: 'FEypc_offers'
+            }
+          }
+           : {
+            browseEndpoint: {
+              browseId: 'SPunlimited'
+            }
+          };
+          break;
+        case 'red':
+          a = {
+            browseEndpoint: {
+              browseId: 'SPunlimited'
+            }
+          };
+          break;
+        case 'paid_memberships':
+          a = {
+            browseEndpoint: {
+              browseId: E('enable_memberships_and_purchases') ? 'FEmemberships_and_purchases' : 'SPpaid_memberships'
+            }
+          };
+          break;
+        case 'browse':
+          a = a.length > 1 ? a[1] : 'FEmusic_home';
+          b = {
+            browseId: a
+          };
+          a.startsWith('MPED') &&
+          (
+            b.browseEndpointContextSupportedConfigs = {
+              browseEndpointContextMusicConfig: {
+                pageType: 'MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE'
+              }
+            }
+          );
+          a.startsWith('MPSP') &&
+          (
+            b.browseEndpointContextSupportedConfigs = {
+              browseEndpointContextMusicConfig: {
+                pageType: 'MUSIC_PAGE_TYPE_PODCAST_SHOW_DETAIL_PAGE'
+              }
+            }
+          );
+          a = {
+            browseEndpoint: b
+          };
+          break;
+        case 'tasteprofile':
+          a = {
+            browseEndpoint: {
+              browseId: 'FEmusic_tastebuilder'
+            }
+          };
+          break;
+        default:
+          a = {
+            browseEndpoint: {
+              browseId: 'FEmusic_home'
+            }
+          };
+      }
+      return xZ(a)
+    }
+
+//innertubeCommand event 156080
+// return this.ytComponentBehavior.resolveCommand(a) 156143
+console.log(MYNAV)
+MYNAV = {
+	JSC$9501_innertubePath: "/browse",
+	data: {
+		browseId: "VLLM",
+		browseEndpointContextSupportedConfigs: {
+			browseEndpointContextMusicConfig: {
+				pageType: "MUSIC_PAGE_TYPE_PLAYLIST"
+			}
+		}
+	}
+}
+
+a = controllerProxy.parentComponent.getDefaultEndpoint()
+a.data = MYNAV.data;
+console.log(a);
+//controllerProxy.parentComponent.navigate(a);
+
+controllerProxy.parentComponent.navigator.navigate(a);
+//controllerProxy.resolveCommand({innertubeCommand:MYNAV})
+//controllerProxy.parentComponent.navigate(new URL("https://music.youtube.com/browse/VLSS"))
+
+let infoWeWant;
+
+		try {
+			let settingsBtn = (await this.UWaitForBySelector("ytmusic-settings-button"))[0];
+			let juicyElem = settingsBtn.firstElementChild//.firstElementChild; //tp-yt-iron-icon//__dataHost
+			
+			let juicyInfo = juicyElem.__dataHost.accountService.cachedGetAccountMenuRequestPromise.result_.actions[0]. 
+			openPopupAction.popup.multiPageMenuRenderer.header.activeAccountHeaderRenderer;		
+	
+			infoWeWant = {
+				accountName: juicyInfo.accountName.runs[0].text,
+				accountPhoto: juicyInfo.accountPhoto.thumbnails[0].url,
+				channelHandle: juicyInfo.channelHandle.runs[0].text
+			};
+
+			return infoWeWant;
+
+		} catch (err) {
+			console.warn("ERROR GRABBING ACCOUNTINFO:", err);
+
+			return undefined;
+		};	*/	
+old:case "MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY":
+				tab = response.contents
+					.singleColumnBrowseResultsRenderer.tabs[0].tabRenderer; // tabs[0] because only 1 tab (multiple chips)
+
+				gathered = _CollectTwoRowDataFromGridRenderer(response, tab);
+				break;
+
+			//case "MUSIC_PAGE_TYPE_DOWNLOADS_CONTENT_LANDING_PAGE": // ("offlineItemSectionRenderer" not "gridRenderer", not doing it)
+			case "MUSIC_PAGE_TYPE_LIBRARY_CONTENT_LANDING_PAGE":
+			case "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE":
+				tab = UGetSelectedTab(response.contents.singleColumnBrowseResultsRenderer.tabs);
+
+				gathered = _CollectTwoRowDataFromGridRenderer(response, tab);
+				break;
+
+old:
+
+		//let request = polymerController.cGetDefaultEndpoint(); 
+		//request.JSC$9501_innertubePath = "";
+		//request.data = navigationEndpoint;
+		//polymerController.navigate(request);
+		window.polymerController.cGetDefaultEndpoint = musicApp.getDefaultEndpoint;
+
+			/*static UGetControllerProxy() {
+		if (window.controllerProxy) return controllerProxy;
+
+		if (!window.playerBar) {
+			window.playerBar = document.querySelector("ytmusic-player-bar");
+		};
+
+		window.controllerProxy = playerBar.controllerProxy;
+		return controllerProxy;
+	};*/
+
+
+
+
+
+
+
+
+
+
+	
+	/*static async old_UMWStorageGet(path, filter) {
+		// path: string . separated, eg sidebar.folders.folders
+		// filter: dict defining filter for data to return.
+
+		return new Promise(function(resolve, reject) {
+			function RespListener(event) {
+				if (event.detail.func !== "get-storage") return;
+
+				let gotStorage = event.detail.storage;
+
+				window.removeEventListener(UGeneralCustomEventEWToMW, RespListener);
+
+				resolve(gotStorage);
+			};
+
+			// get ready to receive response
+			window.addEventListener(UGeneralCustomEventEWToMW, RespListener);
+
+			// send event to EW to get saved data
+			UDispatchEventToEW({
+				func: "get-storage",
+				path: path,
+				filter: filter
+			});
+		});
+	};*/
