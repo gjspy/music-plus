@@ -41,8 +41,11 @@ jobs:
           EOF
       
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./output
-          publish_branch: versions
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global user.name = "autobuild"
+          git config --global user.email = "none@autobuild"
+          git checkout -b versions
+          git add output/*
+          git commit -m new version
+          git push --force origin version
