@@ -1,12 +1,12 @@
 {
 	"manifest_version": 3,
-	"name": "YTMUSIC Fixer",
-	"version": "2.33",
+	"name": "YTMUSIC TEST",
+	"version": "1.1",
   
-	"description": "Provides additional features to the Youtube Music site.",
+	"description": "TEST BUILD: Provides additional features to the Youtube Music site.",
 
 	"icons": {
-		"96": "icons/musicemoji.png"
+		"96": "icons/testlogo.png"
 	},
 
 	"content_scripts": [
@@ -46,15 +46,14 @@
 
 	"browser_specific_settings": {
 		"gecko": {
-			"id": "sitefixer@ultra",
-			"strict_min_version": "42.0",
-			"update_url": "https://gjspy.github.io/music-plus/updates.json"
+			"id": "sitefixer@test",
+			"strict_min_version": "42.0"
 		}
 	},
 
 	"action": {
-		"default_icon": "icons/musicemoji.png",
-		"default_title": "YTMUSIC+",
-		"default_popup": "popup/index.html"
+		"default_icon":"icons/testlogo.png",
+		"default_title":"YTMUSIC Test",
+		"default_popup":"popup/index.html"
 	}	  
 }
