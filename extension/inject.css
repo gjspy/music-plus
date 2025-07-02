@@ -1877,10 +1877,12 @@ ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_ALBUM"] {
 	position: initial;
 }
 
+
 .c-carousel .c-paper-wrapper .c-paper-btn {
 	fill: var(--max-bright-white);
 
-	display: none;
+	visibility: hidden;
+	transition: visibility 0s 0s linear;
 }
 
 
@@ -1892,17 +1894,14 @@ ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_ALBUM"] {
 }
 
 .c-carousel .c-paper-wrapper:hover:not(:has(.c-paper-button-cont.c-active)):not(:has(.c-paper-button-cont.c-editing)) .c-paper-icon-cont .c-paper-btn {
-	display: initial;
-}
-.c-carousel .c-paper-wrapper:has(.c-paper-button-cont.c-active) .c-paper-icon-cont .c-paper-btn,
-.c-carousel .c-paper-wrapper:has(.c-paper-button-cont.c-editing) .c-paper-icon-cont .c-paper-btn {
-	display: none;
+	visibility: visible;
+	transition: visibility 0s 0.7s ease;
 }
 
 .c-carousel .c-paper-wrapper:hover .c-paper-button-cont .c-paper-btn,
 .c-carousel .c-paper-wrapper:has(.c-paper-button-cont.c-active) .c-paper-button-cont .c-paper-btn,
 .c-carousel .c-paper-wrapper:has(.c-paper-button-cont.c-editing) .c-paper-button-cont .c-paper-btn {
-	display: initial;
+	visibility: visible;
 }
 
 .c-carousel .c-paper-wrapper .c-paper-btn {
@@ -1925,7 +1924,7 @@ ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_ALBUM"] {
 
 	top: 1px;
 
-	display: none;
+	visibility: hidden;
 }
 
 .c-carousel .c-paper-button-cont .c-paper-status-icon.c-paper-btn { 
@@ -1970,12 +1969,23 @@ ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_ALBUM"] {
 	cursor: pointer !important;
 }
 
+.c-paper-btn #spinnerContainer {
+	overflow: hidden;
+}
+
 .c-carousel > .c-paper-btn:has(.delete) {
 	width: 20px;
 	flex-shrink: 0;
 }
 
-
+ytmusic-nav-bar div.center-content {
+	position: absolute;
+	width: calc(100vw - var(--ytmusic-guide-width));
+	left: initial;
+	right: 0;
+	transform: none;
+	padding-left: 88px;
+}
 
 
 

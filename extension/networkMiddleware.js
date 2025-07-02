@@ -4,8 +4,9 @@ MiddlewareEditors = class MiddlewareEditors {
 		"/youtubei/v1/playlist/create",
 		"/youtubei/v1/playlist/delete",
 		"/youtubei/v1/like/like",
-		"/youtubei/v1/like/removelike"//,
-		//"/youtubei/v1/next"
+		"/youtubei/v1/like/removelike",
+		"/youtubei/v1/next",
+		"/youtubei/v1/player"
 	];
 
 	static _ShouldModifyURL(url) {
@@ -268,11 +269,6 @@ MiddlewareEditors = class MiddlewareEditors {
 			}
 		};
 
-		//let menuCopy = structuredClone(response.header.musicDetailHeaderRenderer.menu.menuRenderer);
-		//delete menuCopy.topLevelButtons;
-
-		//contents.twoColumnBrowseResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer.contents[0].musicResponsiveHeaderRenderer.buttons.push({menuRenderer: menuCopy});
-
 		let layerColors = ["0","0"];
 
 		for (let listItem of contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer.contents[0].musicShelfRenderer.contents) {
@@ -280,7 +276,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			listItem.overlay.musicItemThumbnailOverlayRenderer.background.verticalGradient.gradientLayerColors = layerColors;
 			
-			/*let i = -1; KEEP THIS, FOR WHEN WE CAN ADD OUR OWN VIEW COUNTS!!
+			let i = -1;
 			for (let flexColumn of listItem.flexColumns) {
 				i ++;
 
@@ -291,8 +287,24 @@ MiddlewareEditors = class MiddlewareEditors {
 				if ((runs[0].navigationEndpoint.browseEndpoint || {}).browseId === id) {
 					delete listItem.flexColumns[i]; // delete run that says album name
 				};
-			};*/
-		}
+			};
+
+			let videoId = UDigDict(listItem, ["playlistItemData", "videoId"]);
+			if (!videoId) continue;
+
+			let cachedVideo = cache[videoId];
+			if (!cachedVideo) continue;
+
+			let views = cachedVideo.views;
+			views = (isNaN(views)) ? 0 : views;
+
+			listItem.flexColumns.push({
+				musicResponsiveListItemFlexColumnRenderer: {
+					displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_MEDIUM",
+					text: { runs: [ { text: UBigNumToText(views) + " plays"}] }
+				}
+			});
+		};
 
 
 		response.contents = contents;
@@ -334,6 +346,8 @@ MiddlewareEditors = class MiddlewareEditors {
 				func: "playlist-create",
 				data: gathered
 			});
+
+			return response;
 		},
 
 		"/youtubei/v1/playlist/delete": function PlaylistDeleteCommand(request, response) {
@@ -345,11 +359,133 @@ MiddlewareEditors = class MiddlewareEditors {
 				func: "playlist-delete",
 				data: gathered
 			});
+
+			return response;
+		},
+
+		"/youtubei/v1/player": function CacheVideoViews(request, response) {
+			let gathered = {
+				id: response.videoDetails.videoId,
+				views: Number(response.videoDetails.viewCount),
+				type: response.videoDetails.musicVideoType
+			};
+
+			UDispatchEventToEW({
+				func: "cache-data",
+				data: gathered
+			});
+
+			return response;
 		}
-		/*"/youtubei/v1/next": function test(request, response) {
-			response.playerOverlays.playerOverlayRenderer.browserMediaSession.browserMediaSessionRenderer.album.runs[0].text = "thisisfunny";
-			return response
-		}*/
+	};
+
+
+	static SmallTasksRequireCache = {
+		"/youtubei/v1/next": function TidyQueueNextItems(request, response, cache) {
+			let playlistPanelContents = UDigDict(response, [
+				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
+				"watchNextTabbedResultsRenderer", "tabs", 0,
+				"tabRenderer", "content", "musicQueueRenderer",
+				"content", "playlistPanelRenderer", "contents"
+			]);
+
+			if (!playlistPanelContents) return response;
+
+			for (let item of playlistPanelContents) {
+				let videoRenderer = item.playlistPanelVideoRenderer
+					|| UDigDict(item, ["playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"]);
+
+				if (!videoRenderer) continue;
+
+				let longBylineData = UGetDataFromSubtitleRuns({}, videoRenderer.longBylineText);
+
+				let songCacheData = cache[videoRenderer.videoId];
+				let albumId = (longBylineData.album) ? longBylineData.album.id :
+							  (songCacheData) ? songCacheData.album : undefined;
+				let albumCacheData = (albumId) ? cache[albumId] : {};
+
+				let artistId = (longBylineData.artists) ? longBylineData.artists[0].id :
+							   (songCacheData) ? songCacheData.artists[0] : undefined;
+				let artistCacheData = (artistId) ? cache[artistId] : {};
+
+				if (albumCacheData && albumCacheData.year && !longBylineData.yearStr) {
+					videoRenderer.longBylineText.runs.push(
+						{ text: U_YT_DOT },
+						{ text: String(albumCacheData.year)}
+					);
+				};
+
+				if ((albumCacheData && albumCacheData.private === true) || (artistCacheData && artistCacheData.private === true)) {
+
+					for (let run of videoRenderer.longBylineText.runs) {
+						if (!run.navigationEndpoint) continue;
+						
+						let type = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"]);
+						if (!type) continue;
+
+						if (!type || type === "MUSIC_PAGE_TYPE_UNKNOWN") {
+							let id = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseId"]);
+							if (!id) continue;
+
+							type = UGetBrowsePageTypeFromBrowseId(id, false, true);
+						};
+
+						let counterpartId, counterpartData;
+
+
+						if (type.includes("ALBUM") && (albumCacheData.privateCounterparts || []).length > 0) {
+							counterpartId = albumCacheData.privateCounterparts[0];
+							counterpartData = cache[counterpartId];
+						};
+
+						if (type === "C_PAGE_TYPE_PRIVATE_ARTIST" && (artistCacheData.privateCounterparts || []).length > 0) {
+							counterpartId = artistCacheData.privateCounterparts[0];
+							counterpartData = cache[counterpartId];
+
+							if (counterpartId && item.shortBylineText) {
+								item.shortBylineText.runs[0] = {
+									text: (counterpartData) ? counterpartData.name : run.text
+								}
+							};							
+						};
+
+						if (!counterpartId) continue;
+
+						run.text = (counterpartData) ? counterpartData.name : run.text;
+						run.navigationEndpoint = UBuildEndpoint({
+							navType: "browse",
+							id: counterpartId
+						});						
+					};
+
+				};
+			};
+			
+
+			let headerButtons = UDigDict(response, [
+				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
+				"watchNextTabbedResultsRenderer", "tabs", 0,
+				"tabRenderer", "content", "musicQueueRenderer",
+				"header", "musicQueueHeaderRenderer", "buttons"
+			]);
+
+			if (!headerButtons) return;
+
+			headerButtons.push({
+				chipCloudChipRenderer: {
+					style: { styleType: "STYLE_DEFAULT" },
+					text: { runs: [ {text: "Clear Queue Actually" } ] },
+					navigationEndpoint: { dismissQueueCommand: {} },
+					icon: { iconType: "DISMISS_QUEUE" },
+					accessibilityData: { accessibilityData: { label: "Clear Queue" } },
+					isSelected: false,
+					uniqueId: "Clear"
+				}
+			});
+
+			return response;
+
+		}
 	};
 
 
@@ -367,7 +503,6 @@ MiddlewareEditors = class MiddlewareEditors {
 		// need to edit album subtitleTwo total minutes based on contents.
 
 		// make toplevelbuttons better:  have shuffle instead of share!
-		// make it standard between private album and normal!
 
 		if (!response.cButtons) response.cButtons = [];
 
@@ -380,25 +515,221 @@ MiddlewareEditors = class MiddlewareEditors {
 			]
 		});
 
+		let type = UGetBrowsePageTypeFromBrowseId(id);
+		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return response;
+
+		let cachedAlbum = cache[id];
+		if (!cachedAlbum || (cachedAlbum.privateCounterparts || []).length === 0) return response;
+
+		let counterpart = cachedAlbum.privateCounterparts[0];
+		if (!counterpart || !cache[counterpart]) return response;
+
+		let counterpartData = cache[counterpart];
+
+		let indexesToReplace = {};
+
+		for (let videoId of counterpartData.items) {
+			if (!videoId) continue;
+
+			let cachedVideo = cache[videoId];
+			if (!cachedVideo || !cachedVideo.index) continue;
+
+			indexesToReplace[cachedVideo.index] = cachedVideo;
+		};
+
+		let listItems = UDigDict(response, [
+			"contents", "twoColumnBrowseResultsRenderer", "secondaryContents",
+			"sectionListRenderer", "contents", 0,
+			"musicShelfRenderer", "contents"
+		]);
+		if (!listItems) return response;
+
+		for (let i of listItems) {
+			let data = UGetSongInfoFromListItemRenderer(i);
+
+			let cachedVideo = indexesToReplace[data.index];
+			if (!cachedVideo) continue;
+			
+			i = UModifyListItemRendererFromData(cachedVideo, cachedAlbum, i);
+		};
+
+		// now add extra to end
+		// need to do stuff so when click play, si added to que correcct;y
+
 		return response;
 	};
 
 
+	static MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id) {
+		// THIS ONLY HAPPENS THE FIRST TIME. NAVIGATION = THROUGH CONTINUATIONS
 
-}
+		let sectionListRenderer = UDigDict(response, [
+			"contents", "singleColumnBrowseResultsRenderer", "tabs",
+			0, "tabRenderer", "content", "sectionListRenderer"
+		]);
+		if (!sectionListRenderer) return response;
 
-async function FetchModifyResponse(request, oldResp) {
+		let sortOptions = UDigDict(sectionListRenderer, [
+			"header", "musicSideAlignedItemRenderer", "endItems",
+			0, "musicSortFilterButtonRenderer", "menu",
+			"musicMultiSelectMenuRenderer", "options"
+		]);
+
+		if (!sortOptions) return response;
+		let recencyOpt;
+
+		for (let sortOpt of sortOptions) {
+			sortOpt = sortOpt.musicMultiSelectMenuItemRenderer;
+
+			if (sortOpt.title.runs[0].text !== "Recency") continue;
+			recencyOpt = sortOpt;
+			break;
+		};
+		if (!recencyOpt) return;
+
+		let cmds = UDigDict(recencyOpt, ["selectedCommand", "commandExecutorCommand", "commands"]);
+		let navEndp;
+
+		for (let cmd of cmds) {
+			if (!cmd.browseSectionListReloadEndpoint) continue;
+			navEndp = cmd;
+			break;
+		};
+
+		let continuation = UDigDict(navEndp, ["browseSectionListReloadEndpoint", "continuation", "reloadContinuationData"]);
+
+		//gridRenderer.items = [];
+		sectionListRenderer.contents = [];
+		sectionListRenderer.continuations = [{
+			nextContinuationData: {
+				["continuation"]: continuation.continuation,
+				clickTrackingParams: continuation.clickTrackingParams,
+				autoloadEnabled: true,
+				autoloadImmediately: true,
+				showSpinnerOverlay: true
+			}
+		}];
+
+		return response;
+	};
+
+	static CONT_MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id, cache) {
+		let artist = id.replace("MPAD", "");
+		
+		let cachedArtist = cache[artist];
+		if (!cachedArtist || (cachedArtist.privateCounterparts || []).length === 0) return response;
+
+		let privateArtist = cache[cachedArtist.privateCounterparts[0]];
+		if (!privateArtist) return response;
+
+		let releaseToYear = {};
+
+		for (let album of privateArtist.discography) {
+			album = cache[album];
+			if (!album) continue;
+
+			releaseToYear[album.id] = album.year;
+		};
+
+		let gridRenderer = UDigDict(response, [
+			"continuationContents", "sectionListContinuation", "contents",
+			0, "gridRenderer"
+		]);
+
+		if (!gridRenderer) {
+			gridRenderer = UDigDict(response, ["continuationContents", "gridContinuation"]);
+
+			if (!gridRenderer) return response;
+		};
+
+		let doneYears = [];
+
+		let newItems = [];
+
+		for (let i of gridRenderer.items) {
+			let data = UGetDataFromTwoRowItemRenderer(i);
+			console.log(data);
+
+			if (!data.yearStr || doneYears.indexOf(data.yearStr) !== -1) {
+				newItems.push(i);
+				continue;
+			};
+
+			doneYears.push(data.yearStr);
+
+			for (let [album, year] of Object.entries(structuredClone(releaseToYear))) {
+				console.log(data.yearStr, year, data.name);
+				if (Number(year) <= Number(data.yearStr)) continue;
+				
+				let twoRow = UBuildTwoRowItemRendererFromData(cache[album]);
+				newItems.push(twoRow);
+
+				delete releaseToYear[album];
+			};
+
+			newItems.push(i);
+		};
+
+		if (!gridRenderer.continuation) {
+			for (let i of Object.keys(releaseToYear)) {
+				let twoRow = UBuildTwoRowItemRendererFromData(cache[i]);
+				newItems.push(twoRow);
+			};
+		};
+
+		gridRenderer.items = newItems;
+		return response;
+	};
+
+
+	static MUSIC_PAGE_TYPE_ARTIST(response, id) {
+		let sectionListContents = UDigDict(response, [
+			"contents", "singleColumnBrowseResultsRenderer", "tabs",
+			0, "tabRenderer", "content", "sectionListRenderer", "contents"
+		]);
+		if (!sectionListContents) return response;
+
+		for (let shelf of sectionListContents) {
+			if (!shelf.musicCarouselShelfRenderer) continue;
+
+			let header = shelf.musicCarouselShelfRenderer.header.musicCarouselShelfBasicHeaderRenderer;
+			let title = UDigDict(header, ["title", "runs", 0, "text"]);
+
+			if (title !== "Albums" && title !== "Singles and EPS") continue;
+			if (header.moreContentButton) continue;
+
+			header.moreContentButton = {
+				buttonRenderer: {
+					style: "STYLE_TEXT",
+					text: { runs: [ { text: "More" } ] },
+					navigationEndpoint: UBuildEndpoint({
+						navType: "browse",
+						id: "MPAD" + id
+					}),
+					accessibilityData: {
+						accessibilityData: { label: "More" }
+					}
+				}
+			};
+		};
+
+		return response;
+	};
+
+	static C_PAGE_TYPE_CHANNEL_OR_ARTIST(response, id) {
+		return this.MUSIC_PAGE_TYPE_ARTIST.apply(this, arguments);
+	};
+};
+
+async function FetchModifyResponse(request, oldResp, xhr) {
 	console.log(request.url);
+
 	if (
-		oldResp.status !== 200 ||
-		!(oldResp.headers.get("Content-Type") || "").includes("application/json") ||
+		(!xhr && oldResp.status !== 200) ||
+		(!xhr && !(oldResp.headers.get("Content-Type") || "").includes("application/json")) ||
 		!request ||
-		request.method !== "POST" ||
-		//!request.url.includes("browse") ||
-		//!MiddlewareEditors._ShouldModifyURL(request.url) ||
-		!request.body
-		//MiddlewareEditors.urlsToEdit.indexOf(request.urlObj.pathname) === -1
-		//(!request.body.browseId && !request.body.continuation)
+		!request.body ||
+		request.method !== "POST"
 	) {
 		return oldResp;
 	};
@@ -410,18 +741,22 @@ async function FetchModifyResponse(request, oldResp) {
 	if (!urlObj || MiddlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
 		return oldResp;
 	};
-	
-	console.log("passed tests, modifying", request.url);
 
 	let changed = false;
-	let clonedResp = oldResp.clone();
-	let respText = await clonedResp.text();
+	let clonedResp = (!xhr) ? oldResp.clone() : undefined;
+	let respText = (xhr) ? structuredClone(oldResp.responseText) : (await clonedResp.text());
 
 	let respBody = JSON.parse(respText);
 	let toCacheOriginal = structuredClone(respBody);
 
 	let browseId = request.body.browseId ||
 		UGetBrowseIdFromResponseContext(toCacheOriginal.responseContext);
+	
+	let responseIsContinuation = !!(
+		request.body.continuation ||
+		urlObj.searchParams.get("ctoken") ||
+		urlObj.searchParams.get("continuation")
+	);
 	
 	let cParams = (UBrowseParamsByRequest || {})[browseId];
 
@@ -431,42 +766,55 @@ async function FetchModifyResponse(request, oldResp) {
 		delete cParams;
 	};
 
+	console.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation);
+
 
 	if (MiddlewareEditors.SmallTasks[urlObj.pathname]) {
-		let newResp = MiddlewareEditors.SmallTasks[urlObj.pathname](request, respBody);
-
-		return newResp || oldResp;
-	};
-
-	
-	if (!browseId) return oldResp;
-
-	let pageType = UGetBrowsePageTypeFromBrowseId(browseId);	
-
-
-	let continuationInRequest = request.body.continuation ||
-		urlObj.searchParams.get("ctoken") ||
-		urlObj.searchParams.get("continuation");
-
-
-	let responseIsContinuation = !!continuationInRequest;
-
-
-	console.log("ORIGINAL RESP", browseId, respBody, "continuation:", continuationInRequest);
-
-
-	// EDITING FOR INITIAL PAGE DATAS
-	if (!responseIsContinuation && MiddlewareEditors[pageType]) {
-		let cache = await UMWStorageGet("cache") || {};
-
-		respBody = MiddlewareEditors[pageType](respBody, browseId, cache);
-
+		respBody = MiddlewareEditors.SmallTasks[urlObj.pathname](request, respBody);
 		changed = true;
 	};
 
+
+	if (MiddlewareEditors.SmallTasksRequireCache[urlObj.pathname]) {
+		let cache = await UMWStorageGet("cache") || {};
+
+		respBody = MiddlewareEditors.SmallTasksRequireCache[urlObj.pathname](request, respBody, cache);
+		changed = true;
+	};
+
+	let pageType;
+	if (!changed && browseId) {
+		pageType = UGetBrowsePageTypeFromBrowseId(browseId);
+		
+		if (!pageType) return oldResp;
+		if (responseIsContinuation) pageType = "CONT_" + pageType;
+
+		let f = MiddlewareEditors[pageType];
+
+		if (!f) return oldResp;
+
+		// functions MUST take response, browseId. MAY take cache, that's the only change.
+		if (f.length === 3) { // only get cache for functions that need it.
+			let cache = await UMWStorageGet("cache") || {};
+
+			respBody = f.apply(MiddlewareEditors, [respBody, browseId, cache]);
+
+		} else {
+			respBody = f.apply(MiddlewareEditors, [respBody, browseId]);
+		};
+		
+		changed = true;
+	};
+
+	if (!changed) return oldResp;
+
 	console.log("NEW RESP BODY", respBody);
 
+	if (!respBody) return oldResp;
+
 	setTimeout(function() { // CACHE ORIGINAL!
+		if (!browseId) return;
+
 		let contents = toCacheOriginal.contents;
 
 		if (toCacheOriginal.onResponseReceivedActions) {
@@ -491,8 +839,25 @@ async function FetchModifyResponse(request, oldResp) {
 
 	if (changed) {
 		respBody.cMusicFixerExtChangedResponse = true;
+		let finalStr = JSON.stringify(respBody);
 
-		return new Response(JSON.stringify(respBody), {
+		if (xhr) {
+			Object.defineProperty(oldResp, "responseText", {
+				get() {
+					return finalStr;
+				}
+			});
+
+			Object.defineProperty(oldResp, "response", {
+				get() {
+					return finalStr;
+				}
+			});
+
+			return oldResp;
+		};
+
+		return new Response(finalStr, {
 			headers: clonedResp.headers,
 			ok: clonedResp.ok,
 			redirected: clonedResp.redirected,
@@ -543,14 +908,10 @@ async function newFetch(resource, options) {
 
 			};
 			
-		} catch (err){
-			//console.warn("ERR GETTING BODY", request.url, resourceIsStr, err);
-			//console.log("errGettingBody", resource, options, reqText);
-		};
+		} catch {};
 	};
 
 	let response = await originalFetch(resource, options);
-	//console.log(".fetch response", response);
 
 	try {
 		response = await FetchModifyResponse(request, response);
@@ -571,6 +932,19 @@ Object.defineProperty(window, "originalFetch", {
 	configurable: false
 });
 
+Object.defineProperty(window, "originalXHROpen", {
+	value: XMLHttpRequest.prototype.open,
+	writable: false,
+	configurable: false
+});
+
+Object.defineProperty(window, "originalXHRSend", {
+	value: XMLHttpRequest.prototype.send,
+	writable: false,
+	configurable: false
+});
+
+
 window.fetch = async function(resource, opts) {
 	try {
 		return await newFetch(resource, opts);
@@ -580,6 +954,37 @@ window.fetch = async function(resource, opts) {
 		return await originalFetch(resource, opts);
 
 	};
+};
+
+XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+	this._url = url;
+	this._method = method;
+
+	if (url.startsWith("/")) {
+		this._url = "https://music.youtube.com" + url; 
+	};
+
+	return originalXHROpen.apply(this, arguments);
+};
+
+XMLHttpRequest.prototype.send = function(body) {
+	const xhr = this;
+
+	const originalOnReadyStateEvent = xhr.onreadystatechange;
+
+	xhr.onreadystatechange = async function() {
+		if (xhr.readyState === 4 && xhr.status === 200) {
+			await FetchModifyResponse({
+				url: xhr._url,
+				method: xhr._method,
+				body: body
+			}, xhr, true);
+		};
+
+		if (originalOnReadyStateEvent) originalOnReadyStateEvent.apply(this, arguments);
+	};
+
+	return originalXHRSend.apply(this, arguments);
 };
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = window.fetch, non clonable.)

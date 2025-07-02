@@ -120,12 +120,12 @@ allow to select primary ver of album
 
 STORE DATA IN MYSQL DB!!
 
-for adding to sidebar, have pane for "non saved" items, but do by search,, dont create all the elems
+/Xfor adding to sidebar, have pane for "non saved" items, but do by search,, dont create all the elems
 for songs with too many plays (we are never ever getting back together 1b tv), see video detail from playerResponse.
 	- this returns viewCount for this instance, not including non-explicit/deluxe album/other alts of song. (for "we are never." the original is included in the sum with tv.)
 	- on select lyric (css:select) in lyrics pane,, popup window like spotify thing that people always tweet
 
-https://music.youtube.com/youtubei/v1/guide?prettyPrint=false FOR REFRESHING GUIDE, EVENT FOR DOING MINE AGAIN
+/Xhttps://music.youtube.com/youtubei/v1/guide?prettyPrint=false FOR REFRESHING GUIDE, EVENT FOR DOING MINE AGAIN
 body: fetchLiveState: true
 
 QUEUE NAV CMD, CAN have videoIds: [...] IN REQUEST, WORKS WITH ENDPOINT
@@ -141,10 +141,11 @@ EDITING ALBUMS:
 	- private version, change songs based on it
 	- deluxe versions of albums, use base songs
 	- priv album, send 
+	- STARTED ADDING OVERWRITING SONGS. NEED TO ADD TO END, AND ALLOW USER TO SELECT ALBUM TO USE (EG UPLOADED DELUXE)
 
 ARTISTS:
-	- add private uploads to their album playerPageFeatures
-	- auto sort discog by age
+//	- add private uploads to their album playerPageFeatures
+//	- auto sort discog by age
 	- custom names (twenty one pilots)
 
 RATINGS:
@@ -167,7 +168,7 @@ SONGS:
 update eventdriven & playerPageFeatures.
 
 save "privateCounterparts" separate, in edits sect, not cache? or should be cache because is automatic?
-add isDeleted to playlist, will get removed once cache is _CollectTwoRowDataFromGridRenderer
+/?add isDeleted to playlist, will get removed once cache is _CollectTwoRowDataFromGridRenderer
 
 CLEAR QUEUE BUTTON DOESNT CLEAR SERVER QUEUE.
 CLICK IT, THEN ADD SOMETHING ELSE TO THE QUEUE, THEN SHUFFLE IT.
@@ -177,15 +178,15 @@ SERVER RETURNS QUEUE WHICH HAS STUFF FROM OLD QUEUE IN IT!!
 playerBar.inst.__data.currentItem has what we want!!
 look at tracking player instead of next. try editing then calling console.trace() and log that, to see where we are.. need this!!
 
-***** PLAYER BAR DATA IS ON api/next CALL. CONTENTS>singlEColumnMusicWeatchENxtResultsRenderer.tabbedRenderer.watchNextTabbedResultsRenderer.tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents[x].playlistPanelVideoRenderer.longBylineText!!!
+//***** PLAYER BAR DATA IS ON api/next CALL. CONTENTS>singlEColumnMusicWeatchENxtResultsRenderer.tabbedRenderer.watchNextTabbedResultsRenderer.tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents[x].playlistPanelVideoRenderer.longBylineText!!!
 
 
 MAKE MINI WINDOW FOR TABLET, YT MUSIC WIDGET, make it auto appear on login and fill screen, using firefox as desktop backgorund ish user showcase mode smth
-sidebar carousel paper items, make play buttons appear after a delay of hovering
-(can animate visibility, not display. replace display: none with visibility: hidden)
+//sidebar carousel paper items, make play buttons appear after a delay of hovering
+//(can animate visibility, not display. replace display: none with visibility: hidden)
 
 
-
+COULD DEFINE OWN MUSIC VIDEOS, IN /NEXT API CALL, playlistPanelVideoWrapperRenderer.counterpart.counterpartRenderer + segmentMan
 
 
 

@@ -184,6 +184,7 @@ done:
 		separators with/without titles depending what you want.
 		rearranging elements by moving them to a temporary overflow
 		carousel elements to have icons only which are still interactable.
+		"add to queue" buttons, instead of just abruptly playing.
 	
 	fixed background gradient on album pages.
 	player-bar has nicer background.
@@ -197,6 +198,14 @@ done:
 	sync AND local storage
 		sync used for configs
 		local used for cache
+
+	converts old album page (used for custom ones) to updated style
+		- also shows cached view count for private songs
+	fixes player bar not showing year for custom albums
+	player bar leads to actual artist, not private version
+	auto sorts artist discog by recency
+	artist discography shows custom albums
+	artist page always has "more" button for albums/singles/eps
 
 bugs fixed:
 	patch 1:

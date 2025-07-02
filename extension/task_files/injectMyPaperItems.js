@@ -52,6 +52,11 @@ export async function MWInjectMyPaperItems() {
 				if (artist) {
 					let artistObj = this.storage.cache[artist];
 
+					if ((artistObj.privateCounterparts || []).length > 0) {
+						let c = artistObj.privateCounterparts[0];
+						if (!!c && this.storage.cache[c]) artistObj = this.storage.cache[c];
+					};
+
 					if (artistObj && artistObj.name) subtitle.push({
 						text: artistObj.name,
 						navigationEndpoint: UBuildEndpoint({
@@ -117,30 +122,6 @@ export async function MWInjectMyPaperItems() {
 
 			return ytLoadedPlaylists;
 		};
-
-
-		/*AnimatePaperPlayButtons() {
-			function _PlayerBarInterval() {
-				if (!polymerController) this.UGetPolymerController();
-				if (!polymerController) return;
-
-				// getVideoData and getWatchNextResponse are good too
-				let mfId = polymerController.playerApi.getPlaylistId();
-				if (!mfId) { console.log("returning mfid:", mfId); return; };
-
-				let storeState = polymerController.store.getState();
-
-				let newState;
-
-				if (storeState.playing === true) newState = "playing";
-				else if (storeState.playing === false) newState = "paused";
-				else newState = "loading";
-
-
-			};
-
-			let playing, state;
-		};*/
 
 		InitButtonContOnNavClick(cont) {
 			console.log("IN SETBUTTONCONTLOADING");
@@ -698,8 +679,6 @@ export async function MWInjectMyPaperItems() {
 
 
 		_OnChangeSentByEW(eventData) {
-			console.log("THIS IN ONCHANGE", this);
-
 			if (!eventData.storage) {
 				console.error("event.storage IS undefined, not running onChange action");
 				return;
