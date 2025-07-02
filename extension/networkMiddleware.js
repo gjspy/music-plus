@@ -269,11 +269,6 @@ MiddlewareEditors = class MiddlewareEditors {
 			}
 		};
 
-		//let menuCopy = structuredClone(response.header.musicDetailHeaderRenderer.menu.menuRenderer);
-		//delete menuCopy.topLevelButtons;
-
-		//contents.twoColumnBrowseResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer.contents[0].musicResponsiveHeaderRenderer.buttons.push({menuRenderer: menuCopy});
-
 		let layerColors = ["0","0"];
 
 		for (let listItem of contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer.contents[0].musicShelfRenderer.contents) {
@@ -281,7 +276,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			listItem.overlay.musicItemThumbnailOverlayRenderer.background.verticalGradient.gradientLayerColors = layerColors;
 			
-			/*let i = -1; KEEP THIS, FOR WHEN WE CAN ADD OUR OWN VIEW COUNTS!!
+			let i = -1;
 			for (let flexColumn of listItem.flexColumns) {
 				i ++;
 
@@ -292,8 +287,24 @@ MiddlewareEditors = class MiddlewareEditors {
 				if ((runs[0].navigationEndpoint.browseEndpoint || {}).browseId === id) {
 					delete listItem.flexColumns[i]; // delete run that says album name
 				};
-			};*/
-		}
+			};
+
+			let videoId = UDigDict(listItem, ["playlistItemData", "videoId"]);
+			if (!videoId) continue;
+
+			let cachedVideo = cache[videoId];
+			if (!cachedVideo) continue;
+
+			let views = cachedVideo.views;
+			views = (isNaN(views)) ? 0 : views;
+
+			listItem.flexColumns.push({
+				musicResponsiveListItemFlexColumnRenderer: {
+					displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_MEDIUM",
+					text: { runs: [ { text: UBigNumToText(views) + " plays"}] }
+				}
+			});
+		};
 
 
 		response.contents = contents;
@@ -422,12 +433,12 @@ MiddlewareEditors = class MiddlewareEditors {
 						let counterpartId, counterpartData;
 
 
-						if (type.includes("ALBUM") && albumCacheData.privateCounterparts.length > 0) {
+						if (type.includes("ALBUM") && (albumCacheData.privateCounterparts || []).length > 0) {
 							counterpartId = albumCacheData.privateCounterparts[0];
 							counterpartData = cache[counterpartId];
 						};
 
-						if (type === "C_PAGE_TYPE_PRIVATE_ARTIST" && artistCacheData.privateCounterparts.length > 0) {
+						if (type === "C_PAGE_TYPE_PRIVATE_ARTIST" && (artistCacheData.privateCounterparts || []).length > 0) {
 							counterpartId = artistCacheData.privateCounterparts[0];
 							counterpartData = cache[counterpartId];
 
@@ -492,7 +503,6 @@ MiddlewareEditors = class MiddlewareEditors {
 		// need to edit album subtitleTwo total minutes based on contents.
 
 		// make toplevelbuttons better:  have shuffle instead of share!
-		// make it standard between private album and normal!
 
 		if (!response.cButtons) response.cButtons = [];
 
@@ -505,12 +515,211 @@ MiddlewareEditors = class MiddlewareEditors {
 			]
 		});
 
+		let type = UGetBrowsePageTypeFromBrowseId(id);
+		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return response;
+
+		let cachedAlbum = cache[id];
+		if (!cachedAlbum || (cachedAlbum.privateCounterparts || []).length === 0) return response;
+
+		let counterpart = cachedAlbum.privateCounterparts[0];
+		if (!counterpart || !cache[counterpart]) return response;
+
+		let counterpartData = cache[counterpart];
+
+		let indexesToReplace = {};
+
+		for (let videoId of counterpartData.items) {
+			if (!videoId) continue;
+
+			let cachedVideo = cache[videoId];
+			if (!cachedVideo || !cachedVideo.index) continue;
+
+			indexesToReplace[cachedVideo.index] = cachedVideo;
+		};
+
+		let listItems = UDigDict(response, [
+			"contents", "twoColumnBrowseResultsRenderer", "secondaryContents",
+			"sectionListRenderer", "contents", 0,
+			"musicShelfRenderer", "contents"
+		]);
+		if (!listItems) return response;
+
+		for (let i of listItems) {
+			let data = UGetSongInfoFromListItemRenderer(i);
+
+			let cachedVideo = indexesToReplace[data.index];
+			if (!cachedVideo) continue;
+			
+			i = UModifyListItemRendererFromData(cachedVideo, cachedAlbum, i);
+		};
+
+		// now add extra to end
+		// need to do stuff so when click play, si added to que correcct;y
+
 		return response;
 	};
 
 
+	static MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id) {
+		// THIS ONLY HAPPENS THE FIRST TIME. NAVIGATION = THROUGH CONTINUATIONS
 
-}
+		let sectionListRenderer = UDigDict(response, [
+			"contents", "singleColumnBrowseResultsRenderer", "tabs",
+			0, "tabRenderer", "content", "sectionListRenderer"
+		]);
+		if (!sectionListRenderer) return response;
+
+		let sortOptions = UDigDict(sectionListRenderer, [
+			"header", "musicSideAlignedItemRenderer", "endItems",
+			0, "musicSortFilterButtonRenderer", "menu",
+			"musicMultiSelectMenuRenderer", "options"
+		]);
+
+		if (!sortOptions) return response;
+		let recencyOpt;
+
+		for (let sortOpt of sortOptions) {
+			sortOpt = sortOpt.musicMultiSelectMenuItemRenderer;
+
+			if (sortOpt.title.runs[0].text !== "Recency") continue;
+			recencyOpt = sortOpt;
+			break;
+		};
+		if (!recencyOpt) return;
+
+		let cmds = UDigDict(recencyOpt, ["selectedCommand", "commandExecutorCommand", "commands"]);
+		let navEndp;
+
+		for (let cmd of cmds) {
+			if (!cmd.browseSectionListReloadEndpoint) continue;
+			navEndp = cmd;
+			break;
+		};
+
+		let continuation = UDigDict(navEndp, ["browseSectionListReloadEndpoint", "continuation", "reloadContinuationData"]);
+
+		//gridRenderer.items = [];
+		sectionListRenderer.contents = [];
+		sectionListRenderer.continuations = [{
+			nextContinuationData: {
+				["continuation"]: continuation.continuation,
+				clickTrackingParams: continuation.clickTrackingParams,
+				autoloadEnabled: true,
+				autoloadImmediately: true,
+				showSpinnerOverlay: true
+			}
+		}];
+
+		return response;
+	};
+
+	static CONT_MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id, cache) {
+		let artist = id.replace("MPAD", "");
+		
+		let cachedArtist = cache[artist];
+		if (!cachedArtist || (cachedArtist.privateCounterparts || []).length === 0) return response;
+
+		let privateArtist = cache[cachedArtist.privateCounterparts[0]];
+		if (!privateArtist) return response;
+
+		let releaseToYear = {};
+
+		for (let album of privateArtist.discography) {
+			album = cache[album];
+			if (!album) continue;
+
+			releaseToYear[album.id] = album.year;
+		};
+
+		let gridRenderer = UDigDict(response, [
+			"continuationContents", "sectionListContinuation", "contents",
+			0, "gridRenderer"
+		]);
+
+		if (!gridRenderer) {
+			gridRenderer = UDigDict(response, ["continuationContents", "gridContinuation"]);
+
+			if (!gridRenderer) return response;
+		};
+
+		let doneYears = [];
+
+		let newItems = [];
+
+		for (let i of gridRenderer.items) {
+			let data = UGetDataFromTwoRowItemRenderer(i);
+			console.log(data);
+
+			if (!data.yearStr || doneYears.indexOf(data.yearStr) !== -1) {
+				newItems.push(i);
+				continue;
+			};
+
+			doneYears.push(data.yearStr);
+
+			for (let [album, year] of Object.entries(structuredClone(releaseToYear))) {
+				console.log(data.yearStr, year, data.name);
+				if (Number(year) <= Number(data.yearStr)) continue;
+				
+				let twoRow = UBuildTwoRowItemRendererFromData(cache[album]);
+				newItems.push(twoRow);
+
+				delete releaseToYear[album];
+			};
+
+			newItems.push(i);
+		};
+
+		if (!gridRenderer.continuation) {
+			for (let i of Object.keys(releaseToYear)) {
+				let twoRow = UBuildTwoRowItemRendererFromData(cache[i]);
+				newItems.push(twoRow);
+			};
+		};
+
+		gridRenderer.items = newItems;
+		return response;
+	};
+
+
+	static MUSIC_PAGE_TYPE_ARTIST(response, id) {
+		let sectionListContents = UDigDict(response, [
+			"contents", "singleColumnBrowseResultsRenderer", "tabs",
+			0, "tabRenderer", "content", "sectionListRenderer", "contents"
+		]);
+		if (!sectionListContents) return response;
+
+		for (let shelf of sectionListContents) {
+			if (!shelf.musicCarouselShelfRenderer) continue;
+
+			let header = shelf.musicCarouselShelfRenderer.header.musicCarouselShelfBasicHeaderRenderer;
+			let title = UDigDict(header, ["title", "runs", 0, "text"]);
+
+			if (title !== "Albums" && title !== "Singles and EPS") continue;
+			if (header.moreContentButton) continue;
+
+			header.moreContentButton = {
+				buttonRenderer: {
+					style: "STYLE_TEXT",
+					text: { runs: [ { text: "More" } ] },
+					navigationEndpoint: UBuildEndpoint({
+						navType: "browse",
+						id: "MPAD" + id
+					}),
+					accessibilityData: {
+						accessibilityData: { label: "More" }
+					}
+				}
+			};
+		};
+
+		return response;
+	};
+
+	static C_PAGE_TYPE_CHANNEL_OR_ARTIST(response, id) {
+		return this.MUSIC_PAGE_TYPE_ARTIST.apply(this, arguments);
+	};
+};
 
 async function FetchModifyResponse(request, oldResp, xhr) {
 	console.log(request.url);
@@ -532,8 +741,6 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	if (!urlObj || MiddlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
 		return oldResp;
 	};
-	
-	console.log("passed tests, modifying", request.url);
 
 	let changed = false;
 	let clonedResp = (!xhr) ? oldResp.clone() : undefined;
@@ -576,14 +783,26 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	};
 
 	let pageType;
-	if (!changed && browseId && !responseIsContinuation) {
+	if (!changed && browseId) {
 		pageType = UGetBrowsePageTypeFromBrowseId(browseId);
+		
+		if (!pageType) return oldResp;
+		if (responseIsContinuation) pageType = "CONT_" + pageType;
 
-		if (!MiddlewareEditors[pageType]) return oldResp;
+		let f = MiddlewareEditors[pageType];
 
-		let cache = await UMWStorageGet("cache") || {};
+		if (!f) return oldResp;
 
-		respBody = MiddlewareEditors[pageType](respBody, browseId, cache);
+		// functions MUST take response, browseId. MAY take cache, that's the only change.
+		if (f.length === 3) { // only get cache for functions that need it.
+			let cache = await UMWStorageGet("cache") || {};
+
+			respBody = f.apply(MiddlewareEditors, [respBody, browseId, cache]);
+
+		} else {
+			respBody = f.apply(MiddlewareEditors, [respBody, browseId]);
+		};
+		
 		changed = true;
 	};
 

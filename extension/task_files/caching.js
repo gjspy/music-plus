@@ -1,45 +1,5 @@
 export function MWCaching() {
-	function _GetArtistsFromTextRuns(runs) {
-		if (runs === undefined) return []; // flexColumn only appears if collaborative album (eg teddy part2)
-
-		let artistsData = [];
-
-		for (let run of runs) {
-			if (!run.navigationEndpoint) continue;
-
-			let id = run.navigationEndpoint.browseEndpoint.browseId;
-			let type = run.navigationEndpoint.browseEndpoint.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType;
-
-			if (type === "MUSIC_PAGE_TYPE_UNKNOWN" && id.match("^FEmusic_library_privately_owned_artist_detail")) {
-				type = "MUSIC_PAGE_TYPE_ARTIST";
-			};
-
-			artistsData.push({
-				name: run.text,
-				id: id,
-				type: type
-			});
-		};
-
-		return artistsData;
-	};
-
-
-	function _GetArtistsFromDropdown(menuRenderer) {
-		for (let item of menuRenderer.items) {
-			if (!item.menuNavigationItemRenderer) continue;
-			if (!item.menuNavigationItemRenderer.navigationEndpoint) continue;
-			if (!item.menuNavigationItemRenderer.navigationEndpoint.browseEndpoint) continue;
-			if (!item.menuNavigationItemRenderer.navigationEndpoint.browseEndpoint.browseEndpointContextSupportedConfigs) continue;
-			if (item.menuNavigationItemRenderer.navigationEndpoint.browseEndpoint
-				.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType !== "MUSIC_PAGE_TYPE_ARTIST") continue;
-			
-
-			return [{
-				id: item.menuNavigationItemRenderer.navigationEndpoint.browseEndpoint.browseId
-			}];
-		};
-	};
+	
 
 	function _GetListIsSavedFromHeaderRenderer(headerRenderer) {
 		let saveToLibraryButton = headerRenderer.buttons.filter(v => 
@@ -64,24 +24,6 @@ export function MWCaching() {
 		return saved;
 	};
 
-	function _GetDefaultDataForTwoRowItemRendererFromBrowsePageType(browsePageType) {
-		let defaultData = {};
-
-		if (browsePageType === "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE") {
-			defaultData = {private: true};
-		} else {
-			defaultData = {private: false};
-		};
-
-		if (browsePageType === "MUSIC_PAGE_TYPE_LIBRARY_CONTENT_LANDING_PAGE" || // library
-			browsePageType === "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE" // private releases
-		) {
-			defaultData = Object.assign(defaultData, {saved: true});
-		};
-
-		return defaultData;
-	};
-
 
 	function _GetShelfFromTitle(shelves, title) {
 		for (let shelf of shelves) {
@@ -104,172 +46,8 @@ export function MWCaching() {
 		};
 	};
 
-	function _GetSongInfoFromListItemRenderer(listItemRenderer) {
-		listItemRenderer = listItemRenderer.musicResponsiveListItemRenderer;
-		if (!listItemRenderer) return;
+	
 
-		let thumb;
-		if (listItemRenderer.thumbnail) {
-			thumb = UChooseBestThumbnail(listItemRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails);
-		};
-
-		let songType = "SONG";
-		if (listItemRenderer.overlay) {
-			let playButton = listItemRenderer.overlay.musicItemThumbnailOverlayRenderer.content.musicPlayButtonRenderer;
-
-			if (playButton && playButton.playNavigationEndpoint) {
-				songType = playButton.playNavigationEndpoint.watchEndpoint
-					.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType;
-			};
-		};
-
-		let id;
-		if (listItemRenderer.playlistItemData) {
-			id = listItemRenderer.playlistItemData.videoId
-		
-		} else if (listItemRenderer.menu) {
-			id = listItemRenderer.menu.menuRenderer.items[0].menuServiceItemRenderer.serviceEndpoint.playlistEditEndpoint.actions[0].removedVideoId;
-		
-		} else {
-			console.log("CANNOT GET DATA FOR",listItemRenderer,"HAS DISPLAY POLICY AND NO MENU.");
-			return;
-			
-		};
-
-		let liked = null;
-		if (listItemRenderer.menu && listItemRenderer.menu.menuRenderer && listItemRenderer.menu.menuRenderer.topLevelButtons) {
-			liked = listItemRenderer.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer.likeStatus;
-		};
-
-		let album = {};
-		let albumListItem;
-
-		// all for artist page singles shelf, col 2 = n plays, 3 = album
-		for (let i = 2; i < listItemRenderer.flexColumns.length; i++) {
-			albumListItem = listItemRenderer.flexColumns[i];
-			if (!albumListItem) break;
-			
-			albumListItem = albumListItem.musicResponsiveListItemFlexColumnRenderer.text;
-			if (!albumListItem || !albumListItem.runs) break;
-			
-			albumListItem = albumListItem.runs[0];
-			if (!albumListItem.navigationEndpoint) continue; 
-
-			album = {
-				name: albumListItem.text,
-				id: albumListItem.navigationEndpoint.browseEndpoint.browseId
-			};
-
-			break;
-		};
-
-		let lengthStr;
-		if (listItemRenderer.fixedColumns) {
-			lengthStr = listItemRenderer.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text;
-		};
-
-
-		return {
-			name:      		 listItemRenderer.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text,
-			lengthStr: 		 lengthStr,
-			artists:  		 _GetArtistsFromTextRuns(listItemRenderer.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs),
-			index: 	  		(listItemRenderer.index || { runs: [ { } ] }).runs[0].text,
-			badges:		    (listItemRenderer.badges || []).map(v => v.musicInlineBadgeRenderer.icon.iconType),
-			album:			 album,
-			thumb:			 thumb,
-			id:				 id,
-			type:			 songType,
-			liked:			 liked,
-			_DISPLAY_POLICY: listItemRenderer.musicItemRendererDisplayPolicy
-		}
-	};
-
-
-
-	function _GetItemInfoFromTwoRowItemRenderer(twoRowItemRenderer, defaultData) {
-		function __BaseListData() { // ALBUM or PLAYLIST
-			return {
-				name: twoRowItemRenderer.title.runs[0].text,
-				thumb: UChooseBestThumbnail(twoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails),
-				id: twoRowItemRenderer.navigationEndpoint.browseEndpoint.browseId,
-				type: twoRowItemRenderer.navigationEndpoint.browseEndpoint.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType,
-				badges: (twoRowItemRenderer.subtitleBadges || []).map(v => v.musicInlineBadgeRenderer.icon.iconType)
-			};
-		};
-
-		function __BaseArtistData() {
-			return {
-				name: twoRowItemRenderer.title.runs[0].text,
-				thumb: UChooseBestThumbnail(twoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails),
-				id: twoRowItemRenderer.navigationEndpoint.browseEndpoint.browseId,
-				type: twoRowItemRenderer.navigationEndpoint.browseEndpoint.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType
-			};
-		};
-		
-		twoRowItemRenderer = twoRowItemRenderer.musicTwoRowItemRenderer;
-		if (!twoRowItemRenderer) return;
-
-		let itemType;
-
-		let browseEndpoint = twoRowItemRenderer.navigationEndpoint.browseEndpoint;
-		if (browseEndpoint) {
-			itemType = browseEndpoint.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType;
-
-		} else {
-			let watchEndpoint = twoRowItemRenderer.navigationEndpoint.watchEndpoint;
-
-			if (!watchEndpoint) {
-				console.log("WHAT IS THIS? NO ENDPOINT?", twoRowItemRenderer);
-				return;
-			};
-
-			itemType = watchEndpoint.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType;
-		};			
-
-		if (itemType === "MUSIC_PAGE_TYPE_USER_CHANNEL") return undefined; // FOR NOW. DONT WANT TO SAVE THEM.
-		if (itemType.match("^MUSIC_VIDEO_TYPE")) return undefined; // FOR NOW ISH..
-
-		if (itemType === "MUSIC_PAGE_TYPE_ARTIST") {
-			let baseData = __BaseArtistData();
-
-			if (defaultData) {
-				for (let [k,o] of Object.entries(defaultData)) {
-					baseData[k] = o;
-				};
-			};
-
-			return baseData;
-		};
-
-		let baseData = __BaseListData();
-		let allData = UGetDataFromSubtitleRuns(baseData, twoRowItemRenderer.subtitle);
-
-		if (allData.subType === "Song") return;
-
-		if (defaultData) {
-			for (let [k,o] of Object.entries(defaultData)) {
-				// playlist isnt private only because its in private lib page. just contains some priv songs.
-				// only apply default value to albums and artists.
-				if (k === "private" && itemType === "MUSIC_PAGE_TYPE_PLAYLIST") continue;
-
-				allData[k] = o;
-			};
-		};
-
-		if (!allData.artists) { // send as artists from here, bkg converts -> artist.
-			allData.artists = _GetArtistsFromDropdown(twoRowItemRenderer.menu.menuRenderer);
-		};
-
-		try {
-			let playNavEndp = twoRowItemRenderer.thumbnailOverlay.musicItemThumbnailOverlayRenderer.content
-				.musicPlayButtonRenderer.playNavigationEndpoint;
-
-			allData.mfId = (playNavEndp.watchPlaylistEndpoint || playNavEndp.watchEndpoint).playlistId;
-
-		} catch {};
-
-		return allData;
-	};
 
 
 	function _CollectPlaylistData(response) {
@@ -282,7 +60,7 @@ export function MWCaching() {
 
 		let sectionListRenderer = data.secondaryContents.sectionListRenderer;
 		let items = sectionListRenderer.contents[0].musicPlaylistShelfRenderer.contents || [];
-		let cleanedItems = items.map( r => _GetSongInfoFromListItemRenderer(r) ).filter( v => v !== undefined );
+		let cleanedItems = items.map( r => UGetSongInfoFromListItemRenderer(r) ).filter( v => v !== undefined );
 
 		let last = items[items.length - 1] || {}
 		let hasContinuation = !!last.continuationItemRenderer;
@@ -314,7 +92,7 @@ export function MWCaching() {
 
 		let sectionListRenderer = data.secondaryContents.sectionListRenderer.contents;
 		let items = sectionListRenderer[0].musicShelfRenderer.contents;
-		let cleanedItems = items.map( r => _GetSongInfoFromListItemRenderer(r) ).filter( v => v !== undefined );
+		let cleanedItems = items.map( r => UGetSongInfoFromListItemRenderer(r) ).filter( v => v !== undefined );
 
 
 		let alternate = [];
@@ -392,7 +170,7 @@ export function MWCaching() {
 
 		let sectionListRenderer = data.tabs[0].tabRenderer.content.sectionListRenderer;
 		let items = sectionListRenderer.contents[0].musicShelfRenderer.contents;
-		let cleanedItems = items.map( r => _GetSongInfoFromListItemRenderer(r) ).filter( v => v !== undefined );
+		let cleanedItems = items.map( r => UGetSongInfoFromListItemRenderer(r) ).filter( v => v !== undefined );
 		
 		return {
 			name: metaDataHost.title.runs[0].text,
@@ -427,25 +205,25 @@ export function MWCaching() {
 
 		let shelves = data.tabs[0].tabRenderer.content.sectionListRenderer.contents;
 
-		let songsShelf = _GetShelfFromTitle(shelves, "Songs");
+		let songsShelf = _GetShelfFromTitle(shelves, "Songs") || _GetShelfFromTitle(shelves, "Top songs");
 		let albumsShelf = _GetShelfFromTitle(shelves, "Albums");
 		let singlesShelf = _GetShelfFromTitle(shelves, "Singles and EPs");
 		let libraryShelf = _GetShelfFromTitle(shelves, "From your library");
 		let artistsShelf = _GetShelfFromTitle(shelves, "Fans might also like");
 
 		let items = [];
-		if (songsShelf) items.push(	 ...songsShelf.contents.map( r => _GetSongInfoFromListItemRenderer(r) ).filter( v => v !== undefined ));
-		if (albumsShelf) items.push(	...albumsShelf.contents.map( r => _GetItemInfoFromTwoRowItemRenderer(r) ).filter( v => v !== undefined ));
-		if (singlesShelf) items.push(...singlesShelf.contents.map( r => _GetItemInfoFromTwoRowItemRenderer(r) ).filter( v => v !== undefined ));
-		if (libraryShelf) items.push(...libraryShelf.contents.map( r => _GetItemInfoFromTwoRowItemRenderer(r, { saved: true })).filter( v => v !== undefined ));
-		if (artistsShelf) items.push(...artistsShelf.contents.map( r => _GetItemInfoFromTwoRowItemRenderer(r) ).filter( v => v !== undefined ));
+		if (songsShelf) items.push(	 ...songsShelf.contents.map( r => UGetSongInfoFromListItemRenderer(r) ).filter( v => v !== undefined ));
+		if (albumsShelf) items.push(	...albumsShelf.contents.map( r => UGetDataFromTwoRowItemRenderer(r) ).filter( v => v !== undefined ));
+		if (singlesShelf) items.push(...singlesShelf.contents.map( r => UGetDataFromTwoRowItemRenderer(r) ).filter( v => v !== undefined ));
+		if (libraryShelf) items.push(...libraryShelf.contents.map( r => UGetDataFromTwoRowItemRenderer(r, { saved: true })).filter( v => v !== undefined ));
+		if (artistsShelf) items.push(...artistsShelf.contents.map( r => UGetDataFromTwoRowItemRenderer(r) ).filter( v => v !== undefined ));
 
 		
 		return {
 			name: metaDataHost.title.runs[0].text,
 			radios: {
 				allSongsRadio: metaDataHost.playButton.buttonRenderer.navigationEndpoint.watchEndpoint.playlistId,
-				allSongsPlId: songsShelf.title.runs[0].navigationEndpoint.browseEndpoint.browseId,
+				allSongsPlId: (songsShelf) ? songsShelf.title.runs[0].navigationEndpoint.browseEndpoint.browseId : null,
 				radioRadio: metaDataHost.startRadioButton.buttonRenderer.navigationEndpoint.watchEndpoint.playlistId,
 			},
 			wideThumb: UChooseBestThumbnail(metaDataHost.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails),
@@ -483,12 +261,12 @@ export function MWCaching() {
 		let gridRenderer = content.gridRenderer ? content.gridRenderer.items : undefined;
 		let shelfRenderer = content.musicShelfRenderer ? content.musicShelfRenderer.contents : undefined;
 
-		let defaultData = _GetDefaultDataForTwoRowItemRendererFromBrowsePageType(response.browsePageType);
+		let defaultData = UGetDefaultDataForTwoRowItemRendererFromBrowsePageType(response.browsePageType);
 
 		let cleanedItems;
 
 		if (gridRenderer) {
-			cleanedItems = gridRenderer.map( r => _GetItemInfoFromTwoRowItemRenderer(r, defaultData) ).filter( v => v !== undefined );
+			cleanedItems = gridRenderer.map( r => UGetDataFromTwoRowItemRenderer(r, defaultData) ).filter( v => v !== undefined );
 
 		} else if (shelfRenderer) {
 			cleanedItems = shelfRenderer.map( r => _GetArtistInfoFromLibraryShelfListItemRenderer(r) );
@@ -541,14 +319,14 @@ export function MWCaching() {
 			}
 		};
 
-		let defaultData = _GetDefaultDataForTwoRowItemRendererFromBrowsePageType(response.browsePageType);
+		let defaultData = UGetDefaultDataForTwoRowItemRendererFromBrowsePageType(response.browsePageType);
 
 		for (let item of items) {
 			if (item.musicResponsiveListItemRenderer) {
-				gathered.items.push(_GetSongInfoFromListItemRenderer(item));
+				gathered.items.push(UGetSongInfoFromListItemRenderer(item));
 
 			} else if (item.musicTwoRowItemRenderer) {
-				gathered.items.push(_GetItemInfoFromTwoRowItemRenderer(item, defaultData));
+				gathered.items.push(UGetDataFromTwoRowItemRenderer(item, defaultData));
 
 			} else if (!item.continuationItemRenderer) {
 				console.log("WHAT is this item? [CachePageContents from continuation data]", response.browseId, item);
@@ -589,8 +367,7 @@ export function MWCaching() {
 			};
 		};
 
-		console.log("response", response);
-
+		//console.log("response", response);
 
 		let gathered, tab;
 		let condition = response.browsePageType;

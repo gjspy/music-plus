@@ -853,7 +853,8 @@ async function EWCacheData(data) {
 			break;
 		
 		case "MUSIC_VIDEO_TYPE_ATV":
-			storable = data;
+		case "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK":
+			storable = [data];
 			break;
 
 		default:

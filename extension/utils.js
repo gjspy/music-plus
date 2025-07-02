@@ -85,6 +85,7 @@ class Utils {
 		SONG: {
 			name: "",
 			album: "",
+			index: "",
 			artists: [],
 			liked: "",
 			lengthSec: -1,
@@ -125,6 +126,9 @@ class Utils {
 	//static U_YT_BADGE_ORDER = ["MUSIC_EXPLICIT_BADGE"];
 	static U_TIME_WORDS = ["hour", "minute", "second"];
 	static U_YT_DOT = " • ";
+
+	static U_SHUFFLE_PLAYER_PARAMS = "wAEB8gECKAE%3D";
+	static U_NORM_PLAYER_PARAMS = "wAEB"
 
 	static UBrowseParamsByRequest = {};
 
@@ -194,7 +198,7 @@ class Utils {
 
 
 	static UDigDict(dict, sequence) {
-		let data = dict;
+		let data = dict || {};
 
 		for (let k of sequence) {
 			data = data[k];
@@ -716,6 +720,7 @@ class Utils {
 
 	static ULengthStrToSeconds(lengthStr) {
 		if (lengthStr === undefined) return;
+
 		let segs = lengthStr.split(":").reverse();
 		let pow = 0;
 		let seconds = 0;
@@ -726,6 +731,29 @@ class Utils {
 		};
 
 		return seconds;
+	};
+
+	static UBigNumToText(n) {
+		let letter = "";
+		if (n > 1_000_000_000) {
+			n /= 1_000_000_000;
+			letter = "B";
+		
+		} else if (n > 1_000_000) {
+			n /= 1_000_000;
+			letter = "M"
+		
+		} else if (n > 1_000) {
+			n /= 1_000;
+			letter = "K";
+		};
+
+		if (n >= 9.95) {
+			return String(Math.round(n)) + letter;
+
+		} else {
+			return String(Math.round(n * 10) / 10) + letter;
+		};
 	};
 
 	static USecondsToLengthDetail(seconds) {
@@ -744,6 +772,8 @@ class Utils {
 				return lengthDet;
 			};
 		};
+
+		return lengthDet;
 	};
 
 	static USecondsToLengthStr(seconds, wordy, includeSeconds) {
@@ -1176,9 +1206,10 @@ class Utils {
 					}
 				};
 			};
+			if (opts.index) v.watchEndpoint.index = opts.index;
 
-			if (opts.shuffle === true) v.watchEndpoint.params = "wAEB8gECKAE%3D";
-			else v.watchEndpoint.params = "wAEB";
+			if (opts.shuffle === true) v.watchEndpoint.params = U_SHUFFLE_PLAYER_PARAMS;
+			else v.watchEndpoint.params = this.U_NORM_PLAYER_PARAMS;
 
 			if (opts.cParams) v.cParams = opts.cParams;
 
@@ -1341,7 +1372,791 @@ class Utils {
 
 
 
+	static UGetArtistsFromDropdown(menuRenderer) {
+		for (let item of menuRenderer.items) {
+			if (!item.menuNavigationItemRenderer) continue;
+			if (!item.menuNavigationItemRenderer.navigationEndpoint) continue;
+			if (!item.menuNavigationItemRenderer.navigationEndpoint.browseEndpoint) continue;
+			if (!item.menuNavigationItemRenderer.navigationEndpoint.browseEndpoint.browseEndpointContextSupportedConfigs) continue;
+			if (item.menuNavigationItemRenderer.navigationEndpoint.browseEndpoint
+				.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType !== "MUSIC_PAGE_TYPE_ARTIST") continue;
+			
 
+			return [{
+				id: item.menuNavigationItemRenderer.navigationEndpoint.browseEndpoint.browseId
+			}];
+		};
+	};
+
+
+	static UGetDefaultDataForTwoRowItemRendererFromBrowsePageType(browsePageType) {
+		let defaultData = {};
+
+		if (browsePageType === "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE") {
+			defaultData = {private: true};
+		} else {
+			defaultData = {private: false};
+		};
+
+		if (browsePageType === "MUSIC_PAGE_TYPE_LIBRARY_CONTENT_LANDING_PAGE" || // library
+			browsePageType === "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE" // private releases
+		) {
+			defaultData = Object.assign(defaultData, {saved: true});
+		};
+
+		return defaultData;
+	};
+
+	static UGetDataFromTwoRowItemRenderer(twoRowItemRenderer, defaultData) {
+		function __BaseListData() { // ALBUM or PLAYLIST
+			return {
+				name: twoRowItemRenderer.title.runs[0].text,
+				thumb: UChooseBestThumbnail(twoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails),
+				id: twoRowItemRenderer.navigationEndpoint.browseEndpoint.browseId,
+				type: twoRowItemRenderer.navigationEndpoint.browseEndpoint.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType,
+				badges: (twoRowItemRenderer.subtitleBadges || []).map(v => v.musicInlineBadgeRenderer.icon.iconType)
+			};
+		};
+
+		function __BaseArtistData() {
+			return {
+				name: twoRowItemRenderer.title.runs[0].text,
+				thumb: UChooseBestThumbnail(twoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails),
+				id: twoRowItemRenderer.navigationEndpoint.browseEndpoint.browseId,
+				type: twoRowItemRenderer.navigationEndpoint.browseEndpoint.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType
+			};
+		};
+		
+		twoRowItemRenderer = twoRowItemRenderer.musicTwoRowItemRenderer;
+		if (!twoRowItemRenderer) return;
+
+		let itemType;
+
+		let browseEndpoint = twoRowItemRenderer.navigationEndpoint.browseEndpoint;
+		if (browseEndpoint) {
+			itemType = browseEndpoint.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType;
+
+		} else {
+			let watchEndpoint = twoRowItemRenderer.navigationEndpoint.watchEndpoint;
+
+			if (!watchEndpoint) {
+				console.log("WHAT IS THIS? NO ENDPOINT?", twoRowItemRenderer);
+				return;
+			};
+
+			itemType = watchEndpoint.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType;
+		};			
+
+		if (itemType === "MUSIC_PAGE_TYPE_USER_CHANNEL") return undefined; // FOR NOW. DONT WANT TO SAVE THEM.
+		if (itemType.match("^MUSIC_VIDEO_TYPE")) return undefined; // FOR NOW ISH..
+
+		if (itemType === "MUSIC_PAGE_TYPE_ARTIST") {
+			let baseData = __BaseArtistData();
+
+			if (defaultData) {
+				for (let [k,o] of Object.entries(defaultData)) {
+					baseData[k] = o;
+				};
+			};
+
+			return baseData;
+		};
+
+		let baseData = __BaseListData();
+		let allData = UGetDataFromSubtitleRuns(baseData, twoRowItemRenderer.subtitle);
+
+		if (allData.subType === "Song") return;
+
+		if (defaultData) {
+			for (let [k,o] of Object.entries(defaultData)) {
+				// playlist isnt private only because its in private lib page. just contains some priv songs.
+				// only apply default value to albums and artists.
+				if (k === "private" && itemType === "MUSIC_PAGE_TYPE_PLAYLIST") continue;
+
+				allData[k] = o;
+			};
+		};
+
+		if (!allData.artists) { // send as artists from here, bkg converts -> artist.
+			allData.artists = UGetArtistsFromDropdown(twoRowItemRenderer.menu.menuRenderer);
+		};
+
+		try {
+			let playNavEndp = twoRowItemRenderer.thumbnailOverlay.musicItemThumbnailOverlayRenderer.content
+				.musicPlayButtonRenderer.playNavigationEndpoint;
+
+			allData.mfId = (playNavEndp.watchPlaylistEndpoint || playNavEndp.watchEndpoint).playlistId;
+
+		} catch {};
+
+		return allData;
+	};
+
+
+	static UGetArtistsFromTextRuns(runs) {
+		if (runs === undefined) return []; // flexColumn only appears if collaborative album (eg teddy part2)
+
+		let artistsData = [];
+
+		for (let run of runs) {
+			if (!run.navigationEndpoint) continue;
+
+			let id = run.navigationEndpoint.browseEndpoint.browseId;
+			let type = run.navigationEndpoint.browseEndpoint.browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType;
+
+			if (type === "MUSIC_PAGE_TYPE_UNKNOWN" && id.match("^FEmusic_library_privately_owned_artist_detail")) {
+				type = "MUSIC_PAGE_TYPE_ARTIST";
+			};
+
+			artistsData.push({
+				name: run.text,
+				id: id,
+				type: type
+			});
+		};
+
+		return artistsData;
+	};
+
+
+	static UGetSongInfoFromListItemRenderer(listItemRenderer) {
+		listItemRenderer = listItemRenderer.musicResponsiveListItemRenderer;
+		if (!listItemRenderer) return;
+
+		let thumb;
+		if (listItemRenderer.thumbnail) {
+			thumb = UChooseBestThumbnail(listItemRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails);
+		};
+
+		let songType = "SONG";
+		if (listItemRenderer.overlay) {
+			let playButton = listItemRenderer.overlay.musicItemThumbnailOverlayRenderer.content.musicPlayButtonRenderer;
+
+			if (playButton && playButton.playNavigationEndpoint) {
+				songType = playButton.playNavigationEndpoint.watchEndpoint
+					.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType;
+			};
+		};
+
+		let id;
+		if (listItemRenderer.playlistItemData) {
+			id = listItemRenderer.playlistItemData.videoId
+		
+		} else if (listItemRenderer.menu) {
+			id = listItemRenderer.menu.menuRenderer.items[0].menuServiceItemRenderer.serviceEndpoint.playlistEditEndpoint.actions[0].removedVideoId;
+		
+		} else {
+			console.log("CANNOT GET DATA FOR",listItemRenderer,"HAS DISPLAY POLICY AND NO MENU.");
+			return;
+			
+		};
+
+		let liked = null;
+		if (listItemRenderer.menu && listItemRenderer.menu.menuRenderer && listItemRenderer.menu.menuRenderer.topLevelButtons) {
+			liked = listItemRenderer.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer.likeStatus;
+		};
+
+		let album = {};
+		let albumListItem;
+
+		// all for artist page singles shelf, col 2 = n plays, 3 = album
+		for (let i = 2; i < listItemRenderer.flexColumns.length; i++) {
+			albumListItem = listItemRenderer.flexColumns[i];
+			if (!albumListItem) break;
+			
+			albumListItem = albumListItem.musicResponsiveListItemFlexColumnRenderer.text;
+			if (!albumListItem || !albumListItem.runs) break;
+			
+			albumListItem = albumListItem.runs[0];
+			if (!albumListItem.navigationEndpoint) continue; 
+
+			album = {
+				name: albumListItem.text,
+				id: albumListItem.navigationEndpoint.browseEndpoint.browseId
+			};
+
+			break;
+		};
+
+		let lengthStr;
+		if (listItemRenderer.fixedColumns) {
+			lengthStr = listItemRenderer.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text;
+		};
+
+
+		return {
+			name:      		 listItemRenderer.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text,
+			lengthStr: 		 lengthStr,
+			artists:  		 UGetArtistsFromTextRuns(listItemRenderer.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs),
+			index: 	  		(listItemRenderer.index || { runs: [ { } ] }).runs[0].text,
+			badges:		    (listItemRenderer.badges || []).map(v => v.musicInlineBadgeRenderer.icon.iconType),
+			album:			 album,
+			thumb:			 thumb,
+			id:				 id,
+			type:			 songType,
+			liked:			 liked,
+			_DISPLAY_POLICY: listItemRenderer.musicItemRendererDisplayPolicy
+		}
+	};
+
+
+	
+	static UTestingShowStorage() {
+		UMWStorageGet().then(v => console.log(v));
+	};
+
+	static UTestingShowCache() {
+		UMWStorageGet("cache").then(v => console.log(v));
+	};
+
+	static UTestingShowCacheEntry(id) {
+		UMWStorageGet("cache").then(v => console.log(v[id]))
+	};
+
+
+	static UBuildTwoRowItemRendererFromData(data) {
+		return {				
+			"musicTwoRowItemRenderer": {
+				"thumbnailRenderer": {
+					"musicThumbnailRenderer": {
+						"thumbnail": {
+							"thumbnails": [
+								{
+									"url": data.thumb,
+									"width": 544,
+									"height": 544
+								}
+							]
+						},
+						"thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+						"thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FILL"
+					}
+				},
+				"aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+				"title": {
+					"runs": [
+						{
+							"text": data.name,
+							"navigationEndpoint": {
+								"browseEndpoint": {
+									"browseId": data.id,
+									"browseEndpointContextSupportedConfigs": {
+										"browseEndpointContextMusicConfig": {
+											"pageType": "MUSIC_PAGE_TYPE_ALBUM"
+										}
+									}
+								}
+							}
+						}
+					]
+				},
+				"subtitle": {
+					"runs": [
+						{
+							"text": data.subType
+						},
+						{
+							"text": this.U_YT_DOT
+						},
+						{
+							"text": data.year
+						}
+					]
+				},
+				"navigationEndpoint": {
+					"browseEndpoint": {
+						"browseId": data.id,
+						"browseEndpointContextSupportedConfigs": {
+							"browseEndpointContextMusicConfig": {
+								"pageType": "MUSIC_PAGE_TYPE_ALBUM"
+							}
+						}
+					}
+				},
+				"menu": {
+					"menuRenderer": {
+						"items": [
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Shuffle play"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "MUSIC_SHUFFLE"
+									},
+									"navigationEndpoint": {
+										"watchPlaylistEndpoint": {
+											"playlistId": data.mfId,
+											"params": this.U_SHUFFLE_PLAYER_PARAMS
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Start radio"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "MIX"
+									},
+									"navigationEndpoint": {
+										"watchPlaylistEndpoint": {
+											"playlistId": "RDAMPL" + data.mfId,
+											"params": this.U_NORM_PLAYER_PARAMS
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Play next"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "QUEUE_PLAY_NEXT"
+									},
+									"serviceEndpoint": {
+										"queueAddEndpoint": {
+											"queueTarget": {
+												"playlistId": data.mfId,
+												"onEmptyQueue": {
+													"watchEndpoint": {
+														"playlistId": data.mfId
+													}
+												}
+											},
+											"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Album will play next"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Add to queue"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ADD_TO_REMOTE_QUEUE"
+									},
+									"serviceEndpoint": {
+										"queueAddEndpoint": {
+											"queueTarget": {
+												"playlistId": data.mfId,
+												"onEmptyQueue": {
+													"watchEndpoint": {
+														"playlistId": data.mfId
+													}
+												}
+											},
+											"queueInsertPosition": "INSERT_AT_END",
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Album added to queue"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							{
+								"toggleMenuServiceItemRenderer": {
+									"defaultText": {
+										"runs": [
+											{
+												"text": "Save album to library"
+											}
+										]
+									},
+									"defaultIcon": {
+										"iconType": "LIBRARY_ADD"
+									},
+									"defaultServiceEndpoint": {
+										"likeEndpoint": {
+											"status": "LIKE",
+											"target": {
+												"playlistId": data.mfId
+											}
+										}
+									},
+									"toggledText": {
+										"runs": [
+											{
+												"text": "Remove album from library"
+											}
+										]
+									},
+									"toggledIcon": {
+										"iconType": "LIBRARY_SAVED"
+									},
+									"toggledServiceEndpoint": {
+										"likeEndpoint": {
+											"status": "INDIFFERENT",
+											"target": {
+												"playlistId": data.mfId
+											}
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemDownloadRenderer": {
+									"serviceEndpoint": {
+										"offlinePlaylistEndpoint": {
+											"playlistId": data.mfId,
+											"action": "ACTION_ADD",
+											"offlineability": {
+												"offlineabilityRenderer": {
+													"offlineable": true
+												}
+											},
+											"onAddCommand": {
+												"getDownloadActionCommand": {
+													"playlistId": data.mfId,
+													"params": "CAI%3D"
+												}
+											}
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Save to playlist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ADD_TO_PLAYLIST"
+									},
+									"navigationEndpoint": {
+										"addToPlaylistEndpoint": {
+											"playlistId": data.mfId
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Go to artist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ARTIST"
+									},
+									"navigationEndpoint": {
+										"browseEndpoint": {
+											"browseId": data.artist,
+											"browseEndpointContextSupportedConfigs": {
+												"browseEndpointContextMusicConfig": {
+													"pageType": "MUSIC_PAGE_TYPE_ARTIST"
+												}
+											}
+										}
+									}
+								}
+							}
+						],
+						"accessibility": {
+							"accessibilityData": {
+								"label": "Action menu"
+							}
+						}
+					}
+				},
+				"thumbnailOverlay": {
+					"musicItemThumbnailOverlayRenderer": {
+						"background": {
+							"verticalGradient": {
+								"gradientLayerColors": [
+									"2147483648",
+									"0",
+									"0"
+								]
+							}
+						},
+						"content": {
+							"musicPlayButtonRenderer": {
+								"playNavigationEndpoint": {
+									"watchEndpoint": {
+										"playlistId": data.mfId,
+										"watchEndpointMusicSupportedConfigs": {
+											"watchEndpointMusicConfig": {
+												"musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+											}
+										}
+									}
+								},
+								"playIcon": {
+									"iconType": "PLAY_ARROW"
+								},
+								"pauseIcon": {
+									"iconType": "PAUSE"
+								},
+								"iconColor": 4294967295,
+								"backgroundColor": 2566914048,
+								"activeBackgroundColor": 4278190080,
+								"loadingIndicatorColor": 14745645,
+								"playingIcon": {
+									"iconType": "VOLUME_UP"
+								},
+								"iconLoadingColor": 1308622847,
+								"activeScaleFactor": 1.2,
+								"buttonSize": "MUSIC_PLAY_BUTTON_SIZE_MEDIUM",
+								"rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+								"accessibilityPlayData": {
+									"accessibilityData": {
+										"label": "Play " + data.name
+									}
+								},
+								"accessibilityPauseData": {
+									"accessibilityData": {
+										"label": "Pause " + data.name
+									}
+								}
+							}
+						},
+						"contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+						"displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+					}
+				}
+			}
+		}
+	};
+
+	static UModifyListItemRendererFromData(video, album, current) {
+		current = current.musicResponsiveListItemRenderer;
+		let playButton = this.UDigDict(current, [
+			"overlay", "musicItemThumbnailOverlayRenderer",
+			"content", "musicPlayButtonRenderer"
+		]);
+
+		console.log(video, album);
+
+		let playEndp = this.UBuildEndpoint({
+			navType: "watch",
+			firstVideo: video,
+			playlistId: album.mfId,
+			index: Number(video.index)
+		});
+		console.log(playEndp);
+
+		playButton.playNavigationEndpoint.watchEndpoint = playEndp.watchEndpoint;
+
+		playButton.accessibilityPlayData.accessibilityData.label = "Play " + video.name;
+		playButton.accessibilityPauseData.accessibilityData.label = "Pause " + video.name;
+
+		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = video.name;
+		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint.watchEndpoint = playEndp.watchEndpoint;
+
+		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text = this.USecondsToLengthStr(video.lengthSec);
+		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.accessibility.accessibilityData.label = this.USecondsToLengthStr(video.lengthSec, true);
+
+		current.menu.menuRenderer.items = [
+			{
+				"menuServiceItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Play next"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "QUEUE_PLAY_NEXT"
+					},
+					"serviceEndpoint": {
+						"queueAddEndpoint": {
+							"queueTarget": {
+								"videoId": video.id,
+								"onEmptyQueue": {
+									"watchEndpoint": {
+										"videoId": video.id
+									}
+								}
+							},
+							"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+							"commands": [
+								{
+									"addToToastAction": {
+										"item": {
+											"notificationTextRenderer": {
+												"successResponseText": {
+													"runs": [
+														{
+															"text": "Song will play next"
+														}
+													]
+												}
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				}
+			},
+			{
+				"menuServiceItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Add to queue"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ADD_TO_REMOTE_QUEUE"
+					},
+					"serviceEndpoint": {
+						"queueAddEndpoint": {
+							"queueTarget": {
+								"videoId": video.id,
+								"onEmptyQueue": {
+									"watchEndpoint": {
+										"videoId": video.id
+									}
+								}
+							},
+							"queueInsertPosition": "INSERT_AT_END",
+							"commands": [
+								{
+									"addToToastAction": {
+										"item": {
+											"notificationTextRenderer": {
+												"successResponseText": {
+													"runs": [
+														{
+															"text": "Song added to queue"
+														}
+													]
+												}
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				}
+			},
+			{
+				"menuServiceItemDownloadRenderer": {
+					"serviceEndpoint": {
+						"offlineVideoEndpoint": {
+							"videoId": video.id,
+							"onAddCommand": {
+								"getDownloadActionCommand": {
+									"videoId": video.id,
+									"params": "CAI%3D"
+								}
+							}
+						}
+					}
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Save to playlist"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ADD_TO_PLAYLIST"
+					},
+					"navigationEndpoint": {
+						"addToPlaylistEndpoint": {
+							"videoId": video.id
+						}
+					}
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Go to artist"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ARTIST"
+					},
+					"navigationEndpoint": {
+						"browseEndpoint": {
+							"browseId": album.artist,
+							"browseEndpointContextSupportedConfigs": {
+								"browseEndpointContextMusicConfig": {
+									"pageType": "MUSIC_PAGE_TYPE_ARTIST"
+								}
+							}
+						}
+					}
+				}
+			}
+		];
+
+		current.playlistItemData.videoId = video.id;
+
+		return current;
+	};
 
 	static FunctionToString(f, property) {
 		// String(function) of a class does not give "function" statement
