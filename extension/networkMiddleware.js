@@ -806,12 +806,6 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		changed = true;
 	};
 
-	if (!changed) return oldResp;
-
-	console.log("NEW RESP BODY", respBody);
-
-	if (!respBody) return oldResp;
-
 	setTimeout(function() { // CACHE ORIGINAL!
 		if (!browseId) return;
 
@@ -836,6 +830,11 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		CachePageContents(response);
 	}, 100);
 
+	if (!changed) return oldResp;
+
+	console.log("NEW RESP BODY", respBody);
+
+	if (!respBody) return oldResp;
 
 	if (changed) {
 		respBody.cMusicFixerExtChangedResponse = true;
