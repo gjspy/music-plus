@@ -721,6 +721,33 @@ MiddlewareEditors = class MiddlewareEditors {
 	};
 };
 
+function initiateDelayedCacheOfOldResp(browseId, pageType, responseIsContinuation, toCacheOriginal) {
+	setTimeout(function() { // CACHE ORIGINAL!
+		if (!browseId) return;
+
+		let contents = toCacheOriginal.contents;
+
+		if (toCacheOriginal.onResponseReceivedActions) {
+			contents = toCacheOriginal.onResponseReceivedActions[0];
+
+		} else if (toCacheOriginal.continuationContents) {
+			contents = toCacheOriginal.continuationContents;
+		};
+
+		let response = {
+			browseId: browseId,
+			browsePageType: pageType,
+			responseIsContinuation: responseIsContinuation,
+			contents: contents
+		};
+		if (toCacheOriginal.header) response.contents.header = toCacheOriginal.header;
+		if (toCacheOriginal.microformat) response.contents.microformat = toCacheOriginal.microformat;
+
+		CachePageContents(response);
+	}, 100);
+};
+
+
 async function FetchModifyResponse(request, oldResp, xhr) {
 	console.log(request.url);
 
@@ -782,6 +809,8 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		changed = true;
 	};
 
+	initiateDelayedCacheOfOldResp(browseId, pageType, responseIsContinuation, toCacheOriginal);
+
 	let pageType;
 	if (!changed && browseId) {
 		pageType = UGetBrowsePageTypeFromBrowseId(browseId);
@@ -805,30 +834,6 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		
 		changed = true;
 	};
-
-	setTimeout(function() { // CACHE ORIGINAL!
-		if (!browseId) return;
-
-		let contents = toCacheOriginal.contents;
-
-		if (toCacheOriginal.onResponseReceivedActions) {
-			contents = toCacheOriginal.onResponseReceivedActions[0];
-
-		} else if (toCacheOriginal.continuationContents) {
-			contents = toCacheOriginal.continuationContents;
-		};
-
-		let response = {
-			browseId: browseId,
-			browsePageType: pageType,
-			responseIsContinuation: responseIsContinuation,
-			contents: contents
-		};
-		if (toCacheOriginal.header) response.contents.header = toCacheOriginal.header;
-		if (toCacheOriginal.microformat) response.contents.microformat = toCacheOriginal.microformat;
-
-		CachePageContents(response);
-	}, 100);
 
 	if (!changed) return oldResp;
 
