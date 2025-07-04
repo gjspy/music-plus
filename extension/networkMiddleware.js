@@ -809,12 +809,11 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		changed = true;
 	};
 
+	let pageType = UGetBrowsePageTypeFromBrowseId(browseId);
+
 	initiateDelayedCacheOfOldResp(browseId, pageType, responseIsContinuation, toCacheOriginal);
 
-	let pageType;
 	if (!changed && browseId) {
-		pageType = UGetBrowsePageTypeFromBrowseId(browseId);
-		
 		if (!pageType) return oldResp;
 		if (responseIsContinuation) pageType = "CONT_" + pageType;
 
