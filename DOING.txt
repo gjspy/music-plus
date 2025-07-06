@@ -138,10 +138,10 @@ QUEUE NAV CMD, CAN have videoIds: [...] IN REQUEST, WORKS WITH ENDPOINT
 WATCH NEXT IS ALL YOU NEED. playerApi.updateVideoData, sort by this.
 
 EDITING ALBUMS:
-	- private version, change songs based on it
-	- deluxe versions of albums, use base songs
-	- priv album, send 
-	- STARTED ADDING OVERWRITING SONGS. NEED TO ADD TO END, AND ALLOW USER TO SELECT ALBUM TO USE (EG UPLOADED DELUXE)
+//	- private version, change songs based on it
+//	- deluxe versions of albums, use base songs
+//	- priv album, send 
+//	- STARTED ADDING OVERWRITING SONGS. NEED TO ADD TO END, AND ALLOW USER TO SELECT ALBUM TO USE (EG UPLOADED DELUXE)
 
 ARTISTS:
 //	- add private uploads to their album playerPageFeatures
@@ -156,6 +156,16 @@ SONGS:
 	- add lyrics to private
 	- edit lyrics
 
+ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED TO SAME ALBUM (PRIVATE)
+
+CHECK GET_QUEUE, FOR ADDING ALBUM TO QUEUE, MAKE SURE IT REPLACES SONGS
+//ALL LISTITEMS WORK. now adding to queue (for extra non-replacing ids.)
+hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
+/XDOES SELCTEG WORK? NON INDEXED THINGS?
+//ARE NON INDEX ITEMS EDITED? TO REPLACE ARTIST WITH PUBLIC AND ETC
+fix like buttons everywhere
+
+error with propagation, is browsing when click play button on sidebar
 
 //dragging carousel into carousel
 //folders in cfmore
@@ -167,12 +177,14 @@ SONGS:
 
 update eventdriven & playerPageFeatures.
 
-save "privateCounterparts" separate, in edits sect, not cache? or should be cache because is automatic?
+/Xsave "privateCounterparts" separate, in edits sect, not cache? or should be cache because is automatic?
 /?add isDeleted to playlist, will get removed once cache is _CollectTwoRowDataFromGridRenderer
 
 CLEAR QUEUE BUTTON DOESNT CLEAR SERVER QUEUE.
 CLICK IT, THEN ADD SOMETHING ELSE TO THE QUEUE, THEN SHUFFLE IT.
 SERVER RETURNS QUEUE WHICH HAS STUFF FROM OLD QUEUE IN IT!!
+can i edit the request before its sent? change videoId to videoIds and add all except the 1
+(egiting QP backing playlist, see dissmiss queue endpoint, in buildQueuePanelRenderer stuff)
 
 
 playerBar.inst.__data.currentItem has what we want!!

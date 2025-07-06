@@ -29,8 +29,8 @@ export async function MWEventDriven_PageChanges() {
 		};
 	};
 
-	function _EvaluateNewValue(browsePage, state, newValue, retry) {
-		console.log("moved to", newValue, "retry = ", retry);
+	function _EvaluateNewValue(browsePage, state, newValue) {
+		browsePage.setAttribute("c-page-type", newValue);
 
 		switch (newValue) {
 			case "MUSIC_PAGE_TYPE_PLAYLIST":
@@ -40,14 +40,14 @@ export async function MWEventDriven_PageChanges() {
 
 			case "MUSIC_PAGE_TYPE_ALBUM":
 				_AlbumAndPlaylistPage(browsePage);
-				_AlbumPage(browsePage);
 				break;
 		};
+
+		EditMode.UpdateButtons(state);
 	};
 
 	async function _OnDOMChange(changes, browsePage) {
 		for (let change of changes) {
-			let oldValue = change.oldValue;
 			let attributeName = change.attributeName;
 			let target = change.target;
 			let newValue = target.getAttribute(attributeName);
@@ -57,46 +57,38 @@ export async function MWEventDriven_PageChanges() {
 			let state = polymerController.store.getState();
 			let browsePageType = UGetBrowsePageType(state);
 
-			browsePage.setAttribute("c-page-type", browsePageType);
-
 			_EvaluateNewValue(browsePage, state, browsePageType);
 		};
 	};
 
 	async function _AsyncStartProcesses() {
-		return new Promise(async function(resolve, reject) {
-			let browsePage = ( await UWaitForBySelector("ytmusic-browse-response") )[0];
-			let navigationProgressBar = ( await UWaitForBySelector("yt-page-navigation-progress") )[0];
+		let browsePage = ( await UWaitForBySelector("ytmusic-browse-response") )[0];
+		let navigationProgressBar = ( await UWaitForBySelector("yt-page-navigation-progress") )[0];
 
-			let observer = new MutationObserver((changes) => {
-				_OnDOMChange(changes, browsePage);
-			});
-
-			observer.observe(navigationProgressBar, {
-				childList: false,
-				subtree: false,
-				attributes: true,
-				//attributeFilter: ["page-type"],
-				attributeFilter: ["aria-valuenow"],
-				attributeOldValue: true
-			});
-
-			// init
-			let state = polymerController.store.getState();
-			let browsePageType = UGetBrowsePageType(state);
-			_EvaluateNewValue(browsePage, state, browsePageType);
-
-			
-
-			resolve(["success"]);
+		let observer = new MutationObserver((changes) => {
+			_OnDOMChange(changes, browsePage);
 		});
+
+		observer.observe(navigationProgressBar, {
+			childList: false,
+			subtree: false,
+			attributes: true,
+			attributeFilter: ["aria-valuenow"],
+			attributeOldValue: true
+		});
+
+		// init
+		let state = polymerController.store.getState();
+		let browsePageType = UGetBrowsePageType(state);
+		_EvaluateNewValue(browsePage, state, browsePageType);
+
+		return "success";
 	};
 
-	async function _ExpireAndReject() {
-		setTimeout(() => {
-			throw new Error("TIMEOUT!");
-
-		}, UMAX_EXECUTION_TIMEOUT);
+	function _ExpireAndReject() {
+		return new Promise(function(_, reject) {
+			setTimeout(() => reject(["TIMEOUT!"]), UMAX_EXECUTION_TIMEOUT);
+		});
 	};
 
 	console.log("MWEXTRA");

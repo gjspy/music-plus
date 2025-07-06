@@ -795,6 +795,13 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 	}
 }
 
+.c-popup-bkg:has(.c-dropdown) {
+	opacity: 1;
+	pointer-events: none;
+
+	background: transparent;
+}
+
 .c-popup-cont {
 	position: fixed;
 	z-index: 1001;
@@ -984,13 +991,14 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 
 
 .c-popup-elem-overflow {
+	--height: 600px;
 	width: 800px;
-	height: 600px;
+	height: var(--height);
 
 	position: fixed;
 	z-index: 110;
 
-	top: calc(50% - 300px);
+	top: calc(50% - var(--height) / 2);
 	margin-left: 300px;
 
 	background: var(--c-yt-background);
@@ -1046,7 +1054,9 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 .c-ovf-elem {
 	width: 125px;
 	height: 175px;
+}
 
+.c-ovf-elem[draggable="true"] {
 	cursor: grab;
 }
 
@@ -1167,7 +1177,7 @@ ytmusic-browse-response[c-page-type="MUSIC_PAGE_TYPE_PLAYLIST"] {
 
 
 ytmusic-two-column-browse-results-renderer #secondary #contents ytmusic-carousel-shelf-renderer {
-	padding-left: 30px;
+	padding: 0 30px;
 }
 
 
@@ -1203,18 +1213,17 @@ ytmusic-app-layout:has(ytmusic-browse-response[c-page-type="C_PAGE_TYPE_PRIVATE_
 }
 
 ytmusic-section-list-renderer.ytmusic-two-column-browse-results-renderer > #contents:not(.ytmusic-shelf-renderer) {
-  background: rgba(0,0,0,0.2);
-  /*box-shadow: 0 0 0px 10px rgba(0,0,0,0.5);*/
-  border-radius: 20px;
-  padding-bottom: 10px;
+	background: rgba(0,0,0,0.2);
+	border-radius: 20px;
 	
 	#header ytmusic-side-aligned-item-renderer {
 		margin: 12px 0px 4px 16px;
 	}
 }
 
-
-
+#primary > ytmusic-section-list-renderer.ytmusic-two-column-browse-results-renderer > #contents:not(.ytmusic-shelf-renderer) {
+	padding-bottom: 10px;
+}
 
 
 
@@ -2011,4 +2020,101 @@ ytmusic-detail-header-renderer {
 ytmusic-description-shelf-renderer[is-track-lyrics-page] {
 	-moz-user-select: text;
 	user-select: text;
+}
+
+ytmusic-nav-bar #right-content {
+	padding: 3px;
+	background: transparent;
+	border-radius: 27px;
+}
+.c-master-buttons {
+	width: fit-content;
+	
+	display: flex;
+}
+
+.c-master-buttons .c-button {
+	width: 27px;
+	height: 27px;
+	
+	padding: 0 5px;
+	
+	fill: rgba(255, 255, 255, 1);
+}
+
+ytmusic-nav-bar #right-content:has(.c-master-buttons div:not(.c-hidden)) {
+	background: rgba(0, 0, 0, 0.5);
+}
+
+ytmusic-nav-bar #right-content ytmusic-settings-button yt-icon-button,
+ytmusic-nav-bar #right-content ytmusic-settings-button yt-img-shadow {
+	width: 33px;
+	height: 33px;
+}
+
+body:has(tp-yt-iron-dropdown:not([aria-hidden="true"]) ytmusic-multi-page-menu-renderer.ytmusicMultiPageMenuRendererHostAccountMenu) ytmusic-nav-bar #right-content {
+	background: var(--yt-spec-menu-background);
+	
+	border-bottom-right-radius: 0px;
+}
+
+tp-yt-iron-dropdown:has(ytmusic-multi-page-menu-renderer.ytmusicMultiPageMenuRendererHostAccountMenu) {
+	transform: translateX(3px);
+}
+
+
+ytmusic-multi-page-menu-renderer.ytmusicMultiPageMenuRendererHostAccountMenu {
+	border-top-right-radius: 0px;
+}
+
+.c-dropdown {
+	width: fit-content;
+	position: absolute;
+	white-space: nowrap;
+	
+	background: var(--yt-spec-menu-background);
+	
+	padding: 3px;
+
+	pointer-events: all;
+	user-select: none;
+	cursor: pointer;
+}
+
+.c-dropdown .c-drop-btn {
+	margin-bottom: 4px;
+}
+
+.c-dropdown svg {
+	fill: #aaa;
+	
+	padding: 4px 0;
+	
+	vertical-align: middle;
+}
+
+.c-dropdown a {
+	color: #fff;
+	height: fit-content;
+	vertical-align: middle;
+	
+	display: inline-block;
+	
+	padding: 0 3px 0 6px;
+	
+}
+
+
+
+.c-popup-elem-overflow[func="link-albums"] .c-paper-text-cont .c-paper-subtitle {
+	display: none;
+}
+
+.c-popup-elem-overflow[func="link-albums"] .c-paper-text-cont .c-paper-title {
+	-webkit-line-clamp: none;
+	line-clamp: none;
+	
+	font-size: 12px;
+	line-height: 12px;
+	height: 60px;
 }

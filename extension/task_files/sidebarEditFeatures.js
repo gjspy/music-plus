@@ -18,7 +18,7 @@ export async function MWSidebarEditFeatures() {
 					dragisOvf = false;
 
 				} else if ((!dragisOvf) && originalInsertedInside.closest(".c-popup-elem-overflow")) {
-					_MovePaperToOVF(draggedPaper);
+					UConvertCPaperItemToCGridItem(draggedPaper);
 
 					dragisOvf = true;
 				};
@@ -258,7 +258,7 @@ export async function MWSidebarEditFeatures() {
 				if (__IsDragInOvf(event)) {
 					if (draggingSep || draggingCarousel) return;
 					if (!dragisOvf) {
-						_MovePaperToOVF(draggedPaper);
+						UConvertCPaperItemToCGridItem(draggedPaper);
 						ovf.elemCont.append(draggedPaper);
 					};
 
@@ -353,190 +353,6 @@ export async function MWSidebarEditFeatures() {
 
 	};
 
-
-	function _RenamePopup(paperWrapper) {
-		function __RenameFolder() {
-			return UCreatePopup({
-				title: {
-					text: "Edit Folder",
-					icon: "pencil"
-				},
-				content: [
-					{
-						class: "c-popup-text-line",
-						config: [
-							["label", "textContent", "Leaving the subtitle blank here will clear it, your original value will not be saved."]
-						],
-						style: [
-							["label", "font-size: 12px;"],
-							["", "margin-bottom: 7px;"]
-						]
-					},
-					{
-						class: "c-text-input",
-						config: [
-							["label", "textContent", "Name"]
-						]
-					},
-					{
-						class: "c-text-input",
-						config: [
-							["label", "textContent", "Subtitle"]
-						]
-					}
-				],
-				actions: [
-					{
-						icon: null,
-						text: "Cancel",
-						style: "text-only",
-						defaultAction: "close"
-					},
-					{
-						icon: null,
-						text: "Reset",
-						style: "dark"
-					},
-					{
-						icon: null,
-						text: "Submit",
-						style: "light"
-					}
-				]
-			});
-		};
-
-
-
-		function __MaskPLName() {
-			return UCreatePopup({
-				title: {
-					text: "Change Playlist Details",
-					icon: "pencil"
-				},
-				content: [
-					{
-						class: "c-popup-text-line",
-						config: [
-							["label", "textContent", "This does not edit the playlist on YouTube. This only changes how it appears on the sidebar.<br>Warning: Leaving a field here blank will reset the value."]
-						],
-						style: [
-							["label", "font-size: 14px;"],
-							["", "margin-bottom: 7px;"]
-						]
-					},
-					{
-						class: "c-text-input",
-						config: [
-							["label", "textContent", "Name"]
-						]
-					},
-					{
-						class: "c-text-input",
-						config: [
-							["label", "textContent", "Subtitle"]
-						]
-					}
-				],
-				actions: [
-					{
-						icon: null,
-						text: "Cancel",
-						style: "text-only",
-						defaultAction: "close"
-					},
-					{
-						icon: null,
-						text: "Reset",
-						style: "dark"
-					},
-					{
-						icon: null,
-						text: "Submit",
-						style: "light"
-					}
-				]
-			});
-		};
-
-
-		const plId = paperWrapper.getAttribute("plId");
-		const isAFolder = paperWrapper.matches(".c-paper-folder");
-
-		let popup;
-
-		if (isAFolder) {
-			popup = __RenameFolder();
-		} else {
-			popup = __MaskPLName();
-		};
-
-		
-		popup.querySelector("#reset").addEventListener("click", function(e) {
-			let func;
-
-			if (isAFolder) {
-				func = "sidebar-rename-folder";
-			} else {
-				func = "sidebar-mask-pl-name";
-			};
-
-			UDispatchEventToEW({
-				func: func,
-				editInfo: {title:"", subtitle:""},
-				plId: plId
-			});	
-
-			URemovePopup(popup);
-
-			if (!isAFolder) {
-				paperWrapper.querySelector(".c-paper-title").textContent = paperWrapper.__cData.realTitle;
-				paperWrapper.querySelector(".c-paper-subtitle").textContent = paperWrapper.__cData.realSubtitle;
-			} else {
-				paperWrapper.querySelector(".c-paper-subtitle").textContent = "";
-			};
-		});
-
-
-		
-		popup.querySelector("#submit").addEventListener("click", function(e) {			
-			// dispatch custom event, received by isolated contentscript, messaged to bkg
-			let titleVal = popup.querySelector("input[_group=\"1\"]").value;
-			let subVal = popup.querySelector("input[_group=\"2\"]").value;
-
-			let newEvent;
-
-			if (isAFolder) {
-				UDispatchEventToEW({
-					func: "sidebar-rename-folder",
-					editInfo: {title: titleVal, subtitle: subVal},
-					plId: plId
-				});
-
-			} else {
-				UDispatchEventToEW({
-					func: "sidebar-mask-pl-name",
-					editInfo: {title: titleVal, subtitle: subVal},
-					plId: plId
-				});
-			};
-
-			URemovePopup(popup);
-
-			if (titleVal === "" && !isAFolder) {
-				paperWrapper.querySelector(".c-paper-title").textContent = paperWrapper.__cData.realTitle;
-			} else if (titleVal !== "") {
-				paperWrapper.querySelector(".c-paper-title").textContent = titleVal;
-			};
-
-			if (subVal === "" && !isAFolder) {
-				paperWrapper.querySelector(".c-paper-subtitle").textContent = paperWrapper.__cData.realSubtitle;
-			} else {
-				paperWrapper.querySelector(".c-paper-subtitle").textContent = subVal;
-			};
-		});		
-	};
-
 	function _NewFolderPopup(finishBtn) {
 		let popup = UCreatePopup({
 			title: {
@@ -601,61 +417,7 @@ export async function MWSidebarEditFeatures() {
 		});
 	};
 
-	function _DeleteFolderPopup(cont, folderName, folderId, folderElem) {
-		let popup = UCreatePopup({
-			title: {
-				text: "Delete Folder",
-				icon: "folder"
-			},
-			content: [{
-				class: "c-popup-text-line",
-				config: [
-					["label", "innerHTML", `Are you sure you want to delete your folder "${folderName}"?<br/>Your playlists will not be deleted.`]
-				]
-			}],
-			actions: [
-				{
-					icon: null,
-					text: "Cancel",
-					style: "text-only",
-					defaultAction: "close"
-				},
-				{
-					icon: null,
-					text: "Confirm",
-					style: "light"
-				}
-			]
-		});
-
-		popup.querySelector("#confirm").addEventListener("click", function(e) {
-			// here, is easy to keep edit mode.
-			// move all elems out of folder. insert above where folder was.
-			let subElems = folderElem.querySelectorAll(".c-paper-folder-cont > *");
-
-			for (let elem of subElems) {
-				folderElem.parentElement.insertBefore(elem, folderElem);
-				// will go in order, bcs folderElem keeps moving down.
-				// no need to reverse. just remove folder after.
-			};
-
-			folderElem.remove();
-			
-			// send event to delete folder from storage
-			// dispatch custom event, received by isolated contentscript, messaged to bkg
-			UDispatchEventToEW({
-				func: "sidebar-delete-folder",
-				folderId: folderId
-			});
-
-			URemovePopup(popup);
-
-			// save new order in separate event..
-			setTimeout(function() {
-				USaveNewOrder(cont);
-			}, 500); // delay this, to ensure previous event happens first.
-		});
-	};
+	
 
 	function _NewSeparatorPopup(finishBtn) {
 		let popup = UCreatePopup({
@@ -763,247 +525,17 @@ export async function MWSidebarEditFeatures() {
 		document.body.oncontextmenu = null;
 	};
 
-	function _CreateOVFPaperItem(paperService, ovf, id, editButtons) {
-		let isFolder = id.match(/^CF/);
-		let paperElem;
-
-		if (isFolder) paperElem = paperService.CreateAndPopulateFolderPaperItem(id, ovf.elemCont);
-		else paperElem = paperService.CreatePaperElem(id, ovf.elemCont);
-
-		_MovePaperToOVF(paperElem);
-		paperElem.setAttribute("c-draggable", "true");
-		paperElem.removeAttribute("href");
-
-		_AddEditButtonsToPaperItem(paperElem, ...editButtons);
-	};
-
-	function _MovePaperToOVF(paper) {
-		URemoveFromClass(paper, "c-paper-wrapper");
-		UAddToClass(paper, "c-ovf-elem");
-	};
-
 	function _MovePaperOutOVF(paper) {
 		URemoveFromClass(paper, "c-ovf-elem");
 		UAddToClass(paper, "c-paper-wrapper");
 	}
 
-	function _ShowOverflowCont(editButtons) {
-		let ovfcont = document.createElement("div");
-		ovfcont.innerHTML = UTemplateElementsStrings["c-popup-elem-overflow"];
-
-		let ovf = {
-			ovf: ovfcont.firstElementChild,
-			elemCont: ovfcont.querySelector(".elem-cont"),
-			paperStorage: ovfcont.querySelector(".paper-storage")
-		};
-
-		let guide = document.querySelector("#guide");
-
-		document.body.append(ovfcont);
-
-		UMWStorageGet().then((storage) => {
-			let organisation = [{},{}];
-
-			let paperService = new InjectMyPaperItems();
-			paperService.storage = storage;
-
-			// sort by private -> type -> artistId(albums) -> alpha name
-
-			/*
-			o = [
-				{type: {
-					artist: {id: undefined, id: undefined
-					}
-				}},
-				{}
-			]
-			
-			*/
-
-			for (let v of Object.values(storage.cache)) {
-				if (v.saved !== true) continue;
-				if (v.type !== "ARTIST" && v.type !== "ALBUM" && v.type !== "PLAYLIST") continue;
-				if (guide.querySelector(`[plId=${v.id}]`)) continue;
-				if (v.id === U_VARIOUS_ARTISTS_EXTID) continue;
-
-				let privateI = Number(!!v.private);
-				let group = organisation[privateI];
-
-				if (!group[v.type]) group[v.type] = {};
-				group = group[v.type];
-
-				if (v.type === "ALBUM") {
-					if (!group[v.artist]) group[v.artist] = {};
-					group = group[v.artist];
-				};
-
-				group[v.id] = {
-					id: v.id,
-					name: v.name
-				};
-			};
-
-
-
-			for (let folder of Object.values(storage.sidebar.folders.folders)) {
-				if (guide.querySelector(`[plId=${folder.id}]`)) continue;
-
-				_CreateOVFPaperItem(paperService, ovf, folder.id, editButtons);
-			};
-
-
-			for (let privateGroup of organisation) {
-				for (let [type, group] of Object.entries(privateGroup)) {
-
-					if (type === "ALBUM") {
-						for (let artistGroup of Object.values(group)) {
-							let alphabetical = Object.values(artistGroup).sort((a, b) => a.name.localeCompare(b.name));
-
-							for (let v of alphabetical) {
-								_CreateOVFPaperItem(paperService, ovf, v.id, editButtons);
-							};
-						};
-
-					} else {
-						let alphabetical = Object.values(group).sort((a, b) => a.name.localeCompare(b.name));
-
-						for (let v of alphabetical) {
-							_CreateOVFPaperItem(paperService, ovf, v.id, editButtons);
-						};
-
-					};
-				};
-			};
-		});
-
-		return ovf;
-	};
 
 	function _HideOverflowCont() {
-		document.querySelector(".c-popup-elem-overflow").remove();
+		document.querySelector("div > .c-popup-elem-overflow").parentElement.remove();
 	};
 
-	function _AddVisibilityIconToButtonCont(elem, editButtonCont, visibleIcon, invisibleIcon) {
-		let thisVisibilityButton;
-		let isVisible = !elem.matches(".c-hidden");
-
-		if (isVisible) {
-			thisVisibilityButton = visibleIcon.cloneNode(true);
-
-		} else {
-			thisVisibilityButton = invisibleIcon.cloneNode(true);
-		};
-
-		editButtonCont.append(thisVisibilityButton);
-
-		thisVisibilityButton.addEventListener("click", function(e) {
-			e.preventDefault();
-			e.stopImmediatePropagation();
-
-			isVisible = !isVisible;
-
-			if (isVisible) {
-				thisVisibilityButton.innerHTML = UGetSVGFromRaw("visible", false, true);
-				UUnHideElem(elem);
-			} else {
-				thisVisibilityButton.innerHTML = UGetSVGFromRaw("invisible", false, true);
-				UHideElem(elem);
-			};
-
-			UDispatchEventToEW({
-				func: "sidebar-visibility-change",
-				change: {
-					id: elem.getAttribute("plId"),
-					isVisible: isVisible
-				} 
-			});
-		});
-	}
-
-	function _AddEditButtonsToPaperItem(elem, visibleIcon, invisibleIcon, pencilIcon, moveIcon, deleteIcon, expandIcon) {
-		const actualPaper = elem.querySelector(".c-paper-item");
-
-		elem.setAttribute("c-draggable","true");
-
-		const normButtonCont = elem.querySelector(".c-paper-button-cont");
-		const editButtonCont = normButtonCont.cloneNode(true);
-		UHideElem(normButtonCont);
-		UUnHideElem(editButtonCont);
-
-		actualPaper.append(editButtonCont);
-
-		UAddToClass(editButtonCont, "c-editing");
-		editButtonCont.innerHTML = "";
-
-		let bkgCont = normButtonCont.querySelector(".bkg-cont");
-		bkgCont = bkgCont.cloneNode(true);
-		
-		editButtonCont.append(bkgCont);
-
-		// add svg buttons to editButtonCont
-
-		// visibility button
-		// if paper is normally hidden, put correct SVG!!
-		_AddVisibilityIconToButtonCont(elem, editButtonCont, visibleIcon, invisibleIcon);
-
-
-		// edit button
-		let thisPencilIcon = pencilIcon.cloneNode(true);
-		editButtonCont.append(thisPencilIcon);
-
-		thisPencilIcon.addEventListener("click", function(e) {
-			e.preventDefault();
-			e.stopImmediatePropagation();
-
-			_RenamePopup(elem);
-		});
-
-
-		// movable icon (not button)
-		let thisMoveIcon = moveIcon.cloneNode(true);
-		editButtonCont.append(thisMoveIcon);
-
-		// only add delete button for folders. cba with apis
-		if (elem.matches(".c-paper-folder")) {
-			let thisDeleteButton = deleteIcon.cloneNode(true);
-			editButtonCont.insertBefore(thisDeleteButton, editButtonCont.firstElementChild);
-
-			thisDeleteButton.addEventListener("click", function(e) {
-				e.preventDefault();
-				e.stopPropagation();
-				e.stopImmediatePropagation();
-				
-				let name = elem.querySelector(".c-paper-text-cont .c-paper-title").textContent;
-				_DeleteFolderPopup(elem.parentElement, name, elem.getAttribute("plId"), elem);
-			});
-
-			let expandButton = expandIcon.cloneNode(true);
-			editButtonCont.insertBefore(expandButton, editButtonCont.firstElementChild);
-
-			if (elem.matches(".open")) {
-				expandButton.style.rotate = "180deg";
-			};
-
-			expandButton.addEventListener("click", function(e) {
-				e.preventDefault();
-				e.stopPropagation();
-				e.stopImmediatePropagation();
-
-				if (elem.matches(":has(:not(.c-hidden) > .c-paper-item > .c-active)")) return;
-
-				if (elem.matches(".open")) {
-					UAddToClass(elem, "closed");
-					URemoveFromClass(elem, "open");
-					expandButton.style.rotate = "";
-
-				} else {
-					UAddToClass(elem, "open");
-					URemoveFromClass(elem, "closed");
-					expandButton.style.rotate = "180deg";
-				};
-			});
-		};
-	};
+	
 	
 	// this function is called when the edit button is clicked.
 	// HERE IS WHERE "DRAGGABLE" ATTR IS GIVEN TO ELEMS
@@ -1069,7 +601,10 @@ export async function MWSidebarEditFeatures() {
 
 		let editButtons = [visibleIcon, invisibleIcon, pencilIcon, moveIcon, deleteIcon, expandIcon];
 
-		let ovf = _ShowOverflowCont(editButtons);
+		let ovf = UShowGridOfMusicItems((v) => (
+			v.saved === true &&
+			!document.querySelector(`#guide [plId=${v.id}]`)
+		), editButtons, true, true, undefined, undefined, "sidebar-edit");
 
 		let tinyDelete = UGetSVGFromRaw("delete", true);
 		UAddToClass(tinyDelete, "c-paper-btn");
@@ -1123,7 +658,7 @@ export async function MWSidebarEditFeatures() {
 		// give editButtonCont to each paper item, containing new buttons.
 		for (let elem of document.querySelectorAll("#guide .c-paper-wrapper:not([is-primary])")) {
 
-			_AddEditButtonsToPaperItem(elem, ...editButtons);
+			UAddEditButtonsToPaperItem(elem, ...editButtons);
 		};
 
 		_AddDraggableFeatures(ovf);		

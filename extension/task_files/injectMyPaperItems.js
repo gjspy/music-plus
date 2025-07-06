@@ -124,8 +124,6 @@ export async function MWInjectMyPaperItems() {
 		};
 
 		InitButtonContOnNavClick(cont) {
-			console.log("IN SETBUTTONCONTLOADING");
-
 			let statusIco = cont.querySelector(".c-paper-status-icon");
 	
 			UHideElem(cont.querySelector(".c-paper-shfl-btn"));
@@ -368,12 +366,12 @@ export async function MWInjectMyPaperItems() {
 
 
 		AddInteractionToPaperItem(elem, id, mfId) {
-			let navVerifyFunc = (e) => (!document.querySelector("#guide .c-editing"));
+			let navVerifyFunc = (e) => (!document.querySelector("#guide .c-editing, .c-popup-elem-overflow") && !elem.matches(".c-ovf-elem"));
 
 			UNavigateOnClick(elem, UBuildEndpoint({
 				id: id,
 				navType: "browse"
-			}), undefined, undefined, navVerifyFunc);
+			}), undefined, undefined, navVerifyFunc, false, false);
 
 			if (!mfId) return;
 			let browsePageType = UGetBrowsePageTypeFromBrowseId(id, true, true);
@@ -385,13 +383,13 @@ export async function MWInjectMyPaperItems() {
 				playlistId: mfId,
 				navType: "watch",
 				shuffle: false
-			}), this.InitButtonContOnNavClick, excessParams);
+			}), this.InitButtonContOnNavClick, excessParams, undefined, true, true);
 
 			UNavigateOnClick(elem.querySelector(".c-paper-shfl-icon"), UBuildEndpoint({
 				playlistId: mfId,
 				navType: "watch",
 				shuffle: true
-			}), this.InitButtonContOnNavClick, excessParams);
+			}), this.InitButtonContOnNavClick, excessParams, undefined, true, true);
 
 
 			// don't initbuttoncontonnavclick for queue buttons:
@@ -402,14 +400,14 @@ export async function MWInjectMyPaperItems() {
 				navType: "queueAdd",
 				position: "end",
 				listType: browsePageType
-			}));
+			}), undefined, undefined, undefined, true, true);
 
 			UNavigateOnClick(elem.querySelector(".c-paper-queuenext-icon"), UBuildEndpoint({
 				playlistId: mfId,
 				navType: "queueAdd",
 				position: "next",
 				listType: browsePageType
-			}));
+			}), undefined, undefined, undefined, true, true);
 		};
 
 
@@ -797,9 +795,7 @@ export async function MWInjectMyPaperItems() {
 
 
 	function _AsyncStartProcesses() {
-		console.log("hello");
 		return new Promise(function(resolve, reject) {
-			console.log("hii");
 
 			try {
 				(new InjectMyPaperItems()).MainTasks(true).then(

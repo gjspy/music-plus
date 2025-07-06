@@ -6,7 +6,8 @@ MiddlewareEditors = class MiddlewareEditors {
 		"/youtubei/v1/like/like",
 		"/youtubei/v1/like/removelike",
 		"/youtubei/v1/next",
-		"/youtubei/v1/player"
+		"/youtubei/v1/player",
+		"/youtubei/v1/music/get_queue"
 	];
 
 	static _ShouldModifyURL(url) {
@@ -78,7 +79,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		};
 
 		let creator = ((subtitleOneData.artists) ? subtitleOneData.artists[0] : undefined) || subtitleOneData.creator;
-		let cachedCreator = cache[creator.id];
+		let cachedCreator = cache[creator.id] || {};
 
 		// DOING COUNTERPART STUFF, LINK TO MAIN ARTIST PAGE
 		if (cachedCreator.privateCounterparts && cachedCreator.privateCounterparts.length > 0) {
@@ -295,13 +296,10 @@ MiddlewareEditors = class MiddlewareEditors {
 			let cachedVideo = cache[videoId];
 			if (!cachedVideo) continue;
 
-			let views = cachedVideo.views;
-			views = (isNaN(views)) ? 0 : views;
-
 			listItem.flexColumns.push({
 				musicResponsiveListItemFlexColumnRenderer: {
 					displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_MEDIUM",
-					text: { runs: [ { text: UBigNumToText(views) + " plays"}] }
+					text: { runs: [ { text: UBigNumToText(cachedVideo.views) + " plays" } ] }
 				}
 			});
 		};
@@ -381,7 +379,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 
 	static SmallTasksRequireCache = {
-		"/youtubei/v1/next": function TidyQueueNextItems(request, response, cache) {
+		"/youtubei/v1/next": function TidyQueueNextItems(request, response, storage) {
 			let playlistPanelContents = UDigDict(response, [
 				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
 				"watchNextTabbedResultsRenderer", "tabs", 0,
@@ -391,76 +389,33 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			if (!playlistPanelContents) return response;
 
-			for (let item of playlistPanelContents) {
-				let videoRenderer = item.playlistPanelVideoRenderer
-					|| UDigDict(item, ["playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"]);
+			this._EditQueueContentsFromResponse(storage, playlistPanelContents, request.body.playlistId, request.body.videoId);
 
-				if (!videoRenderer) continue;
+			console.log(playlistPanelContents);
 
-				let longBylineData = UGetDataFromSubtitleRuns({}, videoRenderer.longBylineText);
+			let requestedIndex = request.body.index
+			if (requestedIndex && response.currentVideoEndpoint) {
+				// this is for clicking on an edited song in an album page. bcs its not in the album, the client doesnt know where
+				// to play from without this.
+				/*let we = response.currentVideoEndpoint.watchEndpoint;
+				let responseIndex = we.index;
 
-				let songCacheData = cache[videoRenderer.videoId];
-				let albumId = (longBylineData.album) ? longBylineData.album.id :
-							  (songCacheData) ? songCacheData.album : undefined;
-				let albumCacheData = (albumId) ? cache[albumId] : {};
+				if (responseIndex !== requestedIndex) {
+					// request/response indexes are 0-based, item based. not related to index displayed in album.
+					we.index = requestedIndex;
 
-				let artistId = (longBylineData.artists) ? longBylineData.artists[0].id :
-							   (songCacheData) ? songCacheData.artists[0] : undefined;
-				let artistCacheData = (artistId) ? cache[artistId] : {};
+					let responseObj = UGetPlaylistPanelVideoRenderer(playlistPanelContents[responseIndex]);
+					if (responseObj) responseObj.selected = false;
 
-				if (albumCacheData && albumCacheData.year && !longBylineData.yearStr) {
-					videoRenderer.longBylineText.runs.push(
-						{ text: U_YT_DOT },
-						{ text: String(albumCacheData.year)}
-					);
-				};
-
-				if ((albumCacheData && albumCacheData.private === true) || (artistCacheData && artistCacheData.private === true)) {
-
-					for (let run of videoRenderer.longBylineText.runs) {
-						if (!run.navigationEndpoint) continue;
-						
-						let type = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"]);
-						if (!type) continue;
-
-						if (!type || type === "MUSIC_PAGE_TYPE_UNKNOWN") {
-							let id = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseId"]);
-							if (!id) continue;
-
-							type = UGetBrowsePageTypeFromBrowseId(id, false, true);
-						};
-
-						let counterpartId, counterpartData;
+					let requestObj = UGetPlaylistPanelVideoRenderer(playlistPanelContents[requestedIndex]);
+					if (requestObj) requestObj.selected = true;
+				};*/
 
 
-						if (type.includes("ALBUM") && (albumCacheData.privateCounterparts || []).length > 0) {
-							counterpartId = albumCacheData.privateCounterparts[0];
-							counterpartData = cache[counterpartId];
-						};
 
-						if (type === "C_PAGE_TYPE_PRIVATE_ARTIST" && (artistCacheData.privateCounterparts || []).length > 0) {
-							counterpartId = artistCacheData.privateCounterparts[0];
-							counterpartData = cache[counterpartId];
 
-							if (counterpartId && item.shortBylineText) {
-								item.shortBylineText.runs[0] = {
-									text: (counterpartData) ? counterpartData.name : run.text
-								}
-							};							
-						};
-
-						if (!counterpartId) continue;
-
-						run.text = (counterpartData) ? counterpartData.name : run.text;
-						run.navigationEndpoint = UBuildEndpoint({
-							navType: "browse",
-							id: counterpartId
-						});						
-					};
-
-				};
+				
 			};
-			
 
 			let headerButtons = UDigDict(response, [
 				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
@@ -485,24 +440,166 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			return response;
 
+		},
+
+		"/youtubei/v1/music/get_queue": function TidyGetQueueItems(request, response, storage) {
+			let queueDatas = response.queueDatas;
+			if (!queueDatas) return response;
+
+			this._EditQueueContentsFromResponse(storage, queueDatas, request.body.playlistId);
+
+			return response;
 		}
 	};
 
+	static _EditLongBylineOfPlaylistPanelVideoRenderer(videoRenderer, cache) {
+		let longBylineData = UGetDataFromSubtitleRuns({}, videoRenderer.longBylineText);
 
-	static C_PAGE_TYPE_PRIVATE_ALBUM(response, id, cache) {
-		// need to edit album subtitleTwo total minutes based on contents.
+		let songCacheData = cache[videoRenderer.videoId];
+		let albumId = (longBylineData.album) ? longBylineData.album.id :
+					  (songCacheData) ? songCacheData.album : undefined;
+		let albumCacheData = (albumId) ? cache[albumId] : {};
 
-		let albumLike = this._ConvertOldAlbumPageToNew(response, id, cache);
-		let newResp = this.MUSIC_PAGE_TYPE_ALBUM(albumLike, id, cache);
+		let artistId = (longBylineData.artists) ? longBylineData.artists[0].id :
+					   (songCacheData) ? songCacheData.artists[0] : undefined;
+		let artistCacheData = (artistId) ? cache[artistId] : {};
+
+		if (albumCacheData && albumCacheData.year && !longBylineData.yearStr) {
+			videoRenderer.longBylineText.runs.push(
+				{ text: U_YT_DOT },
+				{ text: String(albumCacheData.year)}
+			);
+		};
+
+		if (!(albumCacheData && albumCacheData.private === true) && !(artistCacheData && artistCacheData.private === true)) return;
+
+		for (let run of videoRenderer.longBylineText.runs) {
+			if (!run.navigationEndpoint) continue;
+			
+			let type = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"]);
+			if (!type) continue;
+
+			if (!type || type === "MUSIC_PAGE_TYPE_UNKNOWN") {
+				let id = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseId"]);
+				if (!id) continue;
+
+				type = UGetBrowsePageTypeFromBrowseId(id, false, true);
+			};
+
+			let counterpartData;
+
+			if (type === "MUSIC_PAGE_TYPE_ALBUM") counterpartData = UGetCounterpartFromData(cache, albumCacheData);
+			if (type === "C_PAGE_TYPE_PRIVATE_ARTIST") {
+				counterpartData = UGetCounterpartFromData(cache, artistCacheData);
+
+				if (videoRenderer.shortBylineText) {
+					videoRenderer.shortBylineText.runs[0] = {
+						text: (counterpartData) ? counterpartData.name : run.text
+					}
+				};
+			};
+
+			if (!counterpartData) continue;
+
+			run.text = (counterpartData) ? counterpartData.name : run.text;
+			run.navigationEndpoint = UBuildEndpoint({
+				navType: "browse",
+				id: counterpartData.id
+			});						
+		};
+	};
+
+	static _EditQueueContentsFromResponse(storage, queueContents, addedBulkFromMfId, videoIdToSelect) {
+		addedBulkFromMfId = addedBulkFromMfId.replace(/^RDAMPL/, "");
+		let addedBulkFrom = UGetObjFromMfId(storage.cache, addedBulkFromMfId) || {};
+
+		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, addedBulkFrom.id) || {};
+
+		let backingPlaylistId;
+		
+		for (let item of queueContents) {
+			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
+			if (!videoRenderer) continue;
+
+			this._EditLongBylineOfPlaylistPanelVideoRenderer(videoRenderer, storage.cache);
+
+			let toReplaceWith = idsToReplace[videoRenderer.videoId];
+			if (toReplaceWith) UModifyPlaylistPanelRendererFromData(toReplaceWith, addedBulkFrom, videoRenderer);
+
+			if (!backingPlaylistId) backingPlaylistId = UDigDict(videoRenderer, [
+				"queueNavigationEndpoint", "queueAddEndpoint",
+				"queueTarget", "backingQueuePlaylistId"
+			]);
+
+			if (videoIdToSelect) videoRenderer.selected = videoRenderer.videoId === videoIdToSelect;
+		};
+
+		// dont need to worry about other items in queue. any response only ever gives the new bit.
+		// next: only runs on first click, else just does hack: true
+		// get_queue: only returns the new section.
+
+		let byIndex = idsToReplace.extraByIndex;
+		if (!byIndex) return;
+
+		let cachedArtist = storage.cache[addedBulkFrom.artist];
+
+		let lastItem;
+		if (queueContents[queueContents.length - 1].automixPreviewVideoRenderer) {
+			lastItem = queueContents.pop();
+		};
+
+		let item0;
+
+		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
+		for (let index of orderedExtraIndexes) {
+			let video = byIndex[index];
+
+			// gets "modified" info by using addedBulkFrom and artist got from that. (public data)
+			let albumToUse = addedBulkFrom;
+
+			let privAlbum = storage.cache[video.album];
+			if (privAlbum) { // want "Deluxe" text, but keep public browse id
+				albumToUse = structuredClone(addedBulkFrom);
+				albumToUse.name = privAlbum.name;
+			};
+
+			let newVideoItem = UBuildPlaylistPanelRendererFromData(video, albumToUse, cachedArtist, backingPlaylistId);
+
+			if (videoIdToSelect) newVideoItem.playlistPanelVideoRenderer.selected = newVideoItem.playlistPanelVideoRenderer.videoId === videoIdToSelect;
+
+			if (index === "0") {
+				item0 = video.id;
+				queueContents.unshift(newVideoItem);
+
+			} else queueContents.push(newVideoItem);
+		};
+
+		if (lastItem) queueContents.push(lastItem);
+
+		if (item0) {
+			for (let i of queueContents) {
+				let videoRenderer = UGetPlaylistPanelVideoRenderer(i);
+				if (!videoRenderer) continue;
+
+				let we = UDigDict(videoRenderer, ["navigationEndpoint", "watchEndpoint"]);
+				if (videoRenderer.videoId === item0) continue;
+
+				we.index += 1;
+			};
+		};
+	};
+
+
+	static C_PAGE_TYPE_PRIVATE_ALBUM(response, id, storage) {
+		let albumLike = this._ConvertOldAlbumPageToNew(response, id, storage.cache);
+		let newResp = this.MUSIC_PAGE_TYPE_ALBUM(albumLike, id, storage);
 
 		return newResp;
 	};
 
-	static MUSIC_PAGE_TYPE_ALBUM(response, id, cache) {
+	static MUSIC_PAGE_TYPE_ALBUM(response, id, storage) {
 		// caching stuff
 		// need to edit album subtitleTwo total minutes based on contents.
-
-		// make toplevelbuttons better:  have shuffle instead of share!
 
 		if (!response.cButtons) response.cButtons = [];
 
@@ -518,43 +615,44 @@ MiddlewareEditors = class MiddlewareEditors {
 		let type = UGetBrowsePageTypeFromBrowseId(id);
 		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return response;
 
-		let cachedAlbum = cache[id];
-		if (!cachedAlbum || (cachedAlbum.privateCounterparts || []).length === 0) return response;
+		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id);
+		if (!idsToReplace) return response;
 
-		let counterpart = cachedAlbum.privateCounterparts[0];
-		if (!counterpart || !cache[counterpart]) return response;
-
-		let counterpartData = cache[counterpart];
-
-		let indexesToReplace = {};
-
-		for (let videoId of counterpartData.items) {
-			if (!videoId) continue;
-
-			let cachedVideo = cache[videoId];
-			if (!cachedVideo || !cachedVideo.index) continue;
-
-			indexesToReplace[cachedVideo.index] = cachedVideo;
-		};
-
-		let listItems = UDigDict(response, [
+		let musicShelfRenderer = UDigDict(response, [
 			"contents", "twoColumnBrowseResultsRenderer", "secondaryContents",
 			"sectionListRenderer", "contents", 0,
-			"musicShelfRenderer", "contents"
+			"musicShelfRenderer"
 		]);
-		if (!listItems) return response;
+		if (!musicShelfRenderer || !musicShelfRenderer.contents) return response;
 
-		for (let i of listItems) {
+		let cachedAlbum = storage.cache[id];
+
+		// iter thru each existing item, modify if necessary
+
+		for (let i of musicShelfRenderer.contents) {
 			let data = UGetSongInfoFromListItemRenderer(i);
 
-			let cachedVideo = indexesToReplace[data.index];
+			let cachedVideo = idsToReplace[data.id];
 			if (!cachedVideo) continue;
 			
 			i = UModifyListItemRendererFromData(cachedVideo, cachedAlbum, i);
+			delete idsToReplace[data.id];
 		};
 
-		// now add extra to end
-		// need to do stuff so when click play, si added to que correcct;y
+		// now add extra to end (or start)
+		let byIndex = idsToReplace.extraByIndex;
+		if (!byIndex) return response;
+
+		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
+		for (let index of orderedExtraIndexes) {
+			let video = byIndex[index];
+
+			// use cachedAlbum from before, to keep public playlistIds etc.
+			let newListItem = UBuildListItemRendererFromData(video, cachedAlbum);
+
+			if (index === "0") musicShelfRenderer.contents.unshift(newListItem);
+			else musicShelfRenderer.contents.push(newListItem);
+		};
 
 		return response;
 	};
@@ -562,6 +660,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 	static MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id) {
 		// THIS ONLY HAPPENS THE FIRST TIME. NAVIGATION = THROUGH CONTINUATIONS
+		// SO ADDING OUR CUSTOM ELEMS IS IN THE CONTINUATION!
 
 		let sectionListRenderer = UDigDict(response, [
 			"contents", "singleColumnBrowseResultsRenderer", "tabs",
@@ -648,7 +747,6 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		for (let i of gridRenderer.items) {
 			let data = UGetDataFromTwoRowItemRenderer(i);
-			console.log(data);
 
 			if (!data.yearStr || doneYears.indexOf(data.yearStr) !== -1) {
 				newItems.push(i);
@@ -658,7 +756,6 @@ MiddlewareEditors = class MiddlewareEditors {
 			doneYears.push(data.yearStr);
 
 			for (let [album, year] of Object.entries(structuredClone(releaseToYear))) {
-				console.log(data.yearStr, year, data.name);
 				if (Number(year) <= Number(data.yearStr)) continue;
 				
 				let twoRow = UBuildTwoRowItemRendererFromData(cache[album]);
@@ -749,14 +846,13 @@ function initiateDelayedCacheOfOldResp(browseId, pageType, responseIsContinuatio
 
 
 async function FetchModifyResponse(request, oldResp, xhr) {
-	console.log(request.url);
-
 	if (
 		(!xhr && oldResp.status !== 200) ||
 		(!xhr && !(oldResp.headers.get("Content-Type") || "").includes("application/json")) ||
 		!request ||
 		!request.body ||
-		request.method !== "POST"
+		request.method !== "POST" ||
+		NETWORK_EDITING_ENABLED === false
 	) {
 		return oldResp;
 	};
@@ -768,6 +864,8 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	if (!urlObj || MiddlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
 		return oldResp;
 	};
+
+	console.log(request.url);
 
 	let changed = false;
 	let clonedResp = (!xhr) ? oldResp.clone() : undefined;
@@ -795,17 +893,19 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 
 	console.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation);
 
+	let smallTask = MiddlewareEditors.SmallTasks[urlObj.pathname];
 
-	if (MiddlewareEditors.SmallTasks[urlObj.pathname]) {
-		respBody = MiddlewareEditors.SmallTasks[urlObj.pathname](request, respBody);
+	if (smallTask) {
+		respBody = smallTask.apply(MiddlewareEditors, [request, respBody]);
 		changed = true;
 	};
 
+	let smallTaskWithCache = MiddlewareEditors.SmallTasksRequireCache[urlObj.pathname];
 
-	if (MiddlewareEditors.SmallTasksRequireCache[urlObj.pathname]) {
-		let cache = await UMWStorageGet("cache") || {};
+	if (smallTaskWithCache) {
+		let storage = await UMWStorageGet();
 
-		respBody = MiddlewareEditors.SmallTasksRequireCache[urlObj.pathname](request, respBody, cache);
+		respBody = smallTaskWithCache.apply(MiddlewareEditors, [request, respBody, storage]);
 		changed = true;
 	};
 
@@ -823,9 +923,9 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 
 		// functions MUST take response, browseId. MAY take cache, that's the only change.
 		if (f.length === 3) { // only get cache for functions that need it.
-			let cache = await UMWStorageGet("cache") || {};
+			let storage = await UMWStorageGet();
 
-			respBody = f.apply(MiddlewareEditors, [respBody, browseId, cache]);
+			respBody = f.apply(MiddlewareEditors, [respBody, browseId, storage]);
 
 		} else {
 			respBody = f.apply(MiddlewareEditors, [respBody, browseId]);

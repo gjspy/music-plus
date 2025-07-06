@@ -8,7 +8,7 @@ import { MWEventDriven_PageChanges } from "../task_files/eventDriven.js";
 import { MWCaching } from "../task_files/caching.js";
 
 const EXTRAS_FILE_LOC = "../task_files/extras/";
-const EXTRAS = ["niceMiniGuide.js", "playerPageFeatures.js"];
+const EXTRAS = ["niceMiniGuide.js", "playerPageFeatures.js", "editMode.js"];
 const MIDDLEWARE = "../networkMiddleware.js";
 
 
@@ -50,6 +50,7 @@ async function MWInit(toGlobalise) {
 
 	window.polymerController = undefined;
 	window.menuServiceItemBehaviour = undefined;
+	window.NETWORK_EDITING_ENABLED = true;
 	
 	interval = setInterval(function() { // backup, incase loop in paperitems doesnt work.
 		let utilsGot = UGetPolymerController();
@@ -81,6 +82,16 @@ async function MWInit(toGlobalise) {
 	};
 
 	document.head.appendChild(templates);
+
+
+	document.documentElement.addEventListener("click", function(e) {
+		let currentDropdown = document.querySelector("body .c-popup-bkg .c-dropdown");
+		if (!currentDropdown) return;
+
+		if (e.target.matches(".c-dropdown") || e.target.closest(".c-dropdown")) return;
+
+		currentDropdown.parentElement.remove();
+	});
 };
 
 
@@ -545,6 +556,8 @@ function EWCacheLinkPrivateCounterparts(cache) {
 	// DO ALBUMS AND ARTISTS SEPARATE: MIGHT HAVE SAME NAME
 	// EG SELF TITLED/DEBUT ALBUMS!!
 
+	if (!cache.mfIdMap) cache.mfIdMap = {};
+
 	let matches = {artist:{},album:{}}; 
 
 	for (let [k,o] of Object.entries(cache)) {
@@ -558,6 +571,8 @@ function EWCacheLinkPrivateCounterparts(cache) {
 		if (o.type === "ALBUM") {
 			if (!matches.album[o.name]) matches.album[o.name] = [];
 			matches.album[o.name].push([k, o.private]);
+
+			cache.mfIdMap[o.mfId] = o.id; // MAP MFID IN THIS ITERATION
 		};
 	};
 
@@ -608,6 +623,12 @@ async function EWCacheUpdateWithData(storable) {
 			let oldV = currentData[k];
 			let newV = toStore[k];
 			let isArray = newV && newV.constructor === Array;
+
+			if (k === "artPlaylistSetId" && oldV === defaultData[k]) {
+				let songAlbum = toStore.album || currentData.album;
+
+				if (songAlbum && songAlbum.startsWith("FEmusic")) newV = utils.UGenerateArtificialPlaylistSetId();
+			};
 
 			if (newV === undefined || newV === "" || (isArray && newV.length === 0)) continue;
 
@@ -890,6 +911,22 @@ async function EWOMOnPostCacheData(request, sender) {
 };
 
 
+
+
+
+async function EWOMDefineLink(request) {
+	let storage = await utils.UStorageGet();
+
+	if (!storage.customisation.albumLinks[request.baseItem]) {
+		storage.customisation.albumLinks[request.baseItem] = [];
+	};
+
+	storage.customisation.albumLinks[request.baseItem].push(request.linkedItem);
+
+	await utils.UStorageSet(storage);
+};
+
+
 function OnMessage(request, sender, sendResponse) {
 	console.log("received in EW", JSON.stringify(request), sender, sendResponse);
 	
@@ -912,6 +949,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "cache-data")				EWOMOnPostCacheData(request, sender);
 	else if (f === "playlist-create")			EWOMOnNewPlaylist(request, sender);
 	else if (f === "playlist-delete")			EWOMOnDeletePlaylist(request, sender);
+	else if (f === "defineLink")				EWOMDefineLink(request, sender);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);
