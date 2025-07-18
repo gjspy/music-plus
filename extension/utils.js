@@ -229,15 +229,16 @@ class Utils {
 
 		// check has all keys, add default vals if not
 		for (let k of shouldHaveKeys) {
-			if (cont[k]) { // does have
-				if (typeof(cont[k]) === "object") { // has children
-					cont[k] = this.UCheckHasKeys(cont[k], shouldHave[k]); // check children
-				};
-
+			if (cont[k] === undefined) {
+				cont[k] = shouldHave[k]; // does not have, give default.
+				
 				continue;
 			};
 
-			cont[k] = shouldHave[k]; // does not have.
+			if (typeof(cont[k]) === "object") { // has children
+				cont[k] = this.UCheckHasKeys(cont[k], shouldHave[k]); // check children
+			};
+			
 		};
 
 		return cont;
@@ -265,7 +266,9 @@ class Utils {
 			storage = this.UCheckHasKeys(storage, this.UDEFAULT_STORAGE);
 		};
 
-		if (storage["syncEnabled"] === false) {
+		if (storage.syncEnabled === false) {
+			console.warn("storageget only loading from local.");
+
 			let syncContents = structuredClone(storageLocal.syncContents);
 			delete storageLocal.syncContents
 
@@ -315,7 +318,6 @@ class Utils {
 	};
 
 	static async UStorageSet(toSave) {
-		
 
 		let that = this;
 
@@ -359,6 +361,8 @@ class Utils {
 				},
 			
 				function() { // rejected
+					console.error("error writing to sync. using local storage only.");
+
 					storageLocal["syncEnabled"] = false;
 					storageLocal["syncContents"] = storageSync;
 
