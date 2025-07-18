@@ -32,12 +32,13 @@ AlbumEditMode = class AlbumEditMode {
 			type: "editlink",
 			icon: "album",
 			text: "Remove Linked Album",
-			onclick: this.LinkMode
+			onclick: this.RemoveLink
 		},
 		{ // shouldn't be different from yt default. eg folklore: primary = folklore explicit, not deluxe
 			type: "versions",
 			icon: "album",
-			text: "Define Primary Version"
+			text: "Define Primary Version",
+			onclick: this.DefineVersion
 		}
 	];
 
@@ -51,10 +52,12 @@ AlbumEditMode = class AlbumEditMode {
 
 			EditMode.CancelAll();
 
-			setTimeout((() => UNavigate({
-				navType: "browse",
-				"id": id
-			})), 70);
+			setTimeout(() => UNavigate(
+				UBuildEndpoint({
+					navType: "browse",
+					"id": id
+				})
+			), 70);
 			
 		};
 
@@ -68,18 +71,93 @@ AlbumEditMode = class AlbumEditMode {
 
 		let gridCont = UShowGridOfMusicItems(
 			(v) => (
-				v.saved === true &&
+				//v.saved === true &&
 				v.type === "ALBUM" &&
 				v.id !== id &&
 				v.name !== thisAlbumData.name &&
 				(v.artist === thisAlbumData.artist || (artistCounterpart && v.artist === artistCounterpart.id)) &&
 				currentLinked.indexOf(v.id) === -1
 			),
-			[], false, false, OnClickItem, storage, "link-albums"
+			[], false, false, OnClickItem, storage, "link-albums", "Other Albums",
+			"Select an album to link with \"" + thisAlbumData.name + "\". Any private albums with identical names are matched automatically, and hidden here."
 		);
 
-		gridCont.ovf.querySelector(".header a:first-child").textContent = "Other Albums";
-		gridCont.ovf.querySelector(".header a:last-child").textContent = "Select an album to link with \"" + thisAlbumData.name + "\". Any private albums with identical names are matched automatically, and hidden here.";
+		gridCont.ovf.style.marginRight = "250px";
+		gridCont.ovf.style.marginLeft = "initial";
+		gridCont.ovf.style.right = "0";
+		gridCont.ovf.style.setProperty("--height", "700px");
+	};
+
+	static async RemoveLink(state, browsePage, id) {
+		function OnClickItem(chosenId) {
+			UDispatchEventToEW({
+				func: "removeLink",
+				baseItem: id,
+				linkedItem: chosenId
+			});
+
+			EditMode.CancelAll();
+
+			setTimeout(() => UNavigate(
+				UBuildEndpoint({
+					navType: "browse",
+					"id": id
+				})
+			), 70);
+			
+		};
+
+		let storage = await UMWStorageGet();
+		let thisAlbumData = storage.cache[id];
+		let currentLinked = storage.customisation.albumLinks[id] || [];
+
+		let gridCont = UShowGridOfMusicItems(
+			(v) => (
+				currentLinked.indexOf(v.id) !== -1
+			),
+			[], false, false, OnClickItem, storage, "link-albums", "Linked Albums",
+			"Current albums linked with \"" + thisAlbumData.name + "\". Any private albums with identical names are matched automatically, and hidden here. Click to remove."
+		);
+
+		gridCont.ovf.style.marginRight = "250px";
+		gridCont.ovf.style.marginLeft = "initial";
+		gridCont.ovf.style.right = "0";
+		gridCont.ovf.style.setProperty("--height", "700px");
+	};
+
+	static async DefineVersion(state, browsePage, id) {
+		function OnClickItem(chosenId) {
+			let alternates = [...alt, id];
+
+			UDispatchEventToEW({
+				func: "setPrimaryAlbum",
+				chosen: chosenId,
+				alts: alternates
+			});
+
+			EditMode.CancelAll();
+
+			setTimeout(() => UNavigate(
+				UBuildEndpoint({
+					navType: "browse",
+					"id": id
+				})
+			), 70);
+			
+		};
+
+		let storage = await UMWStorageGet();
+		let thisAlbumData = storage.cache[id];
+		let alt = thisAlbumData.alternate;
+
+		let gridCont = UShowGridOfMusicItems(
+			(v) => (
+				alt.indexOf(v.id) !== -1 ||
+				v.id === id
+			),
+			[], false, false, OnClickItem, storage, undefined, "Album Versions",
+			"Choose the base album version that YouTube uses for recommendations. This is usually explicit, non-deluxe."
+		);
 
 		gridCont.ovf.style.marginRight = "250px";
 		gridCont.ovf.style.marginLeft = "initial";

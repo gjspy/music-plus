@@ -65,7 +65,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		if (subtitleOneData.subType && subtitleOneData.yearStr) {
 			subtitleOneRuns = [
-				{text: subtitleOneData.subType}, 
+				{text: subtitleOneData.subType},
 				{text: U_YT_DOT},
 				{text: subtitleOneData.yearStr}
 			];
@@ -93,7 +93,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		};
 
-		let cachedCreatorThumb = (cachedCreator) ? cachedCreator.thumb : undefined; 
+		let cachedCreatorThumb = (cachedCreator) ? cachedCreator.thumb : undefined;
 
 		let straplineTextOne = {};
 		let straplineThumbnail = {};
@@ -113,9 +113,9 @@ MiddlewareEditors = class MiddlewareEditors {
 					navType: "browse",
 					id: cachedCreator.id
 				})
-			};		
-			
-			
+			};
+
+
 			straplineThumbnail = {
 				musicThumbnailRenderer: {
 					thumbnail: {
@@ -232,7 +232,7 @@ MiddlewareEditors = class MiddlewareEditors {
 				}
 			}
 		];
-		
+
 
 		let contents = {
 			twoColumnBrowseResultsRenderer: {
@@ -276,7 +276,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			listItem = listItem.musicResponsiveListItemRenderer;
 
 			listItem.overlay.musicItemThumbnailOverlayRenderer.background.verticalGradient.gradientLayerColors = layerColors;
-			
+
 			let i = -1;
 			for (let flexColumn of listItem.flexColumns) {
 				i ++;
@@ -311,21 +311,6 @@ MiddlewareEditors = class MiddlewareEditors {
 		response.background = {
 			musicThumbnailRenderer: thumbnailRenderer
 		};
-
-		response.cButtons = [
-			{
-				icon: "doc-revert",
-				actions: [
-					UBuildEndpoint({
-						navType: "browse",
-						id: id,
-						cParams: {
-							returnOriginal: true
-						}
-					})
-				]
-			}
-		];
 
 		return response;
 	};
@@ -380,6 +365,20 @@ MiddlewareEditors = class MiddlewareEditors {
 
 	static SmallTasksRequireCache = {
 		"/youtubei/v1/next": function TidyQueueNextItems(request, response, storage) {
+			if (!request.cParams || !request.cParams.buildingQueueFrom) return;
+			// so now if user clicks "revert" on album page, it will play original.
+			// and, clicking a main song will now include the extras.
+
+			// require cParams. declares that we want to edit this response.
+			// even if clicking a song from the real album (deluxe), it still declares
+			// to read the song from itself.
+
+			let browsePage = document.querySelector("ytmusic-browse-response");
+			if (browsePage && browsePage.getAttribute("c-edited") === false) {
+				console.log("browse page reports no c edits. returning in /next middleware.");
+				return response;
+			};
+
 			let playlistPanelContents = UDigDict(response, [
 				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
 				"watchNextTabbedResultsRenderer", "tabs", 0,
@@ -389,33 +388,11 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			if (!playlistPanelContents) return response;
 
-			this._EditQueueContentsFromResponse(storage, playlistPanelContents, request.body.playlistId, request.body.videoId);
+			console.log(structuredClone(playlistPanelContents));
+
+			this._EditQueueContentsFromResponse(storage, playlistPanelContents, request.cParams.buildingQueueFrom, request.body.playlistId, request.body.videoId);
 
 			console.log(playlistPanelContents);
-
-			let requestedIndex = request.body.index
-			if (requestedIndex && response.currentVideoEndpoint) {
-				// this is for clicking on an edited song in an album page. bcs its not in the album, the client doesnt know where
-				// to play from without this.
-				/*let we = response.currentVideoEndpoint.watchEndpoint;
-				let responseIndex = we.index;
-
-				if (responseIndex !== requestedIndex) {
-					// request/response indexes are 0-based, item based. not related to index displayed in album.
-					we.index = requestedIndex;
-
-					let responseObj = UGetPlaylistPanelVideoRenderer(playlistPanelContents[responseIndex]);
-					if (responseObj) responseObj.selected = false;
-
-					let requestObj = UGetPlaylistPanelVideoRenderer(playlistPanelContents[requestedIndex]);
-					if (requestObj) requestObj.selected = true;
-				};*/
-
-
-
-
-				
-			};
 
 			let headerButtons = UDigDict(response, [
 				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
@@ -443,6 +420,12 @@ MiddlewareEditors = class MiddlewareEditors {
 		},
 
 		"/youtubei/v1/music/get_queue": function TidyGetQueueItems(request, response, storage) {
+			let browsePage = document.querySelector("ytmusic-browse-response");
+			if (browsePage && browsePage.getAttribute("c-edited") === false) {
+				console.log("browse page reports no c edits. returning in /get_queue middleware.");
+				return response;
+			};
+
 			let queueDatas = response.queueDatas;
 			if (!queueDatas) return response;
 
@@ -452,7 +435,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		}
 	};
 
-	static _EditLongBylineOfPlaylistPanelVideoRenderer(videoRenderer, cache) {
+	static _EditLongBylineOfPlaylistPanelVideoRenderer(cache, videoRenderer, realAlbum) {
 		let longBylineData = UGetDataFromSubtitleRuns({}, videoRenderer.longBylineText);
 
 		let songCacheData = cache[videoRenderer.videoId];
@@ -471,11 +454,15 @@ MiddlewareEditors = class MiddlewareEditors {
 			);
 		};
 
-		if (!(albumCacheData && albumCacheData.private === true) && !(artistCacheData && artistCacheData.private === true)) return;
+		// used to only edit priv, not anymore.if (!(albumCacheData && albumCacheData.private === true) && !(artistCacheData && artistCacheData.private === true)) return;
+
+		let newRuns = [];
 
 		for (let run of videoRenderer.longBylineText.runs) {
+			newRuns.push(run);
+
 			if (!run.navigationEndpoint) continue;
-			
+
 			let type = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"]);
 			if (!type) continue;
 
@@ -488,43 +475,55 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			let counterpartData;
 
-			if (type === "MUSIC_PAGE_TYPE_ALBUM") counterpartData = UGetCounterpartFromData(cache, albumCacheData);
+			if (type === "MUSIC_PAGE_TYPE_ALBUM") {
+				run.navigationEndpoint = UBuildEndpoint({
+					navType: "browse",
+					id: realAlbum.id
+				});
+			};
+
 			if (type === "C_PAGE_TYPE_PRIVATE_ARTIST") {
 				counterpartData = UGetCounterpartFromData(cache, artistCacheData);
 
 				if (videoRenderer.shortBylineText) {
 					videoRenderer.shortBylineText.runs[0] = {
 						text: (counterpartData) ? counterpartData.name : run.text
-					}
+					};
 				};
+
+				if (!counterpartData) continue;
+
+				run.text = (counterpartData) ? counterpartData.name : run.text;
+				run.navigationEndpoint = UBuildEndpoint({
+					navType: "browse",
+					id: counterpartData.id
+				});
 			};
-
-			if (!counterpartData) continue;
-
-			run.text = (counterpartData) ? counterpartData.name : run.text;
-			run.navigationEndpoint = UBuildEndpoint({
-				navType: "browse",
-				id: counterpartData.id
-			});						
 		};
+
+		videoRenderer.longBylineText.runs = newRuns;
 	};
 
-	static _EditQueueContentsFromResponse(storage, queueContents, addedBulkFromMfId, videoIdToSelect) {
-		addedBulkFromMfId = addedBulkFromMfId.replace(/^RDAMPL/, "");
-		let addedBulkFrom = UGetObjFromMfId(storage.cache, addedBulkFromMfId) || {};
+	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFrom, loadedQueueFrom, videoIdToSelect) {
+		let buildFromAlbum = storage.cache[buildQueueFrom];
+		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFrom);
+		console.log(buildQueueFrom, buildFromAlbum,"ADDEDBULKFROM", loadedFromAlbum, loadedQueueFrom);
 
-		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, addedBulkFrom.id) || {};
+		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, buildFromAlbum.id, loadedFromAlbum.id) || {};
+		console.log("IDS", idsToReplace);
 
-		let backingPlaylistId;
-		
+		let cachedArtist = storage.cache[buildFromAlbum.artist];
+
+		let backingPlaylistId; // for use later. get it in this loop from anything we can!
+
 		for (let item of queueContents) {
 			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
 			if (!videoRenderer) continue;
 
-			this._EditLongBylineOfPlaylistPanelVideoRenderer(videoRenderer, storage.cache);
+			let replacement = idsToReplace[videoRenderer.videoId];
 
-			let toReplaceWith = idsToReplace[videoRenderer.videoId];
-			if (toReplaceWith) UModifyPlaylistPanelRendererFromData(toReplaceWith, addedBulkFrom, videoRenderer);
+			if (replacement) UModifyPlaylistPanelRendererFromData(videoRenderer, replacement, buildFromAlbum, cachedArtist);
+			else this._EditLongBylineOfPlaylistPanelVideoRenderer(storage.cache, videoRenderer, buildFromAlbum);
 
 			if (!backingPlaylistId) backingPlaylistId = UDigDict(videoRenderer, [
 				"queueNavigationEndpoint", "queueAddEndpoint",
@@ -537,13 +536,14 @@ MiddlewareEditors = class MiddlewareEditors {
 		// dont need to worry about other items in queue. any response only ever gives the new bit.
 		// next: only runs on first click, else just does hack: true
 		// get_queue: only returns the new section.
-
+		console.log("NOWBYINDEX", idsToReplace.extraByIndex);
 		let byIndex = idsToReplace.extraByIndex;
 		if (!byIndex) return;
+		console.log("DOINGBYINDEX")
 
-		let cachedArtist = storage.cache[addedBulkFrom.artist];
+		
 
-		let lastItem;
+		let lastItem; // automix. need to remove then add back later.
 		if (queueContents[queueContents.length - 1].automixPreviewVideoRenderer) {
 			lastItem = queueContents.pop();
 		};
@@ -552,23 +552,23 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
 		for (let index of orderedExtraIndexes) {
-			let video = byIndex[index];
+			let replacement = byIndex[index];
 
 			// gets "modified" info by using addedBulkFrom and artist got from that. (public data)
-			let albumToUse = addedBulkFrom;
+			//let albumToUse = addedBulkFrom;
 
-			let privAlbum = storage.cache[video.album];
-			if (privAlbum) { // want "Deluxe" text, but keep public browse id
-				albumToUse = structuredClone(addedBulkFrom);
-				albumToUse.name = privAlbum.name;
-			};
+			//let privAlbum = storage.cache[video.album];
+			//if (privAlbum) { // want "Deluxe" text, but keep public browse id [no! only want it to say deluxe when playing deluxe song.]
+			//	albumToUse = structuredClone(addedBulkFrom);
+			//	albumToUse.name = privAlbum.name;
+			//};
 
-			let newVideoItem = UBuildPlaylistPanelRendererFromData(video, albumToUse, cachedArtist, backingPlaylistId);
+			let newVideoItem = UBuildPlaylistPanelRendererFromData(replacement, replacement.from, cachedArtist, backingPlaylistId); // albumToUse instead of buildFromAlbum if doing above.
 
 			if (videoIdToSelect) newVideoItem.playlistPanelVideoRenderer.selected = newVideoItem.playlistPanelVideoRenderer.videoId === videoIdToSelect;
 
 			if (index === "0") {
-				item0 = video.id;
+				item0 = replacement.video.id;
 				queueContents.unshift(newVideoItem);
 
 			} else queueContents.push(newVideoItem);
@@ -601,21 +601,10 @@ MiddlewareEditors = class MiddlewareEditors {
 		// caching stuff
 		// need to edit album subtitleTwo total minutes based on contents.
 
-		if (!response.cButtons) response.cButtons = [];
-
-		response.cButtons.push({
-			icon: "pencil",
-			actions: [
-				{
-					miscAction: {name: "open-edit"}
-				}
-			]
-		});
-
 		let type = UGetBrowsePageTypeFromBrowseId(id);
 		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return response;
 
-		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id);
+		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id);
 		if (!idsToReplace) return response;
 
 		let musicShelfRenderer = UDigDict(response, [
@@ -627,15 +616,21 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		let cachedAlbum = storage.cache[id];
 
+		UBrowseParamsByRequest.pageSpecific.all = { buildingQueueFrom: cachedAlbum.id };
+
 		// iter thru each existing item, modify if necessary
 
 		for (let i of musicShelfRenderer.contents) {
 			let data = UGetSongInfoFromListItemRenderer(i);
 
-			let cachedVideo = idsToReplace[data.id];
-			if (!cachedVideo) continue;
-			
-			i = UModifyListItemRendererFromData(cachedVideo, cachedAlbum, i);
+			let replacement = idsToReplace[data.id];
+			if (!replacement) {
+				
+				continue;
+			};
+
+			i = UModifyListItemRendererFromData(replacement, cachedAlbum, i);
+			//UBrowseParamsByRequest.pageSpecific[replacement.video.id] = { buildingQueueFrom: cachedAlbum.id };
 			delete idsToReplace[data.id];
 		};
 
@@ -645,10 +640,10 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
 		for (let index of orderedExtraIndexes) {
-			let video = byIndex[index];
+			let replacement = byIndex[index];
 
 			// use cachedAlbum from before, to keep public playlistIds etc.
-			let newListItem = UBuildListItemRendererFromData(video, cachedAlbum);
+			let newListItem = UBuildListItemRendererFromData(replacement, cachedAlbum);
 
 			if (index === "0") musicShelfRenderer.contents.unshift(newListItem);
 			else musicShelfRenderer.contents.push(newListItem);
@@ -714,7 +709,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 	static CONT_MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id, cache) {
 		let artist = id.replace("MPAD", "");
-		
+
 		let cachedArtist = cache[artist];
 		if (!cachedArtist || (cachedArtist.privateCounterparts || []).length === 0) return response;
 
@@ -757,7 +752,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			for (let [album, year] of Object.entries(structuredClone(releaseToYear))) {
 				if (Number(year) <= Number(data.yearStr)) continue;
-				
+
 				let twoRow = UBuildTwoRowItemRendererFromData(cache[album]);
 				newItems.push(twoRow);
 
@@ -876,31 +871,41 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 
 	let browseId = request.body.browseId ||
 		UGetBrowseIdFromResponseContext(toCacheOriginal.responseContext);
-	
+	let pathname = urlObj.pathname;
+
 	let responseIsContinuation = !!(
 		request.body.continuation ||
 		urlObj.searchParams.get("ctoken") ||
 		urlObj.searchParams.get("continuation")
 	);
-	
-	let cParams = (UBrowseParamsByRequest || {})[browseId];
+
+	let cParams = request.cParams || (UBrowseParamsByRequest || {})[browseId];
 
 	if (cParams) {
 		if (cParams.returnOriginal) return oldResp;
+		request.cParams = structuredClone(cParams);
 
 		delete cParams;
+
+	} else if (UBrowseParamsByRequest) {
+		let ref = browseId || request.body.videoId;
+		cParams = UBrowseParamsByRequest.pageSpecific[ref];
+
+		if (!cParams) cParams = UBrowseParamsByRequest.pageSpecific.all;
+
+		request.cParams = cParams; // DON'T delete here. pageSpecific needs to be persistent.
 	};
 
-	console.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation);
+	console.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation, request);
 
-	let smallTask = MiddlewareEditors.SmallTasks[urlObj.pathname];
+	let smallTask = MiddlewareEditors.SmallTasks[pathname];
 
 	if (smallTask) {
 		respBody = smallTask.apply(MiddlewareEditors, [request, respBody]);
 		changed = true;
 	};
 
-	let smallTaskWithCache = MiddlewareEditors.SmallTasksRequireCache[urlObj.pathname];
+	let smallTaskWithCache = MiddlewareEditors.SmallTasksRequireCache[pathname];
 
 	if (smallTaskWithCache) {
 		let storage = await UMWStorageGet();
@@ -930,7 +935,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		} else {
 			respBody = f.apply(MiddlewareEditors, [respBody, browseId]);
 		};
-		
+
 		changed = true;
 	};
 
@@ -980,22 +985,22 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 async function newFetch(resource, options) {
 	let request;
 	let resourceIsStr = typeof(resource) === "string";
-	
-	if (resourceIsStr) {
+
+	if (resourceIsStr) { // used for random stuff
 		request = {
-			url: resource,
-			//urlObj: new URL(resource),
-			method: options.method || "GET"
+			"url": resource,
+			"method": options.method || "GET"
 		};
 
 	} else {
-		request = {
-			url: resource.url,
-			//THIS IS NOT a urlObj, it is a Request obj: resource,
-			method: resource.method || "GET"
+		request = { // used for JSON things like browsing.
+			"url": resource.url,
+			"method": resource.method || "GET"
 		};
-		
+
 	};
+
+	if (request.url.includes("/browse")) UBrowseParamsByRequest.pageSpecific = {};
 
 	if (request.method === "POST") { // have to do this first, or body is used in originalFetch.
 		try {
@@ -1010,7 +1015,7 @@ async function newFetch(resource, options) {
 				request.body = JSON.parse(reqText);
 
 			};
-			
+
 		} catch {};
 	};
 
@@ -1021,7 +1026,7 @@ async function newFetch(resource, options) {
 
 	} catch (err) {
 		console.warn("couldnt modify fetch response", err);
-		
+
 	};
 
 	return response;
@@ -1064,24 +1069,26 @@ XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
 	this._method = method;
 
 	if (url.startsWith("/")) {
-		this._url = "https://music.youtube.com" + url; 
+		this._url = "https://music.youtube.com" + url;
 	};
 
 	return originalXHROpen.apply(this, arguments);
 };
 
-XMLHttpRequest.prototype.send = function(body) {
+XMLHttpRequest.prototype.send = function(body) { // used for player/next/atr/qoe.
 	const xhr = this;
 
 	const originalOnReadyStateEvent = xhr.onreadystatechange;
 
 	xhr.onreadystatechange = async function() {
 		if (xhr.readyState === 4 && xhr.status === 200) {
-			await FetchModifyResponse({
-				url: xhr._url,
-				method: xhr._method,
-				body: body
-			}, xhr, true);
+			try {
+				await FetchModifyResponse({
+					url: xhr._url,
+					method: xhr._method,
+					body: body
+				}, xhr, true);
+			} catch {};
 		};
 
 		if (originalOnReadyStateEvent) originalOnReadyStateEvent.apply(this, arguments);
@@ -1089,5 +1096,49 @@ XMLHttpRequest.prototype.send = function(body) {
 
 	return originalXHRSend.apply(this, arguments);
 };
+
+/*
+XMLHttpRequest.prototype.send = function(body) {
+	const xhr = this;
+
+	const originalOnReadyStateEvent = xhr.onreadystatechange;
+
+	xhr.onreadystatechange = async function() {
+		if (xhr.readyState === 4 && xhr.status === 200) {
+			try {
+				await FetchModifyResponse({
+					url: xhr._url,
+					method: xhr._method,
+					body: body,
+					cParams: xhr._cParams
+				}, xhr, true);
+			} catch {};
+		};
+
+		if (originalOnReadyStateEvent) originalOnReadyStateEvent.apply(this, arguments);
+	};
+
+	console.log("hello xhr", body);
+
+	try {
+		let parsed = JSON.parse(body);
+		
+		if (parsed.videoId) {
+			let [videoId, cParams] = UProcessSearchParams(parsed.videoId);
+			console.log(videoId, cParams);
+
+			parsed.videoId = videoId;
+			xhr._cParams = cParams;
+
+			body = JSON.stringify(parsed);
+		};
+
+	} catch {}; 
+
+	console.log("new body", body);
+
+	return originalXHRSend.apply(this, [body]);
+};
+does OT WORK*/
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = window.fetch, non clonable.)

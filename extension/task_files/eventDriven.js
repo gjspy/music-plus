@@ -43,6 +43,9 @@ export async function MWEventDriven_PageChanges() {
 				break;
 		};
 
+		let edited = !!UDigDict(state, ["navigation", "mainContent", "response", "cMusicFixerExtChangedResponse"]);
+		browsePage.setAttribute("c-edited", edited);
+
 		EditMode.UpdateButtons(state);
 	};
 

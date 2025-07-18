@@ -562,6 +562,7 @@ function EWCacheLinkPrivateCounterparts(cache) {
 
 	for (let [k,o] of Object.entries(cache)) {
 		if (o === undefined || o.name === "" || o.name === undefined) continue;
+		if (o.privateCounterparts) o.privateCounterparts = []; // RESET IT please. incase of a gletch it will fix itself.
 		
 		if (o.type === "ARTIST") {
 			if (!matches.artist[o.name]) matches.artist[o.name] = [];
@@ -584,8 +585,7 @@ function EWCacheLinkPrivateCounterparts(cache) {
 			for (let item of group) {
 				let [id, isPrivate] = item;
 
-				let curr = cache[id].privateCounterparts;
-
+				let curr = cache[id].privateCounterparts; // we reset them, but still need curr.
 				let toAdd = group.filter(v => v[0] !== id && curr.indexOf(v[0]) === -1 && v[1] !== isPrivate).map(v => v[0]);
 				
 				cache[id].privateCounterparts.push(...toAdd);
@@ -839,6 +839,9 @@ function EWCacheCreateStorableFromListPage(data) {
 				.map( v => v.artists.map( y => y.id ) )
 				.flat()
 				.filter( id => id !== newPl.artist );
+
+			let storedFromAlt = EWCacheCreateStorableFromItemsList({items: data.alternate}, newPl);
+			storable.push(...(storedFromAlt || []));
 		};
 		
 		let artist = structuredClone(data.artist);
@@ -926,6 +929,23 @@ async function EWOMDefineLink(request) {
 	await utils.UStorageSet(storage);
 };
 
+async function EWOMRemoveLink(request) {
+	let storage = await utils.UStorageGet();
+
+	let currentLinks = storage.customisation.albumLinks[request.baseItem];
+	storage.customisation.albumLinks[request.baseItem] = currentLinks.filter((v) => v !== request.linkedItem);
+
+	await utils.UStorageSet(storage);
+};
+
+async function EWOMSetPrimaryAlbum(request) {
+	let storage = await utils.UStorageGet();
+
+	storage.customisation.primaryAlbums[request.chosen] = request.alts;
+
+	await utils.UStorageSet(storage);
+};
+
 
 function OnMessage(request, sender, sendResponse) {
 	console.log("received in EW", JSON.stringify(request), sender, sendResponse);
@@ -950,6 +970,8 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "playlist-create")			EWOMOnNewPlaylist(request, sender);
 	else if (f === "playlist-delete")			EWOMOnDeletePlaylist(request, sender);
 	else if (f === "defineLink")				EWOMDefineLink(request, sender);
+	else if (f === "removeLink")				EWOMRemoveLink(request, sender);
+	else if (f === "setPrimaryAlbum")			EWOMSetPrimaryAlbum(request, sender);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);

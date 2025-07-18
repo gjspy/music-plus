@@ -39,7 +39,8 @@ class Utils {
 			},
 
 			customisation: {
-				albumLinks: {}
+				albumLinks: {},
+				primaryAlbums: {}
 			}
 		}
 	};
@@ -238,15 +239,6 @@ class Utils {
 
 			cont[k] = shouldHave[k]; // does not have.
 		};
-
-		// remove keys we no longer need
-		// this happens every layer, so shouldnt have to do more recursion
-		// D U M B: obvs this wll remove stuff we need like folderinfo!!!
-		/*for (let k of Object.keys(cont)) {
-			if (shouldHaveKeys.indexOf(k) !== -1) continue;
-
-			delete cont[k];
-		};*/
 
 		return cont;
 	};
@@ -910,7 +902,7 @@ class Utils {
 		};
 	};
 
-	static UShowGridOfMusicItems(musicItemFilter, editButtons, includeFolders, areDraggable, onClick, pStorage, purpose) {
+	static UShowGridOfMusicItems(musicItemFilter, editButtons, includeFolders, areDraggable, onClick, pStorage, purpose, title, subtitle) {
 		function _CreateOVFPaperItem(paperService, ovf, id) {
 			let isFolder = id.match(/^CF/);
 			let paperElem;
@@ -1007,10 +999,17 @@ class Utils {
 
 		if (purpose) ovf.ovf.setAttribute("func", purpose);
 
+		if (title) ovf.ovf.querySelector(".header a:first-child").textContent = title;
+		if (subtitle) ovf.ovf.querySelector(".header a:last-child").textContent = subtitle;
+
 		document.body.append(ovfcont);
 
-		if (pStorage) setTimeout(() => OnStorageGet(pStorage), 1);
-		else this.UMWStorageGet().then(OnStorageGet);
+		ovf.promiseOfFillingrGrid = async function() {
+			if (!pStorage) pStorage = await this.UMWStorageGet();
+
+			OnStorageGet(pStorage);
+		}();
+		
 
 		return ovf;
 	};
@@ -1895,7 +1894,7 @@ class Utils {
 			liked = listItemRenderer.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer.likeStatus;
 		};
 
-		let album = {};
+		let album = undefined;
 		let albumListItem;
 
 		// all for artist page singles shelf, col 2 = n plays, 3 = album
@@ -1954,49 +1953,97 @@ class Utils {
 		return data;
 	};
 
-	static UGetIdsToReplaceFromRealAlbum(storage, realAlbumId) {
-		if (realAlbumId === undefined) return;
+	static UGetLinkedAlbums(storage, nonMainId) {
+		let linked = [];
+
+		for (let [mainVer, alts] of Object.entries(storage.customisation.primaryAlbums)) {
+			if (mainVer === nonMainId) continue; // do we want to do anything here? provided album IS the prim ver.
+			if (!alts.includes(nonMainId)) continue;
+
+			linked.push(mainVer);
+		};
+
+		return linked;
+	};
+
+	static UGetIdsToReplaceFromRealAlbum(storage, buildQueueFrom, loadedBulkFrom) {
+		// buildQueueFrom is the real nav playlist. (deluxe)
+		// loadedBulkFrom is the perspective, playlist of song that was clicked. (could be non-deluxe) 
+		if (buildQueueFrom === undefined || loadedBulkFrom === undefined) return;
 
 		let cache = storage.cache;
+		let buildingFromAlbum = cache[buildQueueFrom] || {};
+		let loadedFromAlbum = cache[loadedBulkFrom] || {};
+		let indexToVideoIdOfThis = {}; // list of indexes to videoIds in REAL ALBUM (loadedFrom) only.
+		console.log(buildingFromAlbum, loadedFromAlbum, buildQueueFrom, loadedBulkFrom);
 
-		let cachedAlbum = cache[realAlbumId] || {};
-		let customisation = storage.customisation.albumLinks[realAlbumId] || [];
-
-		let indexToRealId = {}; // list of indexes to videoIds in REAL ALBUM only.
-		for (let i of (cachedAlbum.items || [])) {
-			i = cache[i] || {};
-			indexToRealId[i.index] = i.id;
+		for (let video of (loadedFromAlbum.items || [])) {
+			video = cache[video] || {};
+			indexToVideoIdOfThis[video.index] = video.id;
 		};
 
-		let counterpartData = this.UGetCounterpartFromData(cache, cachedAlbum) || {};
-		let idsToReplace = {extraByIndex: {}}; // here, getting ids to replace.
+		let albumsToUse = [];
+		let primaryVersions = this.UGetLinkedAlbums(storage, buildQueueFrom) || [];
+		let linkedAlbums = storage.customisation.albumLinks[buildQueueFrom] || [];
+		let counterparts = buildingFromAlbum.privateCounterparts || [];
 		
-		let allChanges = [];
+		// priority order (last overwrite first)
+		if (primaryVersions) albumsToUse.push(...primaryVersions);
+		if (linkedAlbums) albumsToUse.push(...linkedAlbums);
+		if (counterparts) albumsToUse.push(...counterparts);
 
-		for (let album of customisation) {
-			album = cache[album] || {};
-			if (!album.items) continue;
+		console.log(albumsToUse);
 
-			allChanges.push(...album.items);
+		let changesByIndex = {};
+
+		for (let album of albumsToUse) {
+			album = cache[album];
+			if (!album || album.items.length === 0) continue;
+
+			for (let item of album.items) {
+				item = cache[item];
+				if (!item) continue;
+
+				let alreadyChanging = changesByIndex[item.index];
+				if (alreadyChanging) {
+					if (alreadyChanging.from.private === true) continue;
+					if (album.private === false) continue;
+				};
+
+				// why change if its the same?
+				if (indexToVideoIdOfThis[item.index] === item.id) continue;
+
+				changesByIndex[item.index] = {
+					video: item,
+					from: album
+				};
+			};
 		};
 
-		if (counterpartData.items) allChanges.push(...counterpartData.items); // do counterpart last, most important.
+		// if loading from smaller album, need extras from deluxe adding.
+		for (let item of buildingFromAlbum.items || []) {
+			item = cache[item];
+			if (!item || indexToVideoIdOfThis[item.index] !== undefined) continue;
 
-		for (let videoId of allChanges) {
-			if (!videoId) continue;
-
-			let cachedVideo = cache[videoId];
-			let cachedIndex = Number(cachedVideo.index);
-
-			if (!cachedVideo || (!cachedIndex && cachedIndex !== 0)) continue;
-
-			let realId = indexToRealId[cachedIndex];
-
-			if (realId) idsToReplace[realId] = cachedVideo;
-			else idsToReplace.extraByIndex[cachedIndex] = cachedVideo;
+			changesByIndex[item.index] = {
+				video: item,
+				from: buildingFromAlbum
+			};
 		};
 
-		return idsToReplace;
+		let changesByOriginalId = {extraByIndex: {}};
+
+		console.log(indexToVideoIdOfThis);
+		console.log(changesByIndex);
+
+		for (let [k,v] of Object.entries(changesByIndex)) {
+			let originalId = indexToVideoIdOfThis[k];
+
+			if (originalId) changesByOriginalId[originalId] = v;
+			else changesByOriginalId.extraByIndex[k] = v;
+		};
+
+		return changesByOriginalId;
 	};
 
 	static UGetObjFromMfId(cache, mfId) {
@@ -2010,7 +2057,7 @@ class Utils {
 	};
 
 
-	
+
 	static UTestingShowStorage() {
 		UMWStorageGet().then(v => console.log(v));
 	};
@@ -2386,24 +2433,33 @@ class Utils {
 		}
 	};
 
-	static UModifyListItemRendererFromData(video, album, current) {
+	static UModifyListItemRendererFromData(replacement, realAlbum, current) {
+		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
+		// eg, realAlbum = deluxe, replacement.from = original.
+
 		if (current.musicResponsiveListItemRenderer) current = current.musicResponsiveListItemRenderer;
 		let playButton = this.UDigDict(current, [
 			"overlay", "musicItemThumbnailOverlayRenderer",
 			"content", "musicPlayButtonRenderer"
 		]);
 
-		playButton.playNavigationEndpoint.watchEndpoint.videoId = video.id;
-		playButton.playNavigationEndpoint.watchEndpoint.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK";
+		let vId = replacement.video.id;
 
-		playButton.accessibilityPlayData.accessibilityData.label = "Play " + video.name;
-		playButton.accessibilityPauseData.accessibilityData.label = "Pause " + video.name;
+		// want to make play button work with playlistId being base, then adding extra from deluze version.
+		// different relationship, dont want deluxe to be overwriting.
 
-		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = video.name;
+		playButton.playNavigationEndpoint.watchEndpoint.videoId = vId;
+		if (replacement.from.private === true) playButton.playNavigationEndpoint.watchEndpoint.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK";
+		else playButton.playNavigationEndpoint.watchEndpoint.playlistId = replacement.from.mfId; // keep this, want to play from the main versions!!
+
+		playButton.accessibilityPlayData.accessibilityData.label = "Play " + replacement.video.name;
+		playButton.accessibilityPauseData.accessibilityData.label = "Pause " + replacement.video.name;
+
+		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = replacement.video.name + " test "+ replacement.from.name;
 		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint.watchEndpoint = playButton.playNavigationEndpoint.watchEndpoint;
 
-		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text = this.USecondsToLengthStr(video.lengthSec);
-		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.accessibility.accessibilityData.label = this.USecondsToLengthStr(video.lengthSec, true);
+		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text = this.USecondsToLengthStr(replacement.video.lengthSec);
+		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.accessibility.accessibilityData.label = this.USecondsToLengthStr(replacement.video.lengthSec, true);
 
 		current.menu.menuRenderer.items = [
 			{
@@ -2421,10 +2477,10 @@ class Utils {
 					"serviceEndpoint": {
 						"queueAddEndpoint": {
 							"queueTarget": {
-								"videoId": video.id,
+								"videoId": vId,
 								"onEmptyQueue": {
 									"watchEndpoint": {
-										"videoId": video.id
+										"videoId": vId
 									}
 								}
 							},
@@ -2465,10 +2521,10 @@ class Utils {
 					"serviceEndpoint": {
 						"queueAddEndpoint": {
 							"queueTarget": {
-								"videoId": video.id,
+								"videoId": vId,
 								"onEmptyQueue": {
 									"watchEndpoint": {
-										"videoId": video.id
+										"videoId": vId
 									}
 								}
 							},
@@ -2498,10 +2554,10 @@ class Utils {
 				"menuServiceItemDownloadRenderer": {
 					"serviceEndpoint": {
 						"offlineVideoEndpoint": {
-							"videoId": video.id,
+							"videoId": vId,
 							"onAddCommand": {
 								"getDownloadActionCommand": {
-									"videoId": video.id,
+									"videoId": vId,
 									"params": "CAI%3D"
 								}
 							}
@@ -2523,7 +2579,7 @@ class Utils {
 					},
 					"navigationEndpoint": {
 						"addToPlaylistEndpoint": {
-							"videoId": video.id
+							"videoId": vId
 						}
 					}
 				}
@@ -2542,7 +2598,7 @@ class Utils {
 					},
 					"navigationEndpoint": {
 						"browseEndpoint": {
-							"browseId": album.artist,
+							"browseId": realAlbum.artist,
 							"browseEndpointContextSupportedConfigs": {
 								"browseEndpointContextMusicConfig": {
 									"pageType": "MUSIC_PAGE_TYPE_ARTIST"
@@ -2555,37 +2611,66 @@ class Utils {
 		];
 
 		let l = current.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer;
-		l.target.videoId = video.id;
-		l.serviceEndpoints[0].likeEndpoint.target.videoId = video.id;
-		l.serviceEndpoints[1].likeEndpoint.target.videoId = video.id;
-		l.serviceEndpoints[2].likeEndpoint.target.videoId = video.id;
 
-		current.playlistItemData.videoId = video.id;
+		if (l && l.likesAllowed) {
+			l.likeStatus = replacement.video.liked;
+			l.target.videoId = vId;
+			l.serviceEndpoints[0].likeEndpoint.target.videoId = vId;
+			l.serviceEndpoints[1].likeEndpoint.target.videoId = vId;
+			l.serviceEndpoints[2].likeEndpoint.target.videoId = vId;
+		};
+
+		current.playlistItemData.videoId = vId;
 
 		return current;
 	};
 
-	static UModifyPlaylistPanelRendererFromData(video, album, current) {
-		current.title.runs[0].text = video.name;
+	static UCreateLongBylineForPlaylistPanel(replacement, buildingFromAlbum, artist) {
+		return [
+			{
+				text: artist.name,
+				navigationEndpoint: this.UBuildEndpoint({
+					navType: "browse",
+					id: artist.id
+				})
+			},
+			{ text: this.U_YT_DOT },
+			{
+				text: replacement.from.name,
+				navigationEndpoint: this.UBuildEndpoint({
+					navType: "browse",
+					id: buildingFromAlbum.id
+				})
+			},
+			{ text: this.U_YT_DOT },
+			{ text: buildingFromAlbum.year }
+		];
+	};
 
-		// running EditLongByline already changes album/artist data etc.
+	static UModifyPlaylistPanelRendererFromData(current, replacement, realAlbum, artist) {
+		let vId = replacement.video.id;
+
+		current.title.runs[0].text = replacement.video.name;
+
+		// no longer run editlongbyline, so do here
+		current.longBylineText.runs = this.UCreateLongBylineForPlaylistPanel(replacement, realAlbum, artist);
 
 		current.thumbnail = {
 			thumbnails: [
-				{ url: album.thumb, width: this.UIMG_HEIGHT, height: this.UIMG_HEIGHT }
+				{ url: replacement.from.thumb, width: this.UIMG_HEIGHT, height: this.UIMG_HEIGHT }
 			]
 		};
 		
-		current.lengthText.runs[0].text = this.USecondsToLengthStr(video.lengthSec);
-		current.lengthText.accessibility.accessibilityData.label = this.USecondsToLengthStr(video.lengthSec, true);
+		current.lengthText.runs[0].text = this.USecondsToLengthStr(replacement.video.lengthSec);
+		current.lengthText.accessibility.accessibilityData.label = this.USecondsToLengthStr(replacement.video.lengthSec, true);
 
 		let we = current.navigationEndpoint.watchEndpoint;
-		we.videoId = video.id;
-		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (album.private === true) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
+		we.videoId = vId;
+		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (realAlbum.private === true) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
 		// not editing params, playerParams, playlistSetVideoId, may need to? test it
 
-		current.videoId = video.id;
-		current.queueNavigationEndpoint.queueAddEndpoint.videoId = video.id;
+		current.videoId = vId;
+		current.queueNavigationEndpoint.queueAddEndpoint.videoId = vId;
 
 		current.menu.menuRenderer.items = [
 			{
@@ -2603,10 +2688,10 @@ class Utils {
 					"serviceEndpoint": {
 						"queueAddEndpoint": {
 							"queueTarget": {
-								"videoId": video.id,
+								"videoId": vId,
 								"onEmptyQueue": {
 									"watchEndpoint": {
-										"videoId": video.id
+										"videoId": vId
 									}
 								},
 								"backingQueuePlaylistId": current.queueNavigationEndpoint.queueAddEndpoint.queueTarget.backingQueuePlaylistId
@@ -2648,10 +2733,10 @@ class Utils {
 					"serviceEndpoint": {
 						"queueAddEndpoint": {
 							"queueTarget": {
-								"videoId": video.id,
+								"videoId": vId,
 								"onEmptyQueue": {
 									"watchEndpoint": {
-										"videoId": video.id
+										"videoId": vId
 									}
 								},
 								"backingQueuePlaylistId": current.queueNavigationEndpoint.queueAddEndpoint.queueTarget.backingQueuePlaylistId
@@ -2694,7 +2779,7 @@ class Utils {
 						"likeEndpoint": {
 							"status": "LIKE",
 							"target": {
-								"videoId": video.id
+								"videoId": vId
 							}
 						}
 					},
@@ -2712,7 +2797,7 @@ class Utils {
 						"likeEndpoint": {
 							"status": "INDIFFERENT",
 							"target": {
-								"videoId": video.id
+								"videoId": vId
 							}
 						}
 					}
@@ -2722,10 +2807,10 @@ class Utils {
 				"menuServiceItemDownloadRenderer": {
 					"serviceEndpoint": {
 						"offlineVideoEndpoint": {
-							"videoId": video.id,
+							"videoId": vId,
 							"onAddCommand": {
 								"getDownloadActionCommand": {
-									"videoId": video.id,
+									"videoId": vId,
 									"params": "CAI%3D"
 								}
 							}
@@ -2747,7 +2832,7 @@ class Utils {
 					},
 					"navigationEndpoint": {
 						"addToPlaylistEndpoint": {
-							"videoId": video.id
+							"videoId": vId
 						}
 					}
 				}
@@ -2766,7 +2851,7 @@ class Utils {
 					},
 					"serviceEndpoint": {
 						"removeFromQueueEndpoint": {
-							"videoId": video.id,
+							"videoId": vId,
 							"commands": [
 								{
 									"addToToastAction": {
@@ -2802,7 +2887,7 @@ class Utils {
 					},
 					"navigationEndpoint": {
 						"browseEndpoint": {
-							"browseId": album.id,
+							"browseId": realAlbum.id,
 							"browseEndpointContextSupportedConfigs": {
 								"browseEndpointContextMusicConfig": {
 									"pageType": "MUSIC_PAGE_TYPE_ALBUM"
@@ -2827,7 +2912,7 @@ class Utils {
 					"navigationEndpoint": {
 						"browseEndpoint": this.UBuildEndpoint({
 							navType: "browse",
-							id: album.artist
+							id: realAlbum.artist
 						})
 					}
 				}
@@ -2859,16 +2944,19 @@ class Utils {
 		return current;
 	};
 
-	static UBuildListItemRendererFromData(video, album) {
+	static UBuildListItemRendererFromData(replacement, realAlbum) {
+		let video = replacement.video;
+
 		let index = Number(video.index);
 		if (index !== 0) index --;
 
 		let playEndp = this.UBuildEndpoint({
 			navType: "watch",
-			playlistId: album.mfId,
+			playlistId: realAlbum.mfId,
 			firstVideo: video,
 			index: index, // zero base index.
-			playlistSetVideoId: video.artPlaylistSetId
+			playlistSetVideoId: video.artPlaylistSetId,
+			//cParams: { buildingQueueFrom: realAlbum.id }
 		});
 
 		return {
@@ -3141,9 +3229,67 @@ class Utils {
 		};
 	};
 
-	static UBuildPlaylistPanelRendererFromData(video, album, artist, queuePlaylistId) {
+	static UCreat_eLongBylineAlbumTitle(replacement, realAlbum) {
+		let replName = replacement.name;
+		let realName = realAlbum.name;
+
+		if (replName.length < realName.length && realName.includes(replName)) {
+
+			return [
+				{
+					"text": replName,
+					"navigationEndpoint": this.UBuildEndpoint({
+						navType: "browse",
+						id: replacement.from.id
+					})
+				},
+				{
+					"text": realName.replace(replName, ""),
+					"navigationEndpoint": this.UBuildEndpoint({
+						navType: "browse",
+						id: realAlbum.id
+					})
+				}
+			];
+
+		};
+
+		return [
+			{
+				"text": replName, // using REPLACEMENT's name
+				"navigationEndpoint": this.UBuildEndpoint({
+					navType: "browse",
+					id: realAlbum.id // but using REALALBUM navigation.
+				})
+			}
+		];
+
+	};
+
+	static UBuildPlaylistPanelRendererFromData(replacement, realAlbum, artist, queuePlaylistId) {
+		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
+		// eg, realAlbum = deluxe, replacement.from = original.
+
+		let video = replacement.video;
+
 		let index = Number(video.index);
 		if (index !== 0) index --;
+
+		/*let longBylineRuns = [
+			{
+				"text": artist.name,
+				"navigationEndpoint": this.UBuildEndpoint({
+					navType: "browse",
+					id: artist.id
+				})
+			},
+			{
+				"text": this.U_YT_DOT
+			},
+			...this.UCreateLongBylineAlbumTitle(replacement.from, realAlbum),
+			{ "text": this.U_YT_DOT},
+			{ "text": realAlbum.year || replacement.from.year }
+		];*/
 
 		return {
 			"playlistPanelVideoRenderer": {
@@ -3155,36 +3301,12 @@ class Utils {
 					]
 				},
 				"longBylineText": {
-					"runs": [
-						{
-							"text": artist.name,
-							"navigationEndpoint": this.UBuildEndpoint({
-								navType: "browse",
-								id: artist.id
-							})
-						},
-						{
-							"text": this.U_YT_DOT
-						},
-						{
-							"text": album.name,
-							"navigationEndpoint": this.UBuildEndpoint({
-								navType: "browse",
-								id: album.id
-							})
-						},
-						{
-							"text": this.U_YT_DOT
-						},
-						{
-							"text": album.year
-						}
-					]
+					"runs": this.UCreateLongBylineForPlaylistPanel(replacement, realAlbum, artist)
 				},
 				"thumbnail": {
 					"thumbnails": [
 						{
-							"url": album.thumb,
+							"url": replacement.from.thumb,
 							"width": this.UIMG_HEIGHT,
 							"height": this.UIMG_HEIGHT
 						}
@@ -3206,13 +3328,13 @@ class Utils {
 				"navigationEndpoint": {
 					"watchEndpoint": {
 						"videoId": video.id,
-						"playlistId": album.mfId,
+						"playlistId": realAlbum.mfId,
 						"index": index,
 						"playlistSetVideoId": video.artPlaylistSetId,
 						"watchEndpointMusicSupportedConfigs": {
 							"watchEndpointMusicConfig": {
 								"hasPersistentPlaylistPanel": true,
-								"musicVideoType": (album.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
+								"musicVideoType": (realAlbum.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
 							}
 						}
 					}
@@ -3444,7 +3566,7 @@ class Utils {
 									},
 									"navigationEndpoint": this.UBuildEndpoint({
 										navType: "browse",
-										id: album.id
+										id: realAlbum.id
 									}),
 								}
 							},
@@ -3512,7 +3634,18 @@ class Utils {
 	}
 
 
+	static UProcessSearchParams(urlString) {
+		let queryIndex = urlString.indexOf("?");
+		if (queryIndex === -1) return [urlString, {}];
 
+		let queryString = urlString.slice(queryIndex + 1); // continues to end
+
+		let matches = [...queryString.matchAll(/(.+?)\=(.+?)(?:&|$)/g)];
+		matches = matches.map( v => v.slice(1) ); // remove first item (full match str), only want cap groups
+		matches = Object.fromEntries(matches);
+
+		return [urlString.slice(0, queryIndex), matches];
+	};
 
 
 

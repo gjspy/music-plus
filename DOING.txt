@@ -1,11 +1,11 @@
-why eventdrven timeout?
+//why eventdrven timeout?
 
-find primary version of alternate albums.
-store alternate albums separately, not just alternate: [], have an entry for them.
+//find primary version of alternate albums.
+//store alternate albums separately, not just alternate: [], have an entry for them.
 //not using albumdatafromsubtitle for artists. should be, i ebtter, has info other than id [should be fixed]
 //check various artists stores consistently, and nto storing separate entry for them. unless want to?
 
-CACHE MULTIPLE ARTISTS PER ALBUM (WHO BELIEVES IN ANGELS) (WILL BE VERY EASY TO DO, JUST PLS CHANGE NETWORKMIDDLEWARE!)
+/XCACHE MULTIPLE ARTISTS PER ALBUM (WHO BELIEVES IN ANGELS) (WILL BE VERY EASY TO DO, JUST PLS CHANGE NETWORKMIDDLEWARE!)
 
 AFTER EDITING C_PRIVATE_ALBUM TO LOOK LIKE NORMAL ALBUM, OD WE SWAP BACK PAGE TYPE? IF SO, HOW? IS BASED ON BROWSEID.!!
 
@@ -29,7 +29,7 @@ AFTER EDITING C_PRIVATE_ALBUM TO LOOK LIKE NORMAL ALBUM, OD WE SWAP BACK PAGE TY
 //WHAT IS CREATORNAVENDPOINT FOR IN TWOITEMRENDERER?
 //CACHING ON CLICK AND UPDATE SIDEBAR BASED ON NEW CACHE!! -> WILL NEED TO FULLY UPDATE INSERT() WITH NEW CACHING!! NO MORE CACHE.PLAYLIST!!
 //what happens when anvigate t channel
-improve eventdriven stuff, stop console spam
+//improve eventdriven stuff, stop console spam
 //CACHE ON INITAL OPEN OF PAGE (NEW TAB)
 
 //FEmusic_liked_albums FEmusic_liked_playlists FEmusic_library_corpus_track_artists FEmusic_liked_videos
@@ -114,9 +114,9 @@ LISTITEM SAVE
 //need to set draggingCarousel to false on next click
 //WORKING ON SHELFRENDERER, ERRORS IN BROWSER console
 /XALSO ANOTHER THING I TESTED ERRORED? WHAT WAS IT?
-BROWSEID PARAMS IN newFetch, FOR BUTTON TO "LOAD ORIGINAL"
-how do alterante albums work? cache separately i hope, how will they appear when making sidebar?
-allow to select primary ver of album
+//BROWSEID PARAMS IN newFetch, FOR BUTTON TO "LOAD ORIGINAL"
+//how do alterante albums work? cache separately i hope, how will they appear when making sidebar?
+//allow to select primary ver of album
 
 STORE DATA IN MYSQL DB!!
 
@@ -128,12 +128,7 @@ for songs with too many plays (we are never ever getting back together 1b tv), s
 /Xhttps://music.youtube.com/youtubei/v1/guide?prettyPrint=false FOR REFRESHING GUIDE, EVENT FOR DOING MINE AGAIN
 body: fetchLiveState: true
 
-QUEUE NAV CMD, CAN have videoIds: [...] IN REQUEST, WORKS WITH ENDPOINT
-"queueAddEndpoint":{
-	"queueInsertPosition":"INSERT_AT_END",
-	"commands":[{"addToToastAction":{"item":{"notificationTextRenderer":{"successResponseText":{"runs":[{"text":"4 songs added to queue"}]}}}}}],
-	"queueTargets":[{"videoId":"2tVs8JVU48M"},{"videoId":"5CbWqM0K2v8"},{"videoId":"_vjfkBSTpyk"},{"videoId":"s-QGeo_dpn4"}]
-}
+
 
 WATCH NEXT IS ALL YOU NEED. playerApi.updateVideoData, sort by this.
 
@@ -146,6 +141,7 @@ EDITING ALBUMS:
 ARTISTS:
 //	- add private uploads to their album playerPageFeatures
 //	- auto sort discog by age
+	- custom discog order (or just in album metadata set exact date!!)
 	- custom names (twenty one pilots)
 
 RATINGS:
@@ -156,16 +152,57 @@ SONGS:
 	- add lyrics to private
 	- edit lyrics
 
+
+
+
+
 ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED TO SAME ALBUM (PRIVATE)
 
-CHECK GET_QUEUE, FOR ADDING ALBUM TO QUEUE, MAKE SURE IT REPLACES SONGS
+//CHECK GET_QUEUE, FOR ADDING ALBUM TO QUEUE, MAKE SURE IT REPLACES SONGS
 //ALL LISTITEMS WORK. now adding to queue (for extra non-replacing ids.)
 hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 /XDOES SELCTEG WORK? NON INDEXED THINGS?
 //ARE NON INDEX ITEMS EDITED? TO REPLACE ARTIST WITH PUBLIC AND ETC
-fix like buttons everywhere
+fix like buttons everywhere - FIXED LISTITEMRENDERERS, JUST PLAYLISTPANEL NOW.
 
-error with propagation, is browsing when click play button on sidebar
+now:
+list items and playlist panels work.
+need to make playlist panels work when you start playing a primary ver song.
+change "playing from" text?
+decide whats happening with longByline, with album name. make consistent everwhere, lots of places.
+next, please do naming stuff to make ti consistent, artists and albums.
+need to make sidebar play buttons work? does it already?
+cache on like!!! really important now, making our own listitemrenderers.
+CHECK THAT "add to queue" does not add whole thing, if we're asking to add one song, if we edit indexes.
+REALLY BAD trying to make main ver songs play with extra items. need rewrite, rename addedBulkFrom -> grouper or smth, then perspective = album which was clicked to start playing.
+	- think about midnights, the shitton of albums that will have.
+
+THINK it works. test it, try midnights, then try with shuffling. then get rid of "test [album name]" and clear console.logs.
+make it eexit quick if request.body.plyylistId starts with RDAMPL. this is automix, will make our own later!
+
+***USE THIS NOW** QUEUE NAV CMD, CAN have videoIds: [...] IN REQUEST, WORKS WITH ENDPOINT
+"queueAddEndpoint":{
+	"queueInsertPosition":"INSERT_AT_END",
+	"commands":[{"addToToastAction":{"item":{"notificationTextRenderer":{"successResponseText":{"runs":[{"text":"4 songs added to queue"}]}}}}}],
+	"queueTargets":[{"videoId":"2tVs8JVU48M"},{"videoId":"5CbWqM0K2v8"},{"videoId":"_vjfkBSTpyk"},{"videoId":"s-QGeo_dpn4"}]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//error with propagation, is browsing when click play button on sidebar
 
 //dragging carousel into carousel
 //folders in cfmore
@@ -224,198 +261,20 @@ a.handleCommand.call({hostElement: musicApp}, UBuildEndpoint({
     playlistId: "PLvyOHVv_irfe-_BHteUXBnzKPMGk3YaFE",
     position: "end"
 })) 
- b = document.createElement("ytmusic-menu-service-item-renderer").controllerProxy.handleCommand 
+
+b = document.createElement("ytmusic-menu-service-item-renderer").controllerProxy.handleCommand 
 b.call(polymerController, UBuildEndpoint({
     navType: "queueAdd",
     playlistId: "PLvyOHVv_irfe-_BHteUXBnzKPMGk3YaFE",
     position: "end"
 })) WORKS
 
- a = document.createElement("ytmusic-menu-service-item-renderer").handleCommand 
-
-F5.prototype.handleCommand = function (a) { NEED THIS, HAPPENS WHEN CLICKING MENUSERVICEITEM :(
-
-
-var awb = function (a, b) { interesting!!
-      for (var c = [], d = m(Mf(b, Ir, 1)), e = d.next(); !e.done; e = d.next()) e = nvb(Wf(e.value, 1)),
-      (e = a.fetchCommand(e, b.getController())) &&
-      c.push(e);
-      if (c.length === 0) throw Error('HandleSetMediaItemsRequest: no commands.');
-      return a.JSC$11963_mediaPlayerController.handleCommand(c[0]).then(function () {
-        return $vb()
-      })
-    };
-
-
-
-function UNavigate(navigationEndpointOuterDict) {
-		if (!window.polymerController) this.UGetPolymerController();
-
-		// "outerDict" = requires "endpoint type";
-		// eg param: {
-		//	browseEndpoint:{
-		//		browseId:"VLLM",
-		//		browseEndpointContextSupportedConfigs:{
-		//			browseEndpointContextMusicConfig: {
-		//				pageType: "MUSIC_PAGE_TYPE_PLAYLIST"
-		//			}
-		//		}
-		//	}
-		//}
-		// HAVE TESTED, DOES REQUIRE BROWSECONFIGS
-
-
-		//polymerController.handleNavigateAction({
-		//	navigateAction: {
-		//		endpoint: navigationEndpointOuterDict
-		//	}
-		//});
-	
-	//musicApp.handleServiceEndpoint(
-	//	navigationEndpointOuterDict
-	//)
-	musicApp.polymerController.handleCommandExecutorCommand({
-		commandExecutorCommand:{commands:[navigationEndpointOuterDict]}})
-	
-
-	//a = polymerController.handleServiceEndpoint(
-	//	
-	//)
-	
-	};
-//document.addEventListener("yt-service-request-completed", (e) => {console.log("YES",e)})
 document.querySelector("ytmusic-player-bar")
 e = UBuildEndpoint({
 	navType: "queueAdd",
 	playlistId: "PLvyOHVv_irfe-_BHteUXBnzKPMGk3YaFE",
 	position: "end"
 })
-//e = UBuildEndpoint({
-//	navType: "browse",
-//	id: "VLLM"
-//})
-
-UNavigate(e);polymerController
-
-
-k.navigate = function (a) {
-      a = xZ({
-        browseEndpoint: {
-          browseId: a
-        }
-      });
-      this.navigator.navigate(a);
-      this.isGuidePersistent ||
-      (this.guideCollapsed = !0)
-    };
-
-k = ytmusic-app
-
-/*base = innerApi.cGetDefaultEndpoint()
-base.JSC$9501_innertubePath = ""
-base.data = {
-	params: "wAEB",
-	videoId: "QAo_Ycocl1E",
-	playlistId: "RDAMVMQAo_Ycocl1E",//,
-	watchEndpointMusicSupportedConfigs: {
-		watchEndpointMusicConfig: {
-			musicVideoType: "MUSIC_VIDEO_TYPE_ATV"
-		}
-	}
-}
-console.log(base);
-innerApi.navigate(base);*/
-con = innerApi.cGetDefaultEndpoint().constructor; // yZ.constrctor = hZ.constructor = cZ
-innerApi.playerController.playEndpoint();
-
-// WORKS!: endp = new con({browseId: "VLLM"}, void 0);
-//app = document.querySelector("ytmusic-app")
-//innerApi.playerController
-
-function xZ(a) {
-      var b = null;
-      if (H(a, CI)) {
-        var c = H(a, CI);
-        !c.videoId &&
-        c.playlistId ? b = new wZ(c, a.clickTrackingParams) : c &&
-        (b = new mZ(c, a.clickTrackingParams))
-      } else if (H(a, zG)) b = new hZ(H(a, zG), a.clickTrackingParams);
-       else if (H(a, YI)) b = new rZ(H(a, YI), a.clickTrackingParams);
-       else if (H(a, DI)) b = new wZ(H(a, DI), a.clickTrackingParams);
-       else if (H(a, xI)) b = new gZ(H(a, xI), a.clickTrackingParams);
-       else if (H(a, AG)) b = new t2a(H(a, AG), a.clickTrackingParams);
-       else if (H(a, PJ)) b = new v2a(H(a, PJ), a.clickTrackingParams);
-       else if (H(a, QJ)) b = new w2a(H(a, QJ), a.clickTrackingParams);
-       else if (H(a, yI)) b = new kZ(H(a, yI), a.clickTrackingParams);
-       else if (H(a, AI)) b = new qZ(H(a, AI), a.clickTrackingParams);
-       else if (H(a, DHa)) b = new s2a(H(a, DHa), a.clickTrackingParams);
-       else if (H(a, zw)) b = new vZ(H(a, zw), a.clickTrackingParams);
-       else if (H(a, CG)) b = new jZ(H(a, CG), a.clickTrackingParams);
-       else if (H(a, fGa)) b = new uZ(H(a, fGa), a.clickTrackingParams);
-       else if (H(a, eGa)) b = new tZ(H(a, eGa), a.clickTrackingParams);
-       else if (H(a, zI)) b = new u2a(H(a, zI), a.clickTrackingParams);
-       else if (H(a, xG)) b = new eZ(H(a, xG), a.clickTrackingParams);
-       else if (H(a, wI)) b = new fZ(H(a, wI), a.clickTrackingParams);
-       else if (H(a, WH)) b = new lZ(H(a, WH), a.clickTrackingParams);
-       else if (H(a, YH)) H(a, YH).watchEndpoint ? b = new nZ(H(a, YH), a.clickTrackingParams) : (
-        c = Error(
-          'MusicWatchFormBinderCommandEndpoint is missing WatchEndpoint: ' + JSON.stringify(a)
-        ),
-        cq(c)
-      );
-}
-WORKS:!!!
-
-base = innerApi.cGetDefaultEndpoint();
-console.log(base);
-/*innerApi.playerController.playEndpoint({
-	params: "wAEB",
-	videoId: "QAo_Ycocl1E",
-	playlistId: "RDAMVMQAo_Ycocl1E",//,
-	watchEndpointMusicSupportedConfigs: {
-		watchEndpointMusicConfig: {
-			musicVideoType: "MUSIC_VIDEO_TYPE_ATV"
-		}
-	}
-}, base)//xZ, y2a
-*/
-innerApi.handleNavigationEvent({
-	JSC$5231_event_:{
-		detail:{
-			endpoint:{
-				watchEndpoint:{
-					playlistId: "LM"//, // 
-				
-				}
-				
-			}
-		}
-	}
-})
-innerApi.handleNavigationEvent({
-	JSC$5231_event_:{
-		detail:{
-			endpoint:{
-				browseEndpoint:{
-					browseId: "FEmusic_home"//,
-				//	videoId: "z1N52_9FSOs"
-					//watchEndpointMusicSupportedConfig watchEndpointMusicConfig
-				}
-				
-			}
-		}
-	}
-})
-
-THIS WORK:::::::::!!
-document.querySelector("ytmusic-app").handleNavigateAction({
-	navigateAction: {endpoint:{browseEndpoint:{
-					browseId: "VLPLvyOHVv_irfeEGgAwQtpQ4tPTKT3D5YJA",//
-					browseEndpointContextSupportedConfigs:{                                                 browseEndpointContextMusicConfig: {pageType:"MUSIC_PAGE_TYPE_PLAYLIST"}
-									}
-					}}
-}});
-
 
 
 function y2a(a) {
@@ -663,120 +522,3 @@ function y2a(a) {
       }
       return xZ(a)
     }
-
-//innertubeCommand event 156080
-// return this.ytComponentBehavior.resolveCommand(a) 156143
-console.log(MYNAV)
-MYNAV = {
-	JSC$9501_innertubePath: "/browse",
-	data: {
-		browseId: "VLLM",
-		browseEndpointContextSupportedConfigs: {
-			browseEndpointContextMusicConfig: {
-				pageType: "MUSIC_PAGE_TYPE_PLAYLIST"
-			}
-		}
-	}
-}
-
-a = controllerProxy.parentComponent.getDefaultEndpoint()
-a.data = MYNAV.data;
-console.log(a);
-//controllerProxy.parentComponent.navigate(a);
-
-controllerProxy.parentComponent.navigator.navigate(a);
-//controllerProxy.resolveCommand({innertubeCommand:MYNAV})
-//controllerProxy.parentComponent.navigate(new URL("https://music.youtube.com/browse/VLSS"))
-
-let infoWeWant;
-
-		try {
-			let settingsBtn = (await this.UWaitForBySelector("ytmusic-settings-button"))[0];
-			let juicyElem = settingsBtn.firstElementChild//.firstElementChild; //tp-yt-iron-icon//__dataHost
-			
-			let juicyInfo = juicyElem.__dataHost.accountService.cachedGetAccountMenuRequestPromise.result_.actions[0]. 
-			openPopupAction.popup.multiPageMenuRenderer.header.activeAccountHeaderRenderer;		
-	
-			infoWeWant = {
-				accountName: juicyInfo.accountName.runs[0].text,
-				accountPhoto: juicyInfo.accountPhoto.thumbnails[0].url,
-				channelHandle: juicyInfo.channelHandle.runs[0].text
-			};
-
-			return infoWeWant;
-
-		} catch (err) {
-			console.warn("ERROR GRABBING ACCOUNTINFO:", err);
-
-			return undefined;
-		};	*/	
-old:case "MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY":
-				tab = response.contents
-					.singleColumnBrowseResultsRenderer.tabs[0].tabRenderer; // tabs[0] because only 1 tab (multiple chips)
-
-				gathered = _CollectTwoRowDataFromGridRenderer(response, tab);
-				break;
-
-			//case "MUSIC_PAGE_TYPE_DOWNLOADS_CONTENT_LANDING_PAGE": // ("offlineItemSectionRenderer" not "gridRenderer", not doing it)
-			case "MUSIC_PAGE_TYPE_LIBRARY_CONTENT_LANDING_PAGE":
-			case "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE":
-				tab = UGetSelectedTab(response.contents.singleColumnBrowseResultsRenderer.tabs);
-
-				gathered = _CollectTwoRowDataFromGridRenderer(response, tab);
-				break;
-
-old:
-
-		//let request = polymerController.cGetDefaultEndpoint(); 
-		//request.JSC$9501_innertubePath = "";
-		//request.data = navigationEndpoint;
-		//polymerController.navigate(request);
-		window.polymerController.cGetDefaultEndpoint = musicApp.getDefaultEndpoint;
-
-			/*static UGetControllerProxy() {
-		if (window.controllerProxy) return controllerProxy;
-
-		if (!window.playerBar) {
-			window.playerBar = document.querySelector("ytmusic-player-bar");
-		};
-
-		window.controllerProxy = playerBar.controllerProxy;
-		return controllerProxy;
-	};*/
-
-
-
-
-
-
-
-
-
-
-	
-	/*static async old_UMWStorageGet(path, filter) {
-		// path: string . separated, eg sidebar.folders.folders
-		// filter: dict defining filter for data to return.
-
-		return new Promise(function(resolve, reject) {
-			function RespListener(event) {
-				if (event.detail.func !== "get-storage") return;
-
-				let gotStorage = event.detail.storage;
-
-				window.removeEventListener(UGeneralCustomEventEWToMW, RespListener);
-
-				resolve(gotStorage);
-			};
-
-			// get ready to receive response
-			window.addEventListener(UGeneralCustomEventEWToMW, RespListener);
-
-			// send event to EW to get saved data
-			UDispatchEventToEW({
-				func: "get-storage",
-				path: path,
-				filter: filter
-			});
-		});
-	};*/
