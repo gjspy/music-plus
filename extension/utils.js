@@ -40,7 +40,8 @@ class Utils {
 
 			customisation: {
 				albumLinks: {},
-				primaryAlbums: {}
+				primaryAlbums: {},
+				hiddenSongs: {}
 			}
 		}
 	};
@@ -229,7 +230,7 @@ class Utils {
 
 		// check has all keys, add default vals if not
 		for (let k of shouldHaveKeys) {
-			if (cont[k] === undefined) {
+			if (cont[k] === undefined || cont[k] === null) {
 				cont[k] = shouldHave[k]; // does not have, give default.
 				
 				continue;
@@ -1404,6 +1405,7 @@ class Utils {
 			console.log(elem, "CLICKED navigating to", navigationEndpointOuterDict, "and doing", excessFunc);
 
 			e.preventDefault();
+			if (navigationEndpointOuterDict.cParams && navigationEndpointOuterDict.cParams.stopPropagation) preventPropagation = true;
 			if (preventPropagation) e.stopImmediatePropagation();
 
 			if (verifyFunc && verifyFunc(e) === false) {
@@ -1570,6 +1572,13 @@ class Utils {
 				}
 			};
 		};
+	};
+
+	static UGetIsResponseEditedFromState(state) {
+		return this.UDigDict(state, [
+			"navigation", "mainContent", "response",
+			"cMusicFixerExtChangedResponse"
+		]);
 	};
 
 	static USoftClearQueue() {
@@ -1976,10 +1985,11 @@ class Utils {
 		if (buildQueueFrom === undefined || loadedBulkFrom === undefined) return;
 
 		let cache = storage.cache;
-		let buildingFromAlbum = cache[buildQueueFrom] || {};
-		let loadedFromAlbum = cache[loadedBulkFrom] || {};
+		let buildingFromAlbum = cache[buildQueueFrom];
+		let loadedFromAlbum = cache[loadedBulkFrom];
 		let indexToVideoIdOfThis = {}; // list of indexes to videoIds in REAL ALBUM (loadedFrom) only.
-		console.log(buildingFromAlbum, loadedFromAlbum, buildQueueFrom, loadedBulkFrom);
+
+		if (!buildingFromAlbum || !loadedFromAlbum) return;
 
 		for (let video of (loadedFromAlbum.items || [])) {
 			video = cache[video] || {};
@@ -1993,7 +2003,19 @@ class Utils {
 		
 		// priority order (last overwrite first)
 		if (primaryVersions) albumsToUse.push(...primaryVersions);
-		if (linkedAlbums) albumsToUse.push(...linkedAlbums);
+		if (linkedAlbums) {
+			linkedAlbums = linkedAlbums
+				.map( v => cache[v] ) // docs: "a and b will never be undefined", so no placeholder.
+				.sort( (a, b) =>  (a.private && !b.private) ? 1 : (!a.private && b.private) ? -1 : b.items.length - a.items.length )
+				.map( v => v.id );
+
+			// sort: (a,b): negative = a before b, positive = a after b, 0 or NaN = equal
+			// a is private and b is not: put a after always
+			// a is not and b is private: put b after always
+			// privacy is same (both are or both arent): do based on items length.
+
+			albumsToUse.push(...linkedAlbums);
+		};
 		if (counterparts) albumsToUse.push(...counterparts);
 
 		console.log(albumsToUse);
@@ -2011,7 +2033,8 @@ class Utils {
 				let alreadyChanging = changesByIndex[item.index];
 				if (alreadyChanging) {
 					if (alreadyChanging.from.private === true) continue;
-					if (album.private === false) continue;
+					// removed this. instead, made priority of albumsToUse correct. most important last.
+					// if (album.private === false) continue; 
 				};
 
 				// why change if its the same?
@@ -2037,8 +2060,8 @@ class Utils {
 
 		let changesByOriginalId = {extraByIndex: {}};
 
-		console.log(indexToVideoIdOfThis);
-		console.log(changesByIndex);
+		console.log("indexToVideoIdOfThis", indexToVideoIdOfThis);
+		console.log("changesByIndex", changesByIndex);
 
 		for (let [k,v] of Object.entries(changesByIndex)) {
 			let originalId = indexToVideoIdOfThis[k];
@@ -2459,7 +2482,7 @@ class Utils {
 		playButton.accessibilityPlayData.accessibilityData.label = "Play " + replacement.video.name;
 		playButton.accessibilityPauseData.accessibilityData.label = "Pause " + replacement.video.name;
 
-		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = replacement.video.name + " test "+ replacement.from.name;
+		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = replacement.video.name;
 		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint.watchEndpoint = playButton.playNavigationEndpoint.watchEndpoint;
 
 		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text = this.USecondsToLengthStr(replacement.video.lengthSec);
@@ -2625,6 +2648,8 @@ class Utils {
 		};
 
 		current.playlistItemData.videoId = vId;
+
+		current.cData = replacement;
 
 		return current;
 	};
@@ -3233,43 +3258,6 @@ class Utils {
 		};
 	};
 
-	static UCreat_eLongBylineAlbumTitle(replacement, realAlbum) {
-		let replName = replacement.name;
-		let realName = realAlbum.name;
-
-		if (replName.length < realName.length && realName.includes(replName)) {
-
-			return [
-				{
-					"text": replName,
-					"navigationEndpoint": this.UBuildEndpoint({
-						navType: "browse",
-						id: replacement.from.id
-					})
-				},
-				{
-					"text": realName.replace(replName, ""),
-					"navigationEndpoint": this.UBuildEndpoint({
-						navType: "browse",
-						id: realAlbum.id
-					})
-				}
-			];
-
-		};
-
-		return [
-			{
-				"text": replName, // using REPLACEMENT's name
-				"navigationEndpoint": this.UBuildEndpoint({
-					navType: "browse",
-					id: realAlbum.id // but using REALALBUM navigation.
-				})
-			}
-		];
-
-	};
-
 	static UBuildPlaylistPanelRendererFromData(replacement, realAlbum, artist, queuePlaylistId) {
 		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
 		// eg, realAlbum = deluxe, replacement.from = original.
@@ -3635,7 +3623,60 @@ class Utils {
 				}
 			}
 		}
-	}
+	};
+
+
+	static UAddEditButtonsToListItemPage(browsePage, purpose, icon, onClick) {
+		browsePage.setAttribute("c-editing", purpose);
+
+		let iconElem = this.UGetSVGFromRaw(icon, true, false);
+		this.UAddToClass(iconElem, "c-edit-btn");
+
+		for (let item of browsePage.querySelectorAll("#content-wrapper > #contents ytmusic-responsive-list-item-renderer")) {
+			let newButton = iconElem.cloneNode(true);
+			
+			let fixedCols = item.querySelector("div.fixed-columns");
+			if (fixedCols) fixedCols.append(newButton);
+
+			let data = item.controllerProxy;
+			let videoId = this.UDigDict(data, ["__data", "data", "playlistItemData", "videoId"]);
+
+			if (videoId) newButton.onclick = () => onClick(item, videoId);
+		};
+	};
+
+	static UEndListItemPageEditMode(browsePage) {
+		browsePage.removeAttribute("c-editing");
+
+		for (let item of browsePage.querySelectorAll(".c-edit-btn")) {
+			item.remove();
+		};
+
+		let indexCount = 0;
+		for (let item of browsePage.querySelectorAll("#content-wrapper > #contents ytmusic-responsive-list-item-renderer")) {
+			let data = this.UDigDict(item, ["controllerProxy", "__data", "data"]);
+			if (!data) continue;
+
+			let isDeleted = this.UDigDict(data, ["cData", "changedByDeletion", "isDeleted"]);
+			if (isDeleted) continue;
+			indexCount ++;
+
+			data.index.runs[0].text = String(indexCount);
+
+			let indexElem = item.querySelector("yt-formatted-string.index");
+			if (indexElem) indexElem.textContent = String(indexCount);
+
+			let thisIndex = Number(data.index.runs[0].text);
+			if (thisIndex !== 0 && thisIndex !== indexCount) {
+				if (!data.cData) data.cData = { changedByDeletion: {} };
+				if (!data.cData.changedByDeletion) data.cData.changedByDeletion = {};
+
+				data.cData.changedByDeletion.originalIndex = thisIndex;
+				data.cData.changedByDeletion.updatedIndex = indexCount;
+			};
+
+		};
+	};
 
 
 	static UProcessSearchParams(urlString) {
@@ -3650,7 +3691,6 @@ class Utils {
 
 		return [urlString.slice(0, queryIndex), matches];
 	};
-
 
 
 	static UPopups = {

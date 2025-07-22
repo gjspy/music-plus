@@ -171,7 +171,7 @@ MiddlewareEditors = class MiddlewareEditors {
 					pauseIcon: {
 						iconType: "PAUSE"
 					},
-					iconColor: 4294967295,
+					iconColor: 4278387459,
 					backgroundColor: 0,
 					activeBackgroundColor: 0,
 					loadingIndicatorColor: 14745645,
@@ -379,20 +379,23 @@ MiddlewareEditors = class MiddlewareEditors {
 				return response;
 			};
 
-			let playlistPanelContents = UDigDict(response, [
+			let playlistPanel = UDigDict(response, [
 				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
 				"watchNextTabbedResultsRenderer", "tabs", 0,
 				"tabRenderer", "content", "musicQueueRenderer",
-				"content", "playlistPanelRenderer", "contents"
+				"content", "playlistPanelRenderer"//, "contents"
 			]);
 
-			if (!playlistPanelContents) return response;
+			if (!playlistPanel || !playlistPanel.contents) return response;
 
-			console.log(structuredClone(playlistPanelContents));
+			console.log(structuredClone(playlistPanel.contents));
 
-			this._EditQueueContentsFromResponse(storage, playlistPanelContents, request.cParams.buildingQueueFrom, request.body.playlistId, request.body.videoId);
+			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, playlistPanel.contents, request.cParams.buildingQueueFrom, request.body.playlistId, request.body.videoId);
 
-			console.log(playlistPanelContents);
+			playlistPanel.contents = newContents;
+			response.currentVideoEndpoint.watchEndpoint = currentVideoWE;
+
+			console.log(playlistPanel.contents);
 
 			let headerButtons = UDigDict(response, [
 				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
@@ -401,7 +404,7 @@ MiddlewareEditors = class MiddlewareEditors {
 				"header", "musicQueueHeaderRenderer", "buttons"
 			]);
 
-			if (!headerButtons) return;
+			if (!headerButtons) return response;
 
 			headerButtons.push({
 				chipCloudChipRenderer: {
@@ -429,8 +432,9 @@ MiddlewareEditors = class MiddlewareEditors {
 			let queueDatas = response.queueDatas;
 			if (!queueDatas) return response;
 
-			this._EditQueueContentsFromResponse(storage, queueDatas, request.body.playlistId);
+			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, queueDatas, request.body.playlistId);
 
+			response.queueDatas = newContents;
 			return response;
 		}
 	};
@@ -502,17 +506,17 @@ MiddlewareEditors = class MiddlewareEditors {
 		};
 
 		videoRenderer.longBylineText.runs = newRuns;
+		return songCacheData;
 	};
 
 	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFrom, loadedQueueFrom, videoIdToSelect) {
-		let buildFromAlbum = storage.cache[buildQueueFrom];
-		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFrom);
-		console.log(buildQueueFrom, buildFromAlbum,"ADDEDBULKFROM", loadedFromAlbum, loadedQueueFrom);
+		let buildFromAlbum = storage.cache[buildQueueFrom] || {};
+		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFrom) || {};
 
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, buildFromAlbum.id, loadedFromAlbum.id) || {};
-		console.log("IDS", idsToReplace);
 
-		let cachedArtist = storage.cache[buildFromAlbum.artist];
+		let cachedArtist = (buildFromAlbum.artist) ? storage.cache[buildFromAlbum.artist] : undefined;
+		let hiddenSongs = storage.customisation.hiddenSongs[buildQueueFrom] || [];
 
 		let backingPlaylistId; // for use later. get it in this loop from anything we can!
 
@@ -523,7 +527,10 @@ MiddlewareEditors = class MiddlewareEditors {
 			let replacement = idsToReplace[videoRenderer.videoId];
 
 			if (replacement) UModifyPlaylistPanelRendererFromData(videoRenderer, replacement, buildFromAlbum, cachedArtist);
-			else this._EditLongBylineOfPlaylistPanelVideoRenderer(storage.cache, videoRenderer, buildFromAlbum);
+			else {
+				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage.cache, videoRenderer, buildFromAlbum);
+				videoRenderer.cData = { video: cachedVideo, from: buildFromAlbum };
+			};
 
 			if (!backingPlaylistId) backingPlaylistId = UDigDict(videoRenderer, [
 				"queueNavigationEndpoint", "queueAddEndpoint",
@@ -536,12 +543,8 @@ MiddlewareEditors = class MiddlewareEditors {
 		// dont need to worry about other items in queue. any response only ever gives the new bit.
 		// next: only runs on first click, else just does hack: true
 		// get_queue: only returns the new section.
-		console.log("NOWBYINDEX", idsToReplace.extraByIndex);
-		let byIndex = idsToReplace.extraByIndex;
-		if (!byIndex) return;
-		console.log("DOINGBYINDEX")
-
-		
+		let byIndex = idsToReplace.extraByIndex || {};
+		//if (!byIndex) return;
 
 		let lastItem; // automix. need to remove then add back later.
 		if (queueContents[queueContents.length - 1].automixPreviewVideoRenderer) {
@@ -554,16 +557,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		for (let index of orderedExtraIndexes) {
 			let replacement = byIndex[index];
 
-			// gets "modified" info by using addedBulkFrom and artist got from that. (public data)
-			//let albumToUse = addedBulkFrom;
-
-			//let privAlbum = storage.cache[video.album];
-			//if (privAlbum) { // want "Deluxe" text, but keep public browse id [no! only want it to say deluxe when playing deluxe song.]
-			//	albumToUse = structuredClone(addedBulkFrom);
-			//	albumToUse.name = privAlbum.name;
-			//};
-
-			let newVideoItem = UBuildPlaylistPanelRendererFromData(replacement, replacement.from, cachedArtist, backingPlaylistId); // albumToUse instead of buildFromAlbum if doing above.
+			let newVideoItem = UBuildPlaylistPanelRendererFromData(replacement, replacement.from, cachedArtist, backingPlaylistId);
 
 			if (videoIdToSelect) newVideoItem.playlistPanelVideoRenderer.selected = newVideoItem.playlistPanelVideoRenderer.videoId === videoIdToSelect;
 
@@ -576,17 +570,32 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		if (lastItem) queueContents.push(lastItem);
 
-		if (item0) {
-			for (let i of queueContents) {
-				let videoRenderer = UGetPlaylistPanelVideoRenderer(i);
-				if (!videoRenderer) continue;
+		let newContents = [];
+		let currentVideoWE;
+		let indexCount = 0;
 
-				let we = UDigDict(videoRenderer, ["navigationEndpoint", "watchEndpoint"]);
-				if (videoRenderer.videoId === item0) continue;
+		for (let item of queueContents) {
+			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
 
-				we.index += 1;
+			if (!videoRenderer) {
+				newContents.push(item);
+				continue;
 			};
+
+			let we = UDigDict(videoRenderer, ["navigationEndpoint", "watchEndpoint"]);
+
+			if (hiddenSongs.includes(we.videoId)) continue;
+			indexCount ++;
+
+			if (we.index !== 0) we.index = indexCount;
+			newContents.push(item);
+
+			if (we.videoId === videoIdToSelect) currentVideoWE = we;
 		};
+
+		console.log("newContents", newContents, hiddenSongs);
+
+		return [newContents, currentVideoWE];
 	};
 
 
@@ -604,8 +613,10 @@ MiddlewareEditors = class MiddlewareEditors {
 		let type = UGetBrowsePageTypeFromBrowseId(id);
 		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return response;
 
-		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id);
-		if (!idsToReplace) return response;
+		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id) || {};
+		//if (!idsToReplace) return response;
+
+		console.log(idsToReplace);
 
 		let musicShelfRenderer = UDigDict(response, [
 			"contents", "twoColumnBrowseResultsRenderer", "secondaryContents",
@@ -614,29 +625,50 @@ MiddlewareEditors = class MiddlewareEditors {
 		]);
 		if (!musicShelfRenderer || !musicShelfRenderer.contents) return response;
 
-		let cachedAlbum = storage.cache[id];
+		let cachedAlbum = storage.cache[id] || {};
+		let hiddenSongs = storage.customisation.hiddenSongs[id] || [];
 
 		UBrowseParamsByRequest.pageSpecific.all = { buildingQueueFrom: cachedAlbum.id };
 
+		console.log("listitems", musicShelfRenderer.contents);
+
 		// iter thru each existing item, modify if necessary
 
-		for (let i of musicShelfRenderer.contents) {
-			let data = UGetSongInfoFromListItemRenderer(i);
+		let i = -1;
+		for (let item of structuredClone(musicShelfRenderer.contents)) {
+			i ++;
 
+			let data = UGetSongInfoFromListItemRenderer(item);
 			let replacement = idsToReplace[data.id];
-			if (!replacement) {
-				
-				continue;
+
+			let listItemRenderer = item.musicResponsiveListItemRenderer;
+
+			// should remove base version of song.
+			// (use this to force building listitem instead of modify)
+			let delBaseVideo = hiddenSongs.includes(data.id);
+
+			if (delBaseVideo) {
+				if (!replacement) {
+					if (!listItemRenderer.cData) listItemRenderer.cData = {};
+
+					listItemRenderer.cData.changedByDeletion = { isDeleted: true };
+					continue;
+				};
+
+				let newVRenderer = UBuildListItemRendererFromData(replacement, cachedAlbum);
+				musicShelfRenderer.contents.splice(i, 1, newVRenderer); // actually delete this, as if overwritten
+				delete idsToReplace[data.id];
 			};
 
-			i = UModifyListItemRendererFromData(replacement, cachedAlbum, i);
-			//UBrowseParamsByRequest.pageSpecific[replacement.video.id] = { buildingQueueFrom: cachedAlbum.id };
+			if (!replacement) continue;
+
+			item = UModifyListItemRendererFromData(replacement, cachedAlbum, item);
 			delete idsToReplace[data.id];
 		};
 
 		// now add extra to end (or start)
-		let byIndex = idsToReplace.extraByIndex;
-		if (!byIndex) return response;
+		let byIndex = idsToReplace.extraByIndex || {};
+		//if (!byIndex) return response;
 
 		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
 		for (let index of orderedExtraIndexes) {
@@ -648,6 +680,71 @@ MiddlewareEditors = class MiddlewareEditors {
 			if (index === "0") musicShelfRenderer.contents.unshift(newListItem);
 			else musicShelfRenderer.contents.push(newListItem);
 		};
+
+		// update delete status of items, now theyve been replaced. some replacements might need deleting
+		// and update indexes
+		let indexCount = 0;
+		let totalSeconds = 0;
+		let songCount = 0;
+
+		for (let lir of musicShelfRenderer.contents) {
+			lir = lir.musicResponsiveListItemRenderer;
+			let hideThis = hiddenSongs.includes(lir.playlistItemData.videoId);
+			let thisIndex = Number(lir.index.runs[0].text);
+
+			if (hideThis && (!lir.cData || !lir.cData.changedByDeletion)) {
+				if (!lir.cData) lir.cData = { changedByDeletion: {} };
+				if (!lir.cData.changedByDeletion) lir.cData.changedByDeletion = {};
+
+				lir.cData.changedByDeletion.isDeleted = true;
+				continue; // DONT increment, will fill the gap
+			};
+
+			if (UDigDict(lir, ["cData", "changedByDeletion", "isDeleted"])) continue;
+
+			let thisLenStr = UDigDict(lir, [
+				"fixedColumns", 0, "musicResponsiveListItemFixedColumnRenderer",
+				"text", "runs", 0, "text"
+			]);
+
+			indexCount ++;
+			totalSeconds += ULengthStrToSeconds(thisLenStr);
+			songCount ++;
+
+			if (thisIndex !== 0 && thisIndex !== indexCount) {
+				lir.index.runs[0].text = String(indexCount);
+
+				if (!lir.cData) lir.cData = { changedByDeletion: {} };
+				if (!lir.cData.changedByDeletion) lir.cData.changedByDeletion = {};
+
+				lir.cData.changedByDeletion.originalIndex = thisIndex;
+				lir.cData.changedByDeletion.updatedIndex = indexCount;
+
+				let we = UDigDict(lir, [
+					"overlay", "musicItemThumbnailOverlayRenderer", "content",
+					"musicPlayButtonRenderer", "playNavigationEndpoint", "watchEndpoint"
+				]);
+				if (we) we.index = indexCount;
+
+				let titleEndpoint = UDigDict(lir, [
+					"flexColumns", 0, "musicResponsiveListItemFlexColumnRenderer",
+					"text", "runs", 0,
+					"navigationEndpoint", "watchEndpoint"
+				]);
+				if (titleEndpoint) titleEndpoint.index = indexCount;
+			};
+
+		};
+
+
+		let headerRenderer = UDigDict(response, [
+			"contents", "twoColumnBrowseResultsRenderer", "tabs",
+			0, "tabRenderer", "content",
+			"sectionListRenderer", "contents", 0,
+			"musicResponsiveHeaderRenderer"
+		]);
+		headerRenderer.secondSubtitle.runs[0].text = `${songCount} songs`;
+		headerRenderer.secondSubtitle.runs[2].text = USecondsToLengthStr(totalSeconds, true, false);
 
 		return response;
 	};
@@ -696,7 +793,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		sectionListRenderer.contents = [];
 		sectionListRenderer.continuations = [{
 			nextContinuationData: {
-				["continuation"]: continuation.continuation,
+				"continuation": continuation.continuation,
 				clickTrackingParams: continuation.clickTrackingParams,
 				autoloadEnabled: true,
 				autoloadImmediately: true,
@@ -1096,49 +1193,5 @@ XMLHttpRequest.prototype.send = function(body) { // used for player/next/atr/qoe
 
 	return originalXHRSend.apply(this, arguments);
 };
-
-/*
-XMLHttpRequest.prototype.send = function(body) {
-	const xhr = this;
-
-	const originalOnReadyStateEvent = xhr.onreadystatechange;
-
-	xhr.onreadystatechange = async function() {
-		if (xhr.readyState === 4 && xhr.status === 200) {
-			try {
-				await FetchModifyResponse({
-					url: xhr._url,
-					method: xhr._method,
-					body: body,
-					cParams: xhr._cParams
-				}, xhr, true);
-			} catch {};
-		};
-
-		if (originalOnReadyStateEvent) originalOnReadyStateEvent.apply(this, arguments);
-	};
-
-	console.log("hello xhr", body);
-
-	try {
-		let parsed = JSON.parse(body);
-		
-		if (parsed.videoId) {
-			let [videoId, cParams] = UProcessSearchParams(parsed.videoId);
-			console.log(videoId, cParams);
-
-			parsed.videoId = videoId;
-			xhr._cParams = cParams;
-
-			body = JSON.stringify(parsed);
-		};
-
-	} catch {}; 
-
-	console.log("new body", body);
-
-	return originalXHRSend.apply(this, [body]);
-};
-does OT WORK*/
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = window.fetch, non clonable.)

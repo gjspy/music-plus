@@ -783,7 +783,7 @@ function EWCacheCreateStorableFromListItem(item, listData, albumId) {
 	if (item._DISPLAY_POLICY) return storable;
 
 	// playlist can be here now due to tworowitems. only do the following for a song, not coming from an album page.
-	if (listData.type === "ALBUM" || formattedItem.type === "ALBUM" || formattedItem.type === "PLAYLIST") return storable;
+	if ((listData.type === "ALBUM" || formattedItem.type === "ALBUM" || formattedItem.type === "PLAYLIST") && (item.album)) return storable;
 
 	// album
 	item.album.artist = formattedItem.artists[0];
@@ -806,10 +806,14 @@ function EWCacheCreateStorableFromItemsList(data, newPl) {
 
 		if (!item) continue;
 
-		let itemStorable = EWCacheCreateStorableFromListItem(item, newPl, newPl.id);
-		console.log(itemStorable);
+		try {
+			let itemStorable = EWCacheCreateStorableFromListItem(item, newPl, newPl.id);
+			console.log(itemStorable);
 
-		storable = storable.concat(itemStorable);
+			storable = storable.concat(itemStorable);
+		} catch (err) {
+			console.log("error", err);
+		};
 	};
 
 	return storable;
@@ -946,6 +950,18 @@ async function EWOMSetPrimaryAlbum(request) {
 	await utils.UStorageSet(storage);
 };
 
+async function EWOMHideSongFromAlbum(request) {
+	let storage = await utils.UStorageGet();
+
+	let hiddenSongs = storage.customisation.hiddenSongs;
+	if (!hiddenSongs[request.album]) hiddenSongs[request.album] = [];
+
+	if (request.deleted) hiddenSongs[request.album].push(request.videoId);
+	else hiddenSongs[request.album] = hiddenSongs[request.album].filter( v => v !== request.videoId );
+
+	await utils.UStorageSet(storage);
+};
+
 
 function OnMessage(request, sender, sendResponse) {
 	console.log("received in EW", JSON.stringify(request), sender, sendResponse);
@@ -972,6 +988,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "defineLink")				EWOMDefineLink(request, sender);
 	else if (f === "removeLink")				EWOMRemoveLink(request, sender);
 	else if (f === "setPrimaryAlbum")			EWOMSetPrimaryAlbum(request, sender);
+	else if (f === "setDeletion")				EWOMHideSongFromAlbum(request, sender);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);

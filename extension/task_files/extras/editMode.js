@@ -10,12 +10,18 @@ AlbumEditMode = class AlbumEditMode {
 		{
 			type: "hide",
 			icon: "visible",
-			text: "Hide Songs"
+			text: "Hide Songs",
+			onclick: this.HideSongs
 		},
 		{
 			type: "explicit",
 			icon: "MUSIC_EXPLICIT_BADGE",
 			text: "Define Explicit Songs"
+		},
+		{
+			type: "insert",
+			icon: "add",
+			text: "Insert/Remove Extra Songs"
 		},
 		{ // change name, cover, single/ep/album!!, exact release date!!
 			type: "details",
@@ -41,6 +47,70 @@ AlbumEditMode = class AlbumEditMode {
 			onclick: this.DefineVersion
 		}
 	];
+
+	static async HideSongs(state, browsePage, id) {
+		function OnClickItem(item, clickedId, isDeleted) {
+			UDispatchEventToEW({
+				func: "setDeletion",
+				videoId: clickedId,
+				deleted: isDeleted,
+				album: id
+			});
+
+			if (isDeleted) item.setAttribute("c-hidden", isDeleted);
+			else item.removeAttribute("c-hidden");
+
+			let current = item.querySelector("div.fixed-columns .c-edit-btn");
+			if (isDeleted) current.innerHTML = undoIcon.innerHTML;
+			else current.innerHTML = binIcon.innerHTML;
+
+			let data = item.controllerProxy.__data.data;
+			if (!data) return;
+
+			if (!data.cData) data.cData = { changedByDeletion: {} }
+			if (!data.cData.changedByDeletion) data.cData.changedByDeletion = {};
+
+			data.cData.changedByDeletion.isDeleted = isDeleted;
+		};
+
+		browsePage.setAttribute("c-editing", "hideSongs");
+
+		let listItems = await UWaitForBySelector("ytmusic-browse-response #contents ytmusic-responsive-list-item-renderer");
+
+		let binIcon = UGetSVGFromRaw("delete", true, false);
+		UAddToClass(binIcon, "c-edit-btn");
+
+		let undoIcon = UGetSVGFromRaw("undo", true, false);
+		UAddToClass(undoIcon, "c-edit-btn");
+
+
+		for (let listItem of listItems) {
+			let thisCp = listItem.controllerProxy;
+			let data = UDigDict(thisCp, ["__data", "data"]);
+			if (!data) continue;
+
+			let changedByDeletionData = (data.cData) ? data.cData.changedByDeletion : undefined;
+			let videoId = data.playlistItemData.videoId;
+			
+			let isDeleted = !!listItem.getAttribute("c-hidden");
+
+			if (changedByDeletionData) {
+				if (changedByDeletionData.originalIndex) {
+					let index = listItem.querySelector(".left-items yt-formatted-string.index");
+					if (index) index.textContent = changedByDeletionData.originalIndex;
+				};
+			};
+
+			let newButton = ((isDeleted) ? undoIcon : binIcon).cloneNode(true);
+			if (videoId) newButton.onclick = () => {
+				isDeleted = !isDeleted;
+				OnClickItem(listItem, videoId, isDeleted);
+			};
+
+			let fixedCols = listItem.querySelector("div.fixed-columns");
+			if (fixedCols) fixedCols.append(newButton);
+		};
+	};
 
 	static async LinkMode(state, browsePage, id) {
 		function OnClickItem(chosenId) {
@@ -208,7 +278,7 @@ window.EditMode = class MasterEditMode {
 
 		let newCont = document.createElement("div");
 		newCont.className = "c-master-buttons";
-		newCont.__data = {buttons: {}};
+		newCont.__data = { buttons: {} };
 
 		this.rightContent.insertBefore(newCont, this.rightContent.firstElementChild);
 
@@ -239,7 +309,26 @@ window.EditMode = class MasterEditMode {
 
 		let ovfCont = document.querySelector(".c-popup-elem-overflow");
 		if (ovfCont) ovfCont.remove();
-	}
+
+		let browsePage = document.querySelector("ytmusic-browse-response");
+		if (browsePage) {
+			browsePage.removeAttribute("c-editing");
+		};
+	};
+
+	static OnClickCloseButton() {
+		let browsePage = document.querySelector("ytmusic-browse-response");
+
+		if (browsePage && browsePage.getAttribute("c-editing")) {
+			let pageType = browsePage.getAttribute("c-page-type");
+
+			if (pageType === "MUSIC_PAGE_TYPE_ALBUM") UEndListItemPageEditMode(browsePage);
+
+			browsePage.removeAttribute("c-editing");
+		};
+
+		this.CancelAll();
+	};
 
 	static UpdateButtons(stateOrNone) {
 		let state = stateOrNone || polymerController.store.getState();
@@ -248,6 +337,7 @@ window.EditMode = class MasterEditMode {
 		this.GetButtonCont();
 
 		let hasEditedResponse = content.response.cMusicFixerExtChangedResponse;
+		let browseId = state.navigation.mainContent.endpoint.data.browseId;
 
 		this.CancelAll();
 		this.HideButton("EDIT"); // always hide, to remove old onclick etc..
@@ -256,7 +346,6 @@ window.EditMode = class MasterEditMode {
 
 		if (hasEditedResponse) this.ShowButton("REVERT");
 
-		let browseId = state.navigation.mainContent.endpoint.data.browseId;
 		let browseType = UGetBrowsePageTypeFromBrowseId(browseId, false, true, hasEditedResponse);
 		let modeForType = this.specificEditModes[browseType];
 
@@ -281,7 +370,9 @@ window.EditMode = class MasterEditMode {
 			});
 		};
 
-		this.buttonCont.__data.buttons.CANCEL.onclick = this.CancelAll;
+		let that = this;
+
+		this.buttonCont.__data.buttons.CANCEL.onclick = () => that.OnClickCloseButton.call(that);
 	};
 };
 

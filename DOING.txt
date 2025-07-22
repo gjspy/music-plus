@@ -128,7 +128,9 @@ for songs with too many plays (we are never ever getting back together 1b tv), s
 /Xhttps://music.youtube.com/youtubei/v1/guide?prettyPrint=false FOR REFRESHING GUIDE, EVENT FOR DOING MINE AGAIN
 body: fetchLiveState: true
 
-
+FIX PLAYER PAGE SIZING
+//FIX PLAYER PAGE FULLSCREN VIDEO
+UPGRADE QUALITY OF FULLSCREEN VIDEO?
 
 WATCH NEXT IS ALL YOU NEED. playerApi.updateVideoData, sort by this.
 
@@ -137,6 +139,7 @@ EDITING ALBUMS:
 //	- deluxe versions of albums, use base songs
 //	- priv album, send 
 //	- STARTED ADDING OVERWRITING SONGS. NEED TO ADD TO END, AND ALLOW USER TO SELECT ALBUM TO USE (EG UPLOADED DELUXE)
+	- CUSTOM THUMBNAILS! FOR FT/VLOG SONGS. CAN HAVE IN GOOGLE DRIVE!!
 
 ARTISTS:
 //	- add private uploads to their album playerPageFeatures

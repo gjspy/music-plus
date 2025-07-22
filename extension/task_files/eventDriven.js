@@ -29,6 +29,29 @@ export async function MWEventDriven_PageChanges() {
 		};
 	};
 
+	async function _AlbumPage() {
+		let listItems = await UWaitForBySelector("ytmusic-browse-response ytmusic-responsive-list-item-renderer");
+
+		for (let listItem of listItems) {
+			let thisCp = listItem.controllerProxy;
+			let data = UDigDict(thisCp, ["__data", "data", "cData"]);
+			if (!data) continue;
+
+			if (data.from) {
+				let nameElem = listItem.querySelector(".title-column yt-formatted-string.title");
+				if (!nameElem) continue;
+
+				let title = ((data.video) ? data.video.name : nameElem.getAttribute("title")) + " - " + data.from.name;
+				nameElem.setAttribute("title", title);
+			};
+
+			if (data.changedByDeletion) {
+				if (data.changedByDeletion.isDeleted) listItem.setAttribute("c-hidden", true);
+			};
+			
+		};
+	};
+
 	function _EvaluateNewValue(browsePage, state, newValue) {
 		browsePage.setAttribute("c-page-type", newValue);
 
@@ -40,6 +63,7 @@ export async function MWEventDriven_PageChanges() {
 
 			case "MUSIC_PAGE_TYPE_ALBUM":
 				_AlbumAndPlaylistPage(browsePage);
+				_AlbumPage();
 				break;
 		};
 

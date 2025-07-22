@@ -62,7 +62,8 @@ export async function MWInjectMyPaperItems() {
 						navigationEndpoint: UBuildEndpoint({
 							id: artist,
 							navType: "browse",
-							browsePageType: "MUSIC_PAGE_TYPE_ARTIST"
+							browsePageType: "MUSIC_PAGE_TYPE_ARTIST",
+							cParams: { stopPropagation: true }
 						})
 					});
 				};
