@@ -157,7 +157,7 @@ SONGS:
 
 
 
-
+improve udigdict, predefine paths
 
 ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED TO SAME ALBUM (PRIVATE)
 
@@ -169,19 +169,20 @@ hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 fix like buttons everywhere - FIXED LISTITEMRENDERERS, JUST PLAYLISTPANEL NOW.
 
 now:
-list items and playlist panels work.
-need to make playlist panels work when you start playing a primary ver song.
-change "playing from" text?
-decide whats happening with longByline, with album name. make consistent everwhere, lots of places.
+//list items and playlist panels work.
+//need to make playlist panels work when you start playing a primary ver song.
+/Xchange "playing from" text?
+//decide whats happening with longByline, with album name. make consistent everwhere, lots of places.
 next, please do naming stuff to make ti consistent, artists and albums.
 need to make sidebar play buttons work? does it already?
 cache on like!!! really important now, making our own listitemrenderers.
 CHECK THAT "add to queue" does not add whole thing, if we're asking to add one song, if we edit indexes.
-REALLY BAD trying to make main ver songs play with extra items. need rewrite, rename addedBulkFrom -> grouper or smth, then perspective = album which was clicked to start playing.
-	- think about midnights, the shitton of albums that will have.
+//REALLY BAD trying to make main ver songs play with extra items. need rewrite, rename addedBulkFrom -> grouper or smth, then perspective = album which was clicked to start playing.
+//	- think about midnights, the shitton of albums that will have.
+how does shuffling work when theres two playlists?
 
-THINK it works. test it, try midnights, then try with shuffling. then get rid of "test [album name]" and clear console.logs.
-make it eexit quick if request.body.plyylistId starts with RDAMPL. this is automix, will make our own later!
+//THINK it works. test it, try midnights, then try with shuffling. then get rid of "test [album name]" and clear console.logs.
+//make it eexit quick if request.body.plyylistId starts with RDAMPL. this is automix, will make our own later! and normal playlists, make ti only work for albums.
 
 ***USE THIS NOW** QUEUE NAV CMD, CAN have videoIds: [...] IN REQUEST, WORKS WITH ENDPOINT
 "queueAddEndpoint":{
@@ -191,7 +192,7 @@ make it eexit quick if request.body.plyylistId starts with RDAMPL. this is autom
 }
 
 
-
+LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
 
 
 

@@ -387,17 +387,18 @@ MiddlewareEditors = class MiddlewareEditors {
 			]);
 
 			if (!playlistPanel || !playlistPanel.contents) return response;
+			let isShuffle = request.body.watchNextType === "WATCH_NEXT_TYPE_MUSIC_SHUFFLE";
 
-			console.log(structuredClone(playlistPanel.contents));
+			console.log("originalPlaylistPanelcontents", structuredClone(playlistPanel.contents));
 
-			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, playlistPanel.contents, request.cParams.buildingQueueFrom, request.body.playlistId, request.body.videoId);
+			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, playlistPanel.contents, request.cParams.buildingQueueFrom, request.body.playlistId, request.body.videoId, isShuffle, false);
 
 			playlistPanel.contents = newContents;
 			response.currentVideoEndpoint.watchEndpoint = currentVideoWE;
 
-			console.log(playlistPanel.contents);
+			console.log("newPlPancontents", playlistPanel.contents);
 
-			let headerButtons = UDigDict(response, [
+			/*DONT DELETE THIS. ONGOING STRUGGLE, KEEP THE CODE!  let headerButtons = UDigDict(response, [
 				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
 				"watchNextTabbedResultsRenderer", "tabs", 0,
 				"tabRenderer", "content", "musicQueueRenderer",
@@ -416,23 +417,21 @@ MiddlewareEditors = class MiddlewareEditors {
 					isSelected: false,
 					uniqueId: "Clear"
 				}
-			});
+			});*/
 
 			return response;
 
 		},
 
 		"/youtubei/v1/music/get_queue": function TidyGetQueueItems(request, response, storage) {
-			let browsePage = document.querySelector("ytmusic-browse-response");
-			if (browsePage && browsePage.getAttribute("c-edited") === false) {
-				console.log("browse page reports no c edits. returning in /get_queue middleware.");
-				return response;
-			};
+			if (!request.cParams || !request.cParams.buildingQueueFrom) return;
+			// so now if user clicks "revert" on album page, it will play original.
+			// and, clicking a main song will now include the extras.
 
 			let queueDatas = response.queueDatas;
 			if (!queueDatas) return response;
 
-			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, queueDatas, request.body.playlistId);
+			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, queueDatas, request.cParams.buildingQueueFrom, request.body.playlistId, undefined, false, true);
 
 			response.queueDatas = newContents;
 			return response;
@@ -509,27 +508,33 @@ MiddlewareEditors = class MiddlewareEditors {
 		return songCacheData;
 	};
 
-	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFrom, loadedQueueFrom, videoIdToSelect) {
+	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFrom, loadedQueueFrom, videoIdToSelect, isShuffle, areQueueDatas) {
 		let buildFromAlbum = storage.cache[buildQueueFrom] || {};
 		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFrom) || {};
 
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, buildFromAlbum.id, loadedFromAlbum.id) || {};
+		console.log("replacements", idsToReplace);
+		console.log("queueContentsBefore", structuredClone(queueContents));
 
 		let cachedArtist = (buildFromAlbum.artist) ? storage.cache[buildFromAlbum.artist] : undefined;
 		let hiddenSongs = storage.customisation.hiddenSongs[buildQueueFrom] || [];
 
 		let backingPlaylistId; // for use later. get it in this loop from anything we can!
 
+		// FIRST ITERATION. REPLACE WHATEVER, IF NOT REPLACED EDIT LONG BYLINE.
 		for (let item of queueContents) {
 			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
 			if (!videoRenderer) continue;
 
 			let replacement = idsToReplace[videoRenderer.videoId];
 
+			console.log(item, replacement);
+
 			if (replacement) UModifyPlaylistPanelRendererFromData(videoRenderer, replacement, buildFromAlbum, cachedArtist);
 			else {
 				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage.cache, videoRenderer, buildFromAlbum);
-				videoRenderer.cData = { video: cachedVideo, from: buildFromAlbum };
+				videoRenderer.cData = { video: cachedVideo, from: buildFromAlbum };// why did we set cData here? dont think it worked?
+				console.log("newVideoCData", videoRenderer.cData);
 			};
 
 			if (!backingPlaylistId) backingPlaylistId = UDigDict(videoRenderer, [
@@ -543,37 +548,44 @@ MiddlewareEditors = class MiddlewareEditors {
 		// dont need to worry about other items in queue. any response only ever gives the new bit.
 		// next: only runs on first click, else just does hack: true
 		// get_queue: only returns the new section.
-		let byIndex = idsToReplace.extraByIndex || {};
-		//if (!byIndex) return;
 
-		let lastItem; // automix. need to remove then add back later.
+		let lastItem; // REMOVE AUTOMIX ITEM, ADD BACK LATER.
 		if (queueContents[queueContents.length - 1].automixPreviewVideoRenderer) {
 			lastItem = queueContents.pop();
 		};
 
-		let item0;
-
+		// ADD EXTRA TO START/END
+		let byIndex = idsToReplace.extraByIndex || {};
 		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
+		
 		for (let index of orderedExtraIndexes) {
 			let replacement = byIndex[index];
 
-			let newVideoItem = UBuildPlaylistPanelRendererFromData(replacement, replacement.from, cachedArtist, backingPlaylistId);
+			let newVideoItem = UBuildPlaylistPanelRendererFromData(replacement, buildFromAlbum, cachedArtist, backingPlaylistId);
 
 			if (videoIdToSelect) newVideoItem.playlistPanelVideoRenderer.selected = newVideoItem.playlistPanelVideoRenderer.videoId === videoIdToSelect;
+			if (areQueueDatas) newVideoItem = { content: newVideoItem };
 
-			if (index === "0") {
-				item0 = replacement.video.id;
-				queueContents.unshift(newVideoItem);
+			// INSERT IN RANDOM POSITION FOR SHUFFLE!
+			if (isShuffle) {
+				queueContents = UArrayInsert(queueContents, newVideoItem, URandInt(1, queueContents.length));
+				continue;
+			};
 
-			} else queueContents.push(newVideoItem);
+			if (index === "0") queueContents.unshift(newVideoItem);
+			else queueContents.push(newVideoItem);
 		};
 
 		if (lastItem) queueContents.push(lastItem);
+
+		console.log("queueContents now", structuredClone(queueContents));
 
 		let newContents = [];
 		let currentVideoWE;
 		let indexCount = 0;
 
+		// LAST ITERATION. HIDE ANY WE NEED TO, AND UPDATE ENDPOINT INDEXES.
+		// THIS CLEANS THE MESS FOR US, SO WE CAN ADD SONGS WHEREVER WE WANT!
 		for (let item of queueContents) {
 			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
 
@@ -583,8 +595,9 @@ MiddlewareEditors = class MiddlewareEditors {
 			};
 
 			let we = UDigDict(videoRenderer, ["navigationEndpoint", "watchEndpoint"]);
+			console.log(item, videoRenderer, videoIdToSelect, (videoRenderer) ? [videoRenderer.selected, videoRenderer.videoId] : undefined, we, "deleting", hiddenSongs.includes(we.videoId));
 
-			if (hiddenSongs.includes(we.videoId)) continue;
+			if (hiddenSongs.includes(we.videoId) && !videoRenderer.cData) continue;
 			indexCount ++;
 
 			if (we.index !== 0) we.index = indexCount;
@@ -614,9 +627,8 @@ MiddlewareEditors = class MiddlewareEditors {
 		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return response;
 
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id) || {};
-		//if (!idsToReplace) return response;
 
-		console.log(idsToReplace);
+		console.log("replacements", structuredClone(idsToReplace));
 
 		let musicShelfRenderer = UDigDict(response, [
 			"contents", "twoColumnBrowseResultsRenderer", "secondaryContents",
@@ -628,20 +640,22 @@ MiddlewareEditors = class MiddlewareEditors {
 		let cachedAlbum = storage.cache[id] || {};
 		let hiddenSongs = storage.customisation.hiddenSongs[id] || [];
 
-		UBrowseParamsByRequest.pageSpecific.all = { buildingQueueFrom: cachedAlbum.id };
+		UBrowseParamsByRequest.pageSpecific[cachedAlbum.mfId] = { buildQueueFrom: cachedAlbum.id };
 
-		console.log("listitems", musicShelfRenderer.contents);
+		console.log("listitems before", structuredClone(musicShelfRenderer.contents));
 
 		// iter thru each existing item, modify if necessary
+		let newContents = [];
 
 		let i = -1;
-		for (let item of structuredClone(musicShelfRenderer.contents)) {
+		for (let item of structuredClone(musicShelfRenderer.contents)) { // structuredClone, so wont edit ref of original!
 			i ++;
 
 			let data = UGetSongInfoFromListItemRenderer(item);
 			let replacement = idsToReplace[data.id];
 
 			let listItemRenderer = item.musicResponsiveListItemRenderer;
+			console.log(i, data.id, replacement, listItemRenderer);
 
 			// should remove base version of song.
 			// (use this to force building listitem instead of modify)
@@ -652,23 +666,29 @@ MiddlewareEditors = class MiddlewareEditors {
 					if (!listItemRenderer.cData) listItemRenderer.cData = {};
 
 					listItemRenderer.cData.changedByDeletion = { isDeleted: true };
+					
+					newContents.push(item);
 					continue;
 				};
 
-				let newVRenderer = UBuildListItemRendererFromData(replacement, cachedAlbum);
-				musicShelfRenderer.contents.splice(i, 1, newVRenderer); // actually delete this, as if overwritten
-				delete idsToReplace[data.id];
+				let newListItem = UBuildListItemRendererFromData(replacement, cachedAlbum);
+				newContents.push(newListItem); // actually delete this, as if overwritten
+				continue;
 			};
 
-			if (!replacement) continue;
+			if (!replacement) {
+				newContents.push(item);
+				continue;
+			};
 
-			item = UModifyListItemRendererFromData(replacement, cachedAlbum, item);
-			delete idsToReplace[data.id];
+			UModifyListItemRendererFromData(replacement, cachedAlbum, item);
+			newContents.push(item)
 		};
+		
+		musicShelfRenderer.contents = newContents;
 
-		// now add extra to end (or start)
+		// ADD EXTRA ITEMS TO START/END
 		let byIndex = idsToReplace.extraByIndex || {};
-		//if (!byIndex) return response;
 
 		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
 		for (let index of orderedExtraIndexes) {
@@ -681,15 +701,23 @@ MiddlewareEditors = class MiddlewareEditors {
 			else musicShelfRenderer.contents.push(newListItem);
 		};
 
-		// update delete status of items, now theyve been replaced. some replacements might need deleting
-		// and update indexes
+		// ALL REPLACEMENT NOW DONE, NOW UPDATE DELETION ATTRIBUTES
 		let indexCount = 0;
 		let totalSeconds = 0;
 		let songCount = 0;
 
+		console.log("listItems now", musicShelfRenderer.contents);
+
 		for (let lir of musicShelfRenderer.contents) {
 			lir = lir.musicResponsiveListItemRenderer;
-			let hideThis = hiddenSongs.includes(lir.playlistItemData.videoId);
+			let lirId = lir.playlistItemData.videoId;
+
+			// add per video id. used to do "all", but if clicked play from sidebar, would replace
+			// whatever with this. dont want.
+			UBrowseParamsByRequest.pageSpecific[lirId] = { buildingQueueFrom: cachedAlbum.id };
+			
+			// hiding song stuff. dont delete, just give hidden attr, so can readd in edit mode.
+			let hideThis = hiddenSongs.includes(lirId);
 			let thisIndex = Number(lir.index.runs[0].text);
 
 			if (hideThis && (!lir.cData || !lir.cData.changedByDeletion)) {
@@ -700,6 +728,8 @@ MiddlewareEditors = class MiddlewareEditors {
 				continue; // DONT increment, will fill the gap
 			};
 
+			// INDEX CORRECTION. FILLS GAPS, AND ACCOMMODATES FOR DELETED ITEMS.
+			// continue if is deleted dont want to increment.
 			if (UDigDict(lir, ["cData", "changedByDeletion", "isDeleted"])) continue;
 
 			let thisLenStr = UDigDict(lir, [
@@ -711,6 +741,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			totalSeconds += ULengthStrToSeconds(thisLenStr);
 			songCount ++;
 
+			// EDIT INDEXES IF INCORRECT.
 			if (thisIndex !== 0 && thisIndex !== indexCount) {
 				lir.index.runs[0].text = String(indexCount);
 
@@ -737,6 +768,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		};
 
 
+		// EDIT HEADER DETAILS, AUTOMATICALLY, BASED ON NEW CONTENTS.
 		let headerRenderer = UDigDict(response, [
 			"contents", "twoColumnBrowseResultsRenderer", "tabs",
 			0, "tabRenderer", "content",
@@ -745,6 +777,17 @@ MiddlewareEditors = class MiddlewareEditors {
 		]);
 		headerRenderer.secondSubtitle.runs[0].text = `${songCount} songs`;
 		headerRenderer.secondSubtitle.runs[2].text = USecondsToLengthStr(totalSeconds, true, false);
+
+		let playButton = UGetButtonFromButtons(headerRenderer.buttons, "musicPlayButtonRenderer");
+		let firstLIR = musicShelfRenderer.contents[0].musicResponsiveListItemRenderer;
+		let firstWE = UDigDict(firstLIR, [
+			"overlay", "musicItemThumbnailOverlayRenderer", "content",
+			"musicPlayButtonRenderer", "playNavigationEndpoint", "watchEndpoint"
+		]);
+
+		playButton.playNavigationEndpoint.watchEndpoint = firstWE;
+
+		console.log("listitems after", structuredClone(musicShelfRenderer.contents));
 
 		return response;
 	};
@@ -988,6 +1031,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		let ref = browseId || request.body.videoId;
 		cParams = UBrowseParamsByRequest.pageSpecific[ref];
 
+		if (!cParams) cParams = UBrowseParamsByRequest.pageSpecific[request.body.playlistId];
 		if (!cParams) cParams = UBrowseParamsByRequest.pageSpecific.all;
 
 		request.cParams = cParams; // DON'T delete here. pageSpecific needs to be persistent.
@@ -1183,7 +1227,7 @@ XMLHttpRequest.prototype.send = function(body) { // used for player/next/atr/qoe
 				await FetchModifyResponse({
 					url: xhr._url,
 					method: xhr._method,
-					body: body
+					body: JSON.parse(body)
 				}, xhr, true);
 			} catch {};
 		};

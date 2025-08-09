@@ -783,7 +783,7 @@ function EWCacheCreateStorableFromListItem(item, listData, albumId) {
 	if (item._DISPLAY_POLICY) return storable;
 
 	// playlist can be here now due to tworowitems. only do the following for a song, not coming from an album page.
-	if ((listData.type === "ALBUM" || formattedItem.type === "ALBUM" || formattedItem.type === "PLAYLIST") && (item.album)) return storable;
+	if (listData.type === "ALBUM" || formattedItem.type === "ALBUM" || formattedItem.type === "PLAYLIST" || !item.album) return storable;
 
 	// album
 	item.album.artist = formattedItem.artists[0];

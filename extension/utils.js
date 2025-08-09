@@ -97,7 +97,8 @@ class Utils {
 			badges: [],
 			type: "",
 			views: 0,
-			artPlaylistSetId: ""
+			//artPlaylistSetId: "",
+			playlistSetVideoId: ""
 		},
 		USER_CHANNEL: {
 			name: "",
@@ -219,6 +220,15 @@ class Utils {
 		};
 
 		return data;
+	};
+
+
+	static URandInt(minInc, maxInc) {
+		return minInc + Math.round(Math.random() * (maxInc - minInc));
+	};
+
+	static UArrayInsert(array, item, index) {
+		return [...array.slice(0, index), item, ...array.slice(index)];
 	};
 
 
@@ -419,7 +429,11 @@ class Utils {
 		};
 
 		return maxUrl;
-	}
+	};
+
+	static UGetButtonFromButtons(buttons, buttonName) {
+		return (buttons.filter( v => v[buttonName] )[0] || {})[buttonName];
+	};
 
 	static UGetSVGFromRaw(name, returnDiv, returnHTMLString) {
 		/* Returns copy of requested SVG by finding in UTemplateElementsStrings */
@@ -1890,8 +1904,10 @@ class Utils {
 		};
 
 		let id;
+		let setVideoId;
 		if (listItemRenderer.playlistItemData) {
 			id = listItemRenderer.playlistItemData.videoId;
+			setVideoId = listItemRenderer.playlistItemData.playlistSetVideoId;
 		
 		} else if (listItemRenderer.menu) {
 			id = listItemRenderer.menu.menuRenderer.items[0].menuServiceItemRenderer.serviceEndpoint.playlistEditEndpoint.actions[0].removedVideoId;
@@ -1946,6 +1962,7 @@ class Utils {
 			id:				 id,
 			type:			 songType,
 			liked:			 liked,
+			playlistSetVideoId: setVideoId,
 			_DISPLAY_POLICY: listItemRenderer.musicItemRendererDisplayPolicy
 		}
 	};
@@ -1991,6 +2008,8 @@ class Utils {
 
 		if (!buildingFromAlbum || !loadedFromAlbum) return;
 
+		// MAP INDEX TO VIDEO OF ALBUM WE HAVE LOADED.
+		// DO ALL BASED ON CACHE NOW, SO SHUFFLING DOESNT MATTER.
 		for (let video of (loadedFromAlbum.items || [])) {
 			video = cache[video] || {};
 			indexToVideoIdOfThis[video.index] = video.id;
@@ -2018,6 +2037,12 @@ class Utils {
 		};
 		if (counterparts) albumsToUse.push(...counterparts);
 
+		// if loading from smaller (eg original), need to add extra from deluxe.
+		// add to start of list, so is low priority.
+		if (buildingFromAlbum.id !== loadedFromAlbum.id) {
+			albumsToUse.unshift(buildingFromAlbum.id);
+		};
+
 		console.log(albumsToUse);
 
 		let changesByIndex = {};
@@ -2038,7 +2063,8 @@ class Utils {
 				};
 
 				// why change if its the same?
-				if (indexToVideoIdOfThis[item.index] === item.id) continue;
+				// because midnights. queue built from original, replaced by 3am. 
+				// need to bring back to original.
 
 				changesByIndex[item.index] = {
 					video: item,
@@ -2048,20 +2074,23 @@ class Utils {
 		};
 
 		// if loading from smaller album, need extras from deluxe adding.
-		for (let item of buildingFromAlbum.items || []) {
+		/*for (let item of buildingFromAlbum.items || []) {
 			item = cache[item];
 			if (!item || indexToVideoIdOfThis[item.index] !== undefined) continue;
+			
+			let alreadyChanging = changesByIndex[item.index];
+			if (alreadyChanging) continue; // low priority.
 
 			changesByIndex[item.index] = {
 				video: item,
 				from: buildingFromAlbum
 			};
-		};
+		};*/
 
 		let changesByOriginalId = {extraByIndex: {}};
 
 		console.log("indexToVideoIdOfThis", indexToVideoIdOfThis);
-		console.log("changesByIndex", changesByIndex);
+		console.log("changesByIndex", structuredClone(changesByIndex));
 
 		for (let [k,v] of Object.entries(changesByIndex)) {
 			let originalId = indexToVideoIdOfThis[k];
@@ -2080,7 +2109,10 @@ class Utils {
 			return cache["VL" + mfId];
 		};
 
-		return cache[cache.mfIdMap[mfId]];
+		let id = cache.mfIdMap[mfId];
+		if (!id) return undefined;
+
+		return cache[id];
 	};
 
 
@@ -2089,12 +2121,35 @@ class Utils {
 		UMWStorageGet().then(v => console.log(v));
 	};
 
-	static UTestingShowCache() {
+	static UTestingShowEntireCache() {
 		UMWStorageGet("cache").then(v => console.log(v));
 	};
 
 	static UTestingShowCacheEntry(id) {
 		UMWStorageGet("cache").then(v => console.log(v[id]))
+	};
+
+
+	static UCreateLongBylineForPlaylistPanel(replacement, buildingFromAlbum, artist) {
+		return [
+			{
+				text: artist.name,
+				navigationEndpoint: this.UBuildEndpoint({
+					navType: "browse",
+					id: artist.id
+				})
+			},
+			{ text: this.U_YT_DOT },
+			{
+				text: replacement.from.name,
+				navigationEndpoint: this.UBuildEndpoint({
+					navType: "browse",
+					id: buildingFromAlbum.id
+				})
+			},
+			{ text: this.U_YT_DOT },
+			{ text: buildingFromAlbum.year }
+		];
 	};
 
 
@@ -2471,11 +2526,14 @@ class Utils {
 		]);
 
 		let vId = replacement.video.id;
+		let setPlId = replacement.video.playlistSetVideoId;
 
 		// want to make play button work with playlistId being base, then adding extra from deluze version.
 		// different relationship, dont want deluxe to be overwriting.
 
 		playButton.playNavigationEndpoint.watchEndpoint.videoId = vId;
+		if (setPlId) playButton.playNavigationEndpoint.watchEndpoint.playlistSetVideoId = setPlId;
+
 		if (replacement.from.private === true) playButton.playNavigationEndpoint.watchEndpoint.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK";
 		else playButton.playNavigationEndpoint.watchEndpoint.playlistId = replacement.from.mfId; // keep this, want to play from the main versions!!
 
@@ -2616,6 +2674,24 @@ class Utils {
 					"text": {
 						"runs": [
 							{
+								"text": "Go to original album"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ALBUM"
+					},
+					"navigationEndpoint": this.UBuildEndpoint({
+						navType: "browse",
+						id: replacement.from.id
+					})
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
 								"text": "Go to artist"
 							}
 						]
@@ -2623,16 +2699,10 @@ class Utils {
 					"icon": {
 						"iconType": "ARTIST"
 					},
-					"navigationEndpoint": {
-						"browseEndpoint": {
-							"browseId": realAlbum.artist,
-							"browseEndpointContextSupportedConfigs": {
-								"browseEndpointContextMusicConfig": {
-									"pageType": "MUSIC_PAGE_TYPE_ARTIST"
-								}
-							}
-						}
-					}
+					"navigationEndpoint": this.UBuildEndpoint({
+						navType: "browse",
+						id: realAlbum.artist
+					})
 				}
 			}
 		];
@@ -2654,30 +2724,9 @@ class Utils {
 		return current;
 	};
 
-	static UCreateLongBylineForPlaylistPanel(replacement, buildingFromAlbum, artist) {
-		return [
-			{
-				text: artist.name,
-				navigationEndpoint: this.UBuildEndpoint({
-					navType: "browse",
-					id: artist.id
-				})
-			},
-			{ text: this.U_YT_DOT },
-			{
-				text: replacement.from.name,
-				navigationEndpoint: this.UBuildEndpoint({
-					navType: "browse",
-					id: buildingFromAlbum.id
-				})
-			},
-			{ text: this.U_YT_DOT },
-			{ text: buildingFromAlbum.year }
-		];
-	};
-
 	static UModifyPlaylistPanelRendererFromData(current, replacement, realAlbum, artist) {
 		let vId = replacement.video.id;
+		let plSetId = replacement.video.playlistSetVideoId;
 
 		current.title.runs[0].text = replacement.video.name;
 
@@ -2696,7 +2745,8 @@ class Utils {
 		let we = current.navigationEndpoint.watchEndpoint;
 		we.videoId = vId;
 		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (realAlbum.private === true) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
-		// not editing params, playerParams, playlistSetVideoId, may need to? test it
+		if (plSetId) we.playlistSetVideoId = plSetId;
+		// TODO not editing params, playerParams, playlistSetVideoId, may need to? test it
 
 		current.videoId = vId;
 		current.queueNavigationEndpoint.queueAddEndpoint.videoId = vId;
@@ -2914,16 +2964,10 @@ class Utils {
 					"icon": {
 						"iconType": "ALBUM"
 					},
-					"navigationEndpoint": {
-						"browseEndpoint": {
-							"browseId": realAlbum.id,
-							"browseEndpointContextSupportedConfigs": {
-								"browseEndpointContextMusicConfig": {
-									"pageType": "MUSIC_PAGE_TYPE_ALBUM"
-								}
-							}
-						}
-					}
+					"navigationEndpoint": this.UBuildEndpoint({
+						navType: "browse",
+						id: replacement.from.id
+					})
 				}
 			},
 			{
@@ -2938,12 +2982,10 @@ class Utils {
 					"icon": {
 						"iconType": "ARTIST"
 					},
-					"navigationEndpoint": {
-						"browseEndpoint": this.UBuildEndpoint({
-							navType: "browse",
-							id: realAlbum.artist
-						})
-					}
+					"navigationEndpoint": this.UBuildEndpoint({
+						navType: "browse",
+						id: artist.id
+					})
 				}
 			},
 			{
@@ -2984,7 +3026,7 @@ class Utils {
 			playlistId: realAlbum.mfId,
 			firstVideo: video,
 			index: index, // zero base index.
-			playlistSetVideoId: video.artPlaylistSetId,
+			playlistSetVideoId: video.playlistSetVideoId
 			//cParams: { buildingQueueFrom: realAlbum.id }
 		});
 
@@ -3201,6 +3243,42 @@ class Utils {
 									}
 								}
 							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Go to album"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ALBUM"
+									},
+									"navigationEndpoint": this.UBuildEndpoint({
+										navType: "browse",
+										id: replacement.from.id
+									})
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Go to artist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ARTIST"
+									},
+									"navigationEndpoint": this.UBuildEndpoint({
+										navType: "browse",
+										id: realAlbum.artist
+									})
+								}
+							}
 						],
 						"topLevelButtons": [
 							{
@@ -3260,28 +3338,11 @@ class Utils {
 
 	static UBuildPlaylistPanelRendererFromData(replacement, realAlbum, artist, queuePlaylistId) {
 		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
-		// eg, realAlbum = deluxe, replacement.from = original.
 
 		let video = replacement.video;
 
 		let index = Number(video.index);
 		if (index !== 0) index --;
-
-		/*let longBylineRuns = [
-			{
-				"text": artist.name,
-				"navigationEndpoint": this.UBuildEndpoint({
-					navType: "browse",
-					id: artist.id
-				})
-			},
-			{
-				"text": this.U_YT_DOT
-			},
-			...this.UCreateLongBylineAlbumTitle(replacement.from, realAlbum),
-			{ "text": this.U_YT_DOT},
-			{ "text": realAlbum.year || replacement.from.year }
-		];*/
 
 		return {
 			"playlistPanelVideoRenderer": {
@@ -3558,7 +3619,7 @@ class Utils {
 									},
 									"navigationEndpoint": this.UBuildEndpoint({
 										navType: "browse",
-										id: realAlbum.id
+										id: replacement.from.id
 									}),
 								}
 							},
@@ -3620,7 +3681,8 @@ class Utils {
 						},
 						"queueInsertPosition": "INSERT_AT_END"
 					}
-				}
+				},
+				cData: replacement
 			}
 		}
 	};

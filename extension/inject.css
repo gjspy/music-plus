@@ -1481,43 +1481,11 @@ ytmusic-player-bar svg {
 	stroke: transparent;
 }
 
-ytmusic-player-bar button[aria-label="Repeat all"] svg,
-ytmusic-player-bar button[aria-label="Repeat one"] svg {
+ytmusic-player-bar[repeat-mode="ALL"] yt-icon-button.repeat svg,
+ytmusic-player-bar[repeat-mode="ONE"] yt-icon-button.repeat svg,
+ytmusic-player-bar[shuffle-on] yt-icon-button.shuffle svg {
 	stroke: #ffffffad;
 }
-
-/*ytmusic-player-bar .right-controls-buttons {
-	box-shadow: 0px 0px 5px 5px #020201;
-	background: #020201;
-	border-radius: 3px;
-
-	z-index: 0;
-	position: fixed;
-	margin-right: 60px;
-
-	transition: padding-left 0.1s ease 0.2s;
-}
-
-ytmusic-player-bar tp-yt-paper-slider {
-	z-index: 1;
-	margin-right: 145px;
-}
-
-ytmusic-player-bar .right-controls:has(tp-yt-paper-slider.on-hover) tp-yt-paper-slider {
-	transition-delay: 0.1s !important;
-}
-
-ytmusic-player-bar .right-controls:not(:has(tp-yt-paper-slider.on-hover)) tp-yt-paper-slider {
-	transition-delay: 0s !important;
-}
-
-ytmusic-player-bar .right-controls:has(tp-yt-paper-slider.on-hover) .right-controls-buttons {
-	padding-left: 90px;
-	transition-delay: 0s !important;
-}*/
-
-
-
 
 
 
@@ -1534,11 +1502,6 @@ ytmusic-player-bar .right-controls:has(tp-yt-paper-slider.on-hover) .right-contr
 	margin-right: -3px;
 }
 
-
-
-/*ytmusic-player-page {
-	/*background: transparent;/
-}*/
 
 
 
