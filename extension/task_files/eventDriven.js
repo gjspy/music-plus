@@ -70,7 +70,7 @@ export async function MWEventDriven_PageChanges() {
 		let edited = !!UDigDict(state, ["navigation", "mainContent", "response", "cMusicFixerExtChangedResponse"]);
 		browsePage.setAttribute("c-edited", edited);
 
-		EditMode.UpdateButtons(state);
+		ButtonBar.UpdateButtons(state);
 	};
 
 	async function _OnDOMChange(changes, browsePage) {

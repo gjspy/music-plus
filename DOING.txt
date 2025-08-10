@@ -166,7 +166,10 @@ ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED
 hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 /XDOES SELCTEG WORK? NON INDEXED THINGS?
 //ARE NON INDEX ITEMS EDITED? TO REPLACE ARTIST WITH PUBLIC AND ETC
-fix like buttons everywhere - FIXED LISTITEMRENDERERS, JUST PLAYLISTPANEL NOW.
+//fix like buttons everywhere - FIXED LISTITEMRENDERERS, JUST PLAYLISTPANEL NOW.
+//	- is so crude. no "toggled = true", they define default and toggled based on how the state starts.
+//	eg, user has already liked the video. default text = "remove from liked songs", toggled text = "add to liked songs". 
+//		if user has not liked the video yet, default text = "add to liked songs", and toggled = "remove from liked songs" !!!!! **********************
 
 now:
 //list items and playlist panels work.
@@ -174,9 +177,9 @@ now:
 /Xchange "playing from" text?
 //decide whats happening with longByline, with album name. make consistent everwhere, lots of places.
 next, please do naming stuff to make ti consistent, artists and albums.
-need to make sidebar play buttons work? does it already?
-cache on like!!! really important now, making our own listitemrenderers.
-CHECK THAT "add to queue" does not add whole thing, if we're asking to add one song, if we edit indexes.
+//need to make sidebar play buttons work? does it already?
+//cache on like!!! really important now, making our own listitemrenderers.
+//CHECK THAT "add to queue" does not add whole thing, if we're asking to add one song, if we edit indexes.
 //REALLY BAD trying to make main ver songs play with extra items. need rewrite, rename addedBulkFrom -> grouper or smth, then perspective = album which was clicked to start playing.
 //	- think about midnights, the shitton of albums that will have.
 how does shuffling work when theres two playlists?
@@ -192,14 +195,14 @@ how does shuffling work when theres two playlists?
 }
 
 
-LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
+LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD, LIKE EDITMODE. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
+//*******GET RID OF "REMOVE FROM PLAYLIST" BUTTON IN PLAYLISTPANELS, ONLY HAVE IT IN LISTITEMS, MAKE IT A DIALOG ARE YOU SURE.
+check TODOs
+
+add album metadata, icon from google drive!!
 
 
-
-
-
-
-
+on playlist create isnt adding to top of paperitemorder. is prob because of no storage space.
 
 
 

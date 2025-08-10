@@ -383,13 +383,15 @@ export async function MWInjectMyPaperItems() {
 			UNavigateOnClick(elem.querySelector(".c-paper-play-icon"), UBuildEndpoint({
 				playlistId: mfId,
 				navType: "watch",
-				shuffle: false
+				shuffle: false,
+				cParams: { buildQueueFrom: id }
 			}), this.InitButtonContOnNavClick, excessParams, undefined, true, true);
 
 			UNavigateOnClick(elem.querySelector(".c-paper-shfl-icon"), UBuildEndpoint({
 				playlistId: mfId,
 				navType: "watch",
-				shuffle: true
+				shuffle: true,
+				cParams: { buildQueueFrom: id }
 			}), this.InitButtonContOnNavClick, excessParams, undefined, true, true);
 
 
@@ -400,14 +402,16 @@ export async function MWInjectMyPaperItems() {
 				playlistId: mfId,
 				navType: "queueAdd",
 				position: "end",
-				listType: browsePageType
+				listType: browsePageType,
+				cParams: { buildQueueFrom: id }
 			}), undefined, undefined, undefined, true, true);
 
 			UNavigateOnClick(elem.querySelector(".c-paper-queuenext-icon"), UBuildEndpoint({
 				playlistId: mfId,
 				navType: "queueAdd",
 				position: "next",
-				listType: browsePageType
+				listType: browsePageType,
+				cParams: { buildQueueFrom: id }
 			}), undefined, undefined, undefined, true, true);
 		};
 

@@ -120,7 +120,7 @@ AlbumEditMode = class AlbumEditMode {
 				linkedItem: chosenId
 			});
 
-			EditMode.CancelAll();
+			ButtonBar.CancelAll();
 
 			setTimeout(() => UNavigate(
 				UBuildEndpoint({
@@ -166,7 +166,7 @@ AlbumEditMode = class AlbumEditMode {
 				linkedItem: chosenId
 			});
 
-			EditMode.CancelAll();
+			ButtonBar.CancelAll();
 
 			setTimeout(() => UNavigate(
 				UBuildEndpoint({
@@ -205,7 +205,7 @@ AlbumEditMode = class AlbumEditMode {
 				alts: alternates
 			});
 
-			EditMode.CancelAll();
+			ButtonBar.CancelAll();
 
 			setTimeout(() => UNavigate(
 				UBuildEndpoint({
@@ -236,9 +236,59 @@ AlbumEditMode = class AlbumEditMode {
 	};
 };
 
-window.EditMode = class MasterEditMode {
+AlbumButtons = class AlbumButtons {
+	static buttons = [
+		{
+			type: "hide",
+			icon: "album",
+			text: "Go To Linked",
+			onclick: this.SelectLinked
+		},
+	];
+
+	static async SelectLinked(state, browsePage, id) {
+		function OnClickItem(chosenId) {
+			ButtonBar.CancelAll();
+
+			setTimeout(() => UNavigate(
+				UBuildEndpoint({
+					navType: "browse",
+					"id": chosenId
+				})
+			), 70);
+			
+		};
+
+		let storage = await UMWStorageGet();
+		let thisAlbumData = storage.cache[id];
+		let primaryVersions = UGetPrimaryVersions(storage, id) || []; // other versions (eg non-deluxe)
+		let linkedAlbums = storage.customisation.albumLinks[id] || []; // linked versions (eg 3am)
+		let counterparts = thisAlbumData.privateCounterparts || []; // private uploaded versions
+
+		let gridCont = UShowGridOfMusicItems(
+			(v) => (
+				primaryVersions.indexOf(v.id) !== -1 ||
+				linkedAlbums.indexOf(v.id) !== -1 || 
+				counterparts.indexOf(v.id) !== -1				
+			),
+			[], false, false, OnClickItem, storage, "link-albums", "Linked Albums",
+			"Current albums linked with \"" + thisAlbumData.name + "\"."
+		);
+
+		gridCont.ovf.style.marginRight = "250px";
+		gridCont.ovf.style.marginLeft = "initial";
+		gridCont.ovf.style.right = "0";
+		gridCont.ovf.style.setProperty("--height", "700px");
+	};
+}
+
+window.ButtonBar = class MasterEditMode {
 	static specificEditModes = {
 		"MUSIC_PAGE_TYPE_ALBUM": AlbumEditMode
+	};
+
+	static specificButtons = {
+		"MUSIC_PAGE_TYPE_ALBUM": AlbumButtons
 	};
 
 	static rightContent = undefined;
@@ -250,6 +300,7 @@ window.EditMode = class MasterEditMode {
 		if (type === "REVERT") btn = UGetSVGFromRaw("doc-revert", true, false);
 		else if (type === "EDIT") btn = UGetSVGFromRaw("pencil", true, false);
 		else if (type === "CANCEL") btn = UGetSVGFromRaw("cross", true, false);
+		else if (type === "DOTS") btn = UGetSVGFromRaw("dots", true, false);
 
 		btn.className = type.toLowerCase() + "-btn c-button";
 
@@ -262,7 +313,7 @@ window.EditMode = class MasterEditMode {
 	};
 
 	static FillButtonCont() {
-		for (let type of ["REVERT", "EDIT", "CANCEL"]) {
+		for (let type of ["DOTS", "REVERT", "EDIT", "CANCEL"]) {
 			this.AddButtonToCont(type);
 		};
 	};
@@ -340,6 +391,7 @@ window.EditMode = class MasterEditMode {
 		let browseId = state.navigation.mainContent.endpoint.data.browseId;
 
 		this.CancelAll();
+		this.HideButton("DOTS");
 		this.HideButton("EDIT"); // always hide, to remove old onclick etc..
 		this.HideButton("REVERT");
 		this.HideButton("CANCEL");
@@ -347,32 +399,50 @@ window.EditMode = class MasterEditMode {
 		if (hasEditedResponse) this.ShowButton("REVERT");
 
 		let browseType = UGetBrowsePageTypeFromBrowseId(browseId, false, true, hasEditedResponse);
-		let modeForType = this.specificEditModes[browseType];
+		let editModeForType = this.specificEditModes[browseType];
+		let buttonsForType = this.specificButtons[browseType];
 
-		UNavigateOnClick(this.buttonCont.__data.buttons.REVERT, UBuildEndpoint({
-			navType: "browse",
-			id: browseId,
-			cParams: {returnOriginal: true}
-		}));
-
-		if (!modeForType) return;
-		
-		this.ShowButton("EDIT");
-
-		this.buttonCont.__data.buttons.EDIT.onclick = function(e) {
-			let browsePage = document.querySelector("#content ytmusic-browse-response#browse-page");
-
-			UDrawDropdown(modeForType.buttons, e, modeForType, [state, browsePage, browseId], function() {
-				let buttonCont = document.querySelector("ytmusic-nav-bar #right-content .c-master-buttons");
-
-				UHideElem(buttonCont.__data.buttons.EDIT);
-				UUnHideElem(buttonCont.__data.buttons.CANCEL);
-			});
+		// DONT USER UNAVIGATEONCLICK, DOES EVENTLISTENER.
+		// NEED onclick SO NEXT TIME OVERWRITES.
+		this.buttonCont.__data.buttons.REVERT.onclick = function(e) { 
+			UNavigate(UBuildEndpoint({
+				navType: "browse",
+				id: browseId,
+				cParams: {returnOriginal: true}
+			}));
 		};
 
-		let that = this;
+		if (editModeForType) {
+			this.ShowButton("EDIT");
 
-		this.buttonCont.__data.buttons.CANCEL.onclick = () => that.OnClickCloseButton.call(that);
+			this.buttonCont.__data.buttons.EDIT.onclick = function(e) {
+				if (document.querySelector(".c-dropdown")) return; // delete and move on
+
+				let browsePage = document.querySelector("#content ytmusic-browse-response#browse-page");
+
+				UDrawDropdown(editModeForType.buttons, e, editModeForType, [state, browsePage, browseId], function() {
+					let buttonCont = document.querySelector("ytmusic-nav-bar #right-content .c-master-buttons");
+
+					UHideElem(buttonCont.__data.buttons.EDIT);
+					UUnHideElem(buttonCont.__data.buttons.CANCEL);
+				});
+			};
+
+			let that = this;
+			this.buttonCont.__data.buttons.CANCEL.onclick = () => that.OnClickCloseButton.call(that);
+		};
+		
+		if (buttonsForType) {
+			this.ShowButton("DOTS");
+
+			this.buttonCont.__data.buttons.DOTS.onclick = function(e) {
+				if (document.querySelector(".c-dropdown")) return; // delete and move on
+
+				let browsePage = document.querySelector("#content ytmusic-browse-response#browse-page");
+
+				UDrawDropdown(buttonsForType.buttons, e, buttonsForType, [state, browsePage, browseId]);
+			};
+		};
 	};
 };
 

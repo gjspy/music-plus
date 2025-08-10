@@ -7,7 +7,9 @@ MiddlewareEditors = class MiddlewareEditors {
 		"/youtubei/v1/like/removelike",
 		"/youtubei/v1/next",
 		"/youtubei/v1/player",
-		"/youtubei/v1/music/get_queue"
+		"/youtubei/v1/music/get_queue",
+		"/youtubei/v1/subscription/subscribe",
+		"/youtubei/v1/subscription/unsubscribe"
 	];
 
 	static _ShouldModifyURL(url) {
@@ -312,7 +314,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			musicThumbnailRenderer: thumbnailRenderer
 		};
 
-		return response;
+		return response; // changed in-place
 	};
 
 	static SmallTasks = {
@@ -330,7 +332,7 @@ MiddlewareEditors = class MiddlewareEditors {
 				data: gathered
 			});
 
-			return response;
+			return;
 		},
 
 		"/youtubei/v1/playlist/delete": function PlaylistDeleteCommand(request, response) {
@@ -343,7 +345,7 @@ MiddlewareEditors = class MiddlewareEditors {
 				data: gathered
 			});
 
-			return response;
+			return;
 		},
 
 		"/youtubei/v1/player": function CacheVideoViews(request, response) {
@@ -358,15 +360,130 @@ MiddlewareEditors = class MiddlewareEditors {
 				data: gathered
 			});
 
-			return response;
-		}
+			return;
+		},
+
+		"/youtubei/v1/like/dislike": function CacheDislike(request, reponse) {
+			let gathered = {
+				id: request.body.target.videoId,
+				liked: "DISLIKE",
+				type: "SONG"
+			};
+
+			if (!gathered) return;
+
+			UDispatchEventToEW({
+				func: "cache-data",
+				data: gathered
+			});
+
+			return;
+		},
+
+		/* this is bad, think theres something going on with topic channels?
+		request does not have the browsed to id of the channel. eg, cage the elephant, endpoint = UCOk9wZlQNsWjb7gJhnvmbkQ but
+		browsed to UCU3rXoHt2bCYbpV3s_sJlgw.
+		"/youtubei/v1/subscription/subscribe": function CacheSubscribe(request, response) {
+			let gathered = request.body.channelIds.map( v => {
+				return { id: v, saved: true, type: "C_PAGE_TYPE_CHANNEL_OR_ARTIST" };
+			});
+
+			if (!gathered) return;
+
+			UDispatchEventToEW({
+				func: "cache-data",
+				data: gathered
+			});
+
+			return;
+		},
+
+		"/youtubei/v1/subscription/unsubscribe": function CacheUnsubscribe(request, response) {
+			let gathered = request.body.channelIds.map( v => {
+				return { id: v, saved: false, type: "C_PAGE_TYPE_CHANNEL_OR_ARTIST" };
+			});
+
+			if (!gathered) return;
+
+			UDispatchEventToEW({
+				func: "cache-data",
+				data: gathered
+			});
+
+			return;
+		}*/
 	};
 
 
 	static SmallTasksRequireCache = {
+		"/youtubei/v1/like/like": function CacheLike(request, response, storage) {
+			let gathered;
+			
+			if (request.body.target.videoId) {
+				gathered = {
+					id: request.body.target.videoId,
+					liked: "LIKE",
+					type: "SONG"
+				};
+			};
+
+			if (request.body.target.playlistId) {
+				let type = UGetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
+				let id = (type === "MUSIC_PAGE_TYPE_ALBUM") ? storage.cache.mfIdMap[request.body.target.playlistId]
+					: "VL" + request.body.target.playlistId;
+				
+				gathered = {
+					"id": id,
+					saved: true,
+					"type": type
+				};
+			};
+
+			if (!gathered || !gathered.id) return;
+
+			UDispatchEventToEW({
+				func: "cache-data",
+				data: gathered
+			});
+
+			return;
+		},
+
+		"/youtubei/v1/like/removelike": function CacheUnlike(request, response, storage) {
+			let gathered;
+			
+			if (request.body.target.videoId) {
+				gathered = {
+					id: request.body.target.videoId,
+					liked: "INDIFFERENT",
+					type: "SONG"
+				};
+			};
+
+			if (request.body.target.playlistId) {
+				let type = UGetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
+				let id = (type === "MUSIC_PAGE_TYPE_ALBUM") ? storage.cache.mfIdMap[request.body.target.playlistId]
+					: "VL" + request.body.target.playlistId;
+				
+				gathered = {
+					"id": id,
+					saved: false,
+					"type": type
+				};
+			};
+
+			if (!gathered || !gathered.id) return;
+
+			UDispatchEventToEW({
+				func: "cache-data",
+				data: gathered
+			});
+
+			return;
+		},
+
 		"/youtubei/v1/next": function TidyQueueNextItems(request, response, storage) {
-			if (!request.cParams || !request.cParams.buildingQueueFrom) return;
-			// so now if user clicks "revert" on album page, it will play original.
+			// if user clicks "revert" on album page, it will play original, because no buildQueueFrom.
 			// and, clicking a main song will now include the extras.
 
 			// require cParams. declares that we want to edit this response.
@@ -376,7 +493,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			let browsePage = document.querySelector("ytmusic-browse-response");
 			if (browsePage && browsePage.getAttribute("c-edited") === false) {
 				console.log("browse page reports no c edits. returning in /next middleware.");
-				return response;
+				return;
 			};
 
 			let playlistPanel = UDigDict(response, [
@@ -386,15 +503,39 @@ MiddlewareEditors = class MiddlewareEditors {
 				"content", "playlistPanelRenderer"//, "contents"
 			]);
 
-			if (!playlistPanel || !playlistPanel.contents) return response;
+			if (!playlistPanel || !playlistPanel.contents) return;
 			let isShuffle = request.body.watchNextType === "WATCH_NEXT_TYPE_MUSIC_SHUFFLE";
 
 			console.log("originalPlaylistPanelcontents", structuredClone(playlistPanel.contents));
+			console.log(request.cParams, (request.cParams || {}), (request.cParams || {}).buildQueueFrom);
 
-			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, playlistPanel.contents, request.cParams.buildingQueueFrom, request.body.playlistId, request.body.videoId, isShuffle, false);
+			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(
+				storage,
+				playlistPanel.contents,
+				(request.cParams || {}).buildQueueFrom,
+				request.body.playlistId,
+				request.body.videoId,
+				isShuffle,
+				false
+			);
 
-			playlistPanel.contents = newContents;
+			if (newContents) playlistPanel.contents = newContents;
+			
+			if (!currentVideoWE) return response; // changed in place (and leaving early)
 			response.currentVideoEndpoint.watchEndpoint = currentVideoWE;
+
+			let currentVideoCache = storage.cache[currentVideoWE.videoId];
+			if (!currentVideoCache) return response; // changed in place
+
+			let overlayButtons = UDigDict(response, ["playerOverlays", "playerOverlayRenderer", "actions"]);
+			if (!overlayButtons) return response; // changed in place
+
+			let like = UGetButtonFromButtons(overlayButtons, "likeButtonRenderer");
+			like.likeStatus = currentVideoCache.liked;
+			like.target.videoId = currentVideoWE.videoId;
+			like.serviceEndpoints[0].likeEndpoint.target.videoId = currentVideoWE.videoId;
+			like.serviceEndpoints[1].likeEndpoint.target.videoId = currentVideoWE.videoId;
+			like.serviceEndpoints[2].likeEndpoint.target.videoId = currentVideoWE.videoId;
 
 			console.log("newPlPancontents", playlistPanel.contents);
 
@@ -405,7 +546,7 @@ MiddlewareEditors = class MiddlewareEditors {
 				"header", "musicQueueHeaderRenderer", "buttons"
 			]);
 
-			if (!headerButtons) return response;
+			if (!headerButtons) return response; // has been changed in place.
 
 			headerButtons.push({
 				chipCloudChipRenderer: {
@@ -419,22 +560,22 @@ MiddlewareEditors = class MiddlewareEditors {
 				}
 			});*/
 
-			return response;
+			return response; // was changed in-place.
 
 		},
 
 		"/youtubei/v1/music/get_queue": function TidyGetQueueItems(request, response, storage) {
-			if (!request.cParams || !request.cParams.buildingQueueFrom) return;
+			//if (!request.cParams || !request.cParams.buildQueueFrom) return;
 			// so now if user clicks "revert" on album page, it will play original.
 			// and, clicking a main song will now include the extras.
 
 			let queueDatas = response.queueDatas;
-			if (!queueDatas) return response;
+			if (!queueDatas) return;
 
-			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, queueDatas, request.cParams.buildingQueueFrom, request.body.playlistId, undefined, false, true);
-
-			response.queueDatas = newContents;
-			return response;
+			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, queueDatas, request.cParams.buildQueueFrom, request.body.playlistId, undefined, false, true);
+			
+			if (newContents) response.queueDatas = newContents;
+			return response; // was changed in-place.
 		}
 	};
 
@@ -478,7 +619,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			let counterpartData;
 
-			if (type === "MUSIC_PAGE_TYPE_ALBUM") {
+			if (type === "MUSIC_PAGE_TYPE_ALBUM" && realAlbum.id) {
 				run.navigationEndpoint = UBuildEndpoint({
 					navType: "browse",
 					id: realAlbum.id
@@ -508,9 +649,31 @@ MiddlewareEditors = class MiddlewareEditors {
 		return songCacheData;
 	};
 
+	static _DeleteRemoveFromPlaylistButtonFromPPVR(videoRenderer) {
+		let buttons = UDigDict(videoRenderer, [
+			"menu", "menuRenderer", "items"
+		]);
+		if (!buttons) return;
+
+		let i = -1;
+		for (let b of structuredClone(buttons)) {
+			i ++;
+
+			let serviceAction = UDigDict(b, [
+				"menuServiceItemRenderer", "serviceEndpoint", "playlistEditEndpoint",
+				"actions", 0, "action"
+			]);
+			if (!serviceAction) continue;
+			if (serviceAction !== "ACTION_REMOVE_VIDEO") continue
+
+			buttons.splice(i, 1);
+		};
+	};
+
 	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFrom, loadedQueueFrom, videoIdToSelect, isShuffle, areQueueDatas) {
 		let buildFromAlbum = storage.cache[buildQueueFrom] || {};
 		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFrom) || {};
+		console.log(buildQueueFrom, loadedQueueFrom, buildFromAlbum, loadedFromAlbum);
 
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, buildFromAlbum.id, loadedFromAlbum.id) || {};
 		console.log("replacements", idsToReplace);
@@ -534,7 +697,8 @@ MiddlewareEditors = class MiddlewareEditors {
 			else {
 				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage.cache, videoRenderer, buildFromAlbum);
 				videoRenderer.cData = { video: cachedVideo, from: buildFromAlbum };// why did we set cData here? dont think it worked?
-				console.log("newVideoCData", videoRenderer.cData);
+
+				this._DeleteRemoveFromPlaylistButtonFromPPVR(videoRenderer);
 			};
 
 			if (!backingPlaylistId) backingPlaylistId = UDigDict(videoRenderer, [
@@ -543,6 +707,13 @@ MiddlewareEditors = class MiddlewareEditors {
 			]);
 
 			if (videoIdToSelect) videoRenderer.selected = videoRenderer.videoId === videoIdToSelect;
+		};
+
+		if (!buildQueueFrom) {
+			// USER HAS CLICKED TO LOAD FROM ORIGINAL, OR OTHER.
+			// ONLY WANTED TO DO FIRST ITERATION, TO EDIT LONGBYLINE.
+			console.log("leaving early!");
+			return [undefined, undefined];
 		};
 
 		// dont need to worry about other items in queue. any response only ever gives the new bit.
@@ -616,7 +787,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		let albumLike = this._ConvertOldAlbumPageToNew(response, id, storage.cache);
 		let newResp = this.MUSIC_PAGE_TYPE_ALBUM(albumLike, id, storage);
 
-		return newResp;
+		return newResp || albumLike;
 	};
 
 	static MUSIC_PAGE_TYPE_ALBUM(response, id, storage) {
@@ -624,7 +795,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		// need to edit album subtitleTwo total minutes based on contents.
 
 		let type = UGetBrowsePageTypeFromBrowseId(id);
-		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return response;
+		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return;
 
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id) || {};
 
@@ -635,7 +806,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			"sectionListRenderer", "contents", 0,
 			"musicShelfRenderer"
 		]);
-		if (!musicShelfRenderer || !musicShelfRenderer.contents) return response;
+		if (!musicShelfRenderer || !musicShelfRenderer.contents) return;
 
 		let cachedAlbum = storage.cache[id] || {};
 		let hiddenSongs = storage.customisation.hiddenSongs[id] || [];
@@ -714,7 +885,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			// add per video id. used to do "all", but if clicked play from sidebar, would replace
 			// whatever with this. dont want.
-			UBrowseParamsByRequest.pageSpecific[lirId] = { buildingQueueFrom: cachedAlbum.id };
+			UBrowseParamsByRequest.pageSpecific[lirId] = { buildQueueFrom: cachedAlbum.id };
 			
 			// hiding song stuff. dont delete, just give hidden attr, so can readd in edit mode.
 			let hideThis = hiddenSongs.includes(lirId);
@@ -789,7 +960,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		console.log("listitems after", structuredClone(musicShelfRenderer.contents));
 
-		return response;
+		return response; // was changed in-place
 	};
 
 
@@ -801,7 +972,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			"contents", "singleColumnBrowseResultsRenderer", "tabs",
 			0, "tabRenderer", "content", "sectionListRenderer"
 		]);
-		if (!sectionListRenderer) return response;
+		if (!sectionListRenderer) return;
 
 		let sortOptions = UDigDict(sectionListRenderer, [
 			"header", "musicSideAlignedItemRenderer", "endItems",
@@ -809,7 +980,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			"musicMultiSelectMenuRenderer", "options"
 		]);
 
-		if (!sortOptions) return response;
+		if (!sortOptions) return;
 		let recencyOpt;
 
 		for (let sortOpt of sortOptions) {
@@ -844,17 +1015,17 @@ MiddlewareEditors = class MiddlewareEditors {
 			}
 		}];
 
-		return response;
+		return response; // was changed in-place
 	};
 
 	static CONT_MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id, cache) {
 		let artist = id.replace("MPAD", "");
 
 		let cachedArtist = cache[artist];
-		if (!cachedArtist || (cachedArtist.privateCounterparts || []).length === 0) return response;
+		if (!cachedArtist || (cachedArtist.privateCounterparts || []).length === 0) return;
 
 		let privateArtist = cache[cachedArtist.privateCounterparts[0]];
-		if (!privateArtist) return response;
+		if (!privateArtist) return;
 
 		let releaseToYear = {};
 
@@ -873,7 +1044,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		if (!gridRenderer) {
 			gridRenderer = UDigDict(response, ["continuationContents", "gridContinuation"]);
 
-			if (!gridRenderer) return response;
+			if (!gridRenderer) return;
 		};
 
 		let doneYears = [];
@@ -910,7 +1081,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		};
 
 		gridRenderer.items = newItems;
-		return response;
+		return response; // changed in-place
 	};
 
 
@@ -919,7 +1090,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			"contents", "singleColumnBrowseResultsRenderer", "tabs",
 			0, "tabRenderer", "content", "sectionListRenderer", "contents"
 		]);
-		if (!sectionListContents) return response;
+		if (!sectionListContents) return;
 
 		for (let shelf of sectionListContents) {
 			if (!shelf.musicCarouselShelfRenderer) continue;
@@ -945,7 +1116,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			};
 		};
 
-		return response;
+		return response; // changed in-place
 	};
 
 	static C_PAGE_TYPE_CHANNEL_OR_ARTIST(response, id) {
@@ -981,6 +1152,38 @@ function initiateDelayedCacheOfOldResp(browseId, pageType, responseIsContinuatio
 
 
 async function FetchModifyResponse(request, oldResp, xhr) {
+	function _GetCParams(request, browseId) {
+		let cParams = request.cParams;
+
+		if (cParams) return [cParams, undefined];
+		if (!UBrowseParamsByRequest) return [undefined, undefined];
+
+		let refs = [
+			browseId,
+			(request.body) ? request.body.videoId : undefined,
+			(request.body) ? request.body.playlistId : undefined
+		];
+
+		for (let ref of refs) {
+			if (ref === undefined) continue;
+
+			cParams = UBrowseParamsByRequest[ref];
+			if (cParams) return [cParams, ref];
+		};
+
+		if (!UBrowseParamsByRequest.pageSpecific) return [undefined, undefined];
+
+		for (let ref of refs) {
+			cParams = UBrowseParamsByRequest.pageSpecific[ref];
+			if (cParams) return [cParams, undefined]; // PAGESPEFIC MUST BE PERSISTENT, NO DELETE.
+		};
+
+		cParams = UBrowseParamsByRequest.pageSpecific.all
+		if (cParams) return [cParams, undefined]; 
+
+		return [undefined, undefined]
+	};
+
 	if (
 		(!xhr && oldResp.status !== 200) ||
 		(!xhr && !(oldResp.headers.get("Content-Type") || "").includes("application/json")) ||
@@ -1019,45 +1222,46 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		urlObj.searchParams.get("continuation")
 	);
 
-	let cParams = request.cParams || (UBrowseParamsByRequest || {})[browseId];
+	let [cParams, cParamsRef] = _GetCParams(request, browseId);
+	console.log("CPARAMS", cParams, cParamsRef);
 
 	if (cParams) {
+		cParams = structuredClone(cParams);
+
+		if (cParamsRef) delete UBrowseParamsByRequest[cParamsRef];
 		if (cParams.returnOriginal) return oldResp;
-		request.cParams = structuredClone(cParams);
 
-		delete cParams;
-
-	} else if (UBrowseParamsByRequest) {
-		let ref = browseId || request.body.videoId;
-		cParams = UBrowseParamsByRequest.pageSpecific[ref];
-
-		if (!cParams) cParams = UBrowseParamsByRequest.pageSpecific[request.body.playlistId];
-		if (!cParams) cParams = UBrowseParamsByRequest.pageSpecific.all;
-
-		request.cParams = cParams; // DON'T delete here. pageSpecific needs to be persistent.
+		request["cParams"] = cParams;
 	};
 
 	console.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation, request);
 
 	let smallTask = MiddlewareEditors.SmallTasks[pathname];
+	let newBody;
 
 	if (smallTask) {
-		respBody = smallTask.apply(MiddlewareEditors, [request, respBody]);
-		changed = true;
+		newBody = smallTask.apply(MiddlewareEditors, [request, respBody]);
 	};
+
 
 	let smallTaskWithCache = MiddlewareEditors.SmallTasksRequireCache[pathname];
 
 	if (smallTaskWithCache) {
 		let storage = await UMWStorageGet();
 
-		respBody = smallTaskWithCache.apply(MiddlewareEditors, [request, respBody, storage]);
-		changed = true;
+		newBody = smallTaskWithCache.apply(MiddlewareEditors, [request, respBody, storage]);
 	};
+
 
 	let pageType = UGetBrowsePageTypeFromBrowseId(browseId);
 
 	initiateDelayedCacheOfOldResp(browseId, pageType, responseIsContinuation, toCacheOriginal);
+
+	if (newBody) {
+		respBody = newBody;
+		changed = true;
+	};
+
 
 	if (!changed && browseId) {
 		if (!pageType) return oldResp;
@@ -1071,13 +1275,16 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		if (f.length === 3) { // only get cache for functions that need it.
 			let storage = await UMWStorageGet();
 
-			respBody = f.apply(MiddlewareEditors, [respBody, browseId, storage]);
+			newBody = f.apply(MiddlewareEditors, [respBody, browseId, storage]);
 
 		} else {
-			respBody = f.apply(MiddlewareEditors, [respBody, browseId]);
+			newBody = f.apply(MiddlewareEditors, [respBody, browseId]);
 		};
 
-		changed = true;
+		if (newBody) {
+			respBody = newBody;
+			changed = true;
+		};
 	};
 
 	if (!changed) return oldResp;
@@ -1141,6 +1348,7 @@ async function newFetch(resource, options) {
 
 	};
 
+	// REFRESHES PAGESPECIFIC HERE!!
 	if (request.url.includes("/browse")) UBrowseParamsByRequest.pageSpecific = {};
 
 	if (request.method === "POST") { // have to do this first, or body is used in originalFetch.

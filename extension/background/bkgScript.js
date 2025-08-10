@@ -708,7 +708,7 @@ function EWCacheCreateStorableFromListItem(item, listData, albumId) {
 	formattedItem.artists = (formattedItem.artists || []).map(v => v.id);
 
 	formattedItem.type = utils.UGetCleanTypeFromPageType(formattedItem.type);
-	let itemIsSong = formattedItem.type.match("VIDEO_TYPE");
+	let itemIsSong = utils.UCacheItemIsSong(formattedItem);
 
 	if ( 
 		( // listitem is from album page, so we know who the artist is, but song doesnt have it, so add it.
@@ -801,7 +801,7 @@ function EWCacheCreateStorableFromListItem(item, listData, albumId) {
 function EWCacheCreateStorableFromItemsList(data, newPl) {
 	let storable = [];
 
-	for (let item of data.items) {
+	for (let item of (data.items || [])) {
 		console.log(item);
 
 		if (!item) continue;
@@ -824,20 +824,20 @@ function EWCacheCreateStorableFromListPage(data) {
 	let storable = [];
 
 	let newPl = structuredClone(data);
-	newPl.items = newPl.items.map(v => v.id);
+	if (newPl.items) newPl.items = newPl.items.map(v => v.id);
 
 	newPl.type = utils.UGetCleanTypeFromPageType(newPl.type);
 
-	if (newPl.type === "ALBUM" || newPl.type === "PLAYLIST") {
+	if ((newPl.type === "ALBUM" || newPl.type === "PLAYLIST") && newPl.yearStr) {
 		delete newPl.yearStr;
 		try { newPl.year = Number(data.yearStr); }
 		catch { newPl.year = -1; };
 	};	
 
 	if (newPl.type === "ALBUM") {
-		newPl.artist = newPl.artist.id;
+		if (newPl.artist) newPl.artist = newPl.artist.id;
 
-		if (newPl.private !== true) {
+		if (newPl.private !== undefined && newPl.private !== true) {
 			newPl.alternate = newPl.alternate.map(v => v.id);
 			newPl.features = data.items
 				.map( v => v.artists.map( y => y.id ) )
@@ -848,11 +848,13 @@ function EWCacheCreateStorableFromListPage(data) {
 			storable.push(...(storedFromAlt || []));
 		};
 		
-		let artist = structuredClone(data.artist);
-		artist.type = utils.UGetCleanTypeFromPageType(artist.type || "ARTIST");
-		artist.discography = [newPl.id];
+		if (data.artist) {
+			let artist = structuredClone(data.artist);
+			artist.type = utils.UGetCleanTypeFromPageType(artist.type || "ARTIST");
+			artist.discography = [newPl.id];
 
-		storable.push(artist);
+			storable.push(artist);
+		};
 	};
 
 	storable.push(newPl);
@@ -866,13 +868,18 @@ function EWCacheCreateStorableFromListPage(data) {
 async function EWCacheData(data) {
 	let storable;
 
-	switch (data.type) {
+	console.log(data.type, data.type === "C_PAGE_TYPE_CHANNEL_OR_ARTIST");
+
+	let isArray = data.constructor === Array;
+
+	switch (data.type || (isArray && data[0].type)) {
 		case "MUSIC_PAGE_TYPE_PLAYLIST":
 		case "MUSIC_PAGE_TYPE_ALBUM":
 		case "C_PAGE_TYPE_PRIVATE_ALBUM":
 		case "MUSIC_PAGE_TYPE_ARTIST":
 			storable = EWCacheCreateStorableFromListPage(data);
 			break;
+
 
 		case "MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY":
 		case "MUSIC_PAGE_TYPE_LIBRARY_CONTENT_LANDING_PAGE": // library
@@ -882,8 +889,15 @@ async function EWCacheData(data) {
 		
 		case "MUSIC_VIDEO_TYPE_ATV":
 		case "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK":
+		case "SONG":
 			storable = [data];
 			break;
+		
+		case "C_PAGE_TYPE_CHANNEL_OR_ARTIST":
+			if (data.constructor === Array) storable = data
+			else storable = [data];
+			break;
+
 
 		default:
 			console.warn("What is this value of store.getState() browsePageType for EWcachePage", data.type);

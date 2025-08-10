@@ -1023,7 +1023,7 @@ class Utils {
 
 		document.body.append(ovfcont);
 
-		ovf.promiseOfFillingrGrid = async function() {
+		ovf.promiseOfFillingGrid = async function() {
 			if (!pStorage) pStorage = await this.UMWStorageGet();
 
 			OnStorageGet(pStorage);
@@ -1223,7 +1223,7 @@ class Utils {
 
 		if (resultisImportant) {
 			if (browseId.match(/privately_owned_release_detail/)) return "MUSIC_PAGE_TYPE_ALBUM"; // NEED c_type because yt does not distinguish PRIVATE_ALBUM from ALBUM.
-			if (browseId.match(/^VL/)) return "MUSIC_PAGE_TYPE_PLAYLIST";
+			if (browseId.match(/^VL/) || browseId.match("^(?:VL){0,1}PL")) return "MUSIC_PAGE_TYPE_PLAYLIST";
 		};
 
 
@@ -1389,6 +1389,8 @@ class Utils {
 			let id;
 
 			if (navigationEndpointOuterDict.browseEndpoint) id = navigationEndpointOuterDict.browseEndpoint.browseId;
+			if (navigationEndpointOuterDict.watchEndpoint) id = navigationEndpointOuterDict.watchEndpoint.playlistId;
+			if (navigationEndpointOuterDict.queueAddEndpoint) id = navigationEndpointOuterDict.queueAddEndpoint.queueTarget.playlistId;
 			
 			this.UBrowseParamsByRequest[id] = structuredClone(navigationEndpointOuterDict.cParams);
 			delete navigationEndpointOuterDict.cParams;
@@ -1736,6 +1738,10 @@ class Utils {
 		return structuredClone(cache[id]) || {};
 	};
 
+	static UCacheItemIsSong(cacheItem) {
+		return cacheItem.type.match("VIDEO_TYPE");
+	};
+
 
 	static UGetArtistsFromDropdown(menuRenderer) {
 		for (let item of menuRenderer.items) {
@@ -1983,7 +1989,7 @@ class Utils {
 		return data;
 	};
 
-	static UGetLinkedAlbums(storage, nonMainId) {
+	static UGetPrimaryVersions(storage, nonMainId) {
 		let linked = [];
 
 		for (let [mainVer, alts] of Object.entries(storage.customisation.primaryAlbums)) {
@@ -2016,7 +2022,7 @@ class Utils {
 		};
 
 		let albumsToUse = [];
-		let primaryVersions = this.UGetLinkedAlbums(storage, buildQueueFrom) || [];
+		let primaryVersions = this.UGetPrimaryVersions(storage, buildQueueFrom) || [];
 		let linkedAlbums = storage.customisation.albumLinks[buildQueueFrom] || [];
 		let counterparts = buildingFromAlbum.privateCounterparts || [];
 		
@@ -2153,6 +2159,180 @@ class Utils {
 	};
 
 
+	static UCreateToggleMenuItemForLikeButton(cacheItem) {
+		if (!cacheItem) return;
+
+		if (cacheItem.type === "ALBUM") {
+			if (cacheItem.saved) return {
+				"toggleMenuServiceItemRenderer": {
+					"defaultText": {
+						"runs": [
+							{
+								"text": "Remove album from library"
+							}
+						]
+					},
+					"defaultIcon": {
+						"iconType": "LIBRARY_SAVED"
+					},
+					"defaultServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "INDIFFERENT",
+							"target": {
+								"playlistId": cacheItem.mfId
+							}
+						}
+					},
+					"toggledText": {
+						"runs": [
+							{
+								"text": "Save album to library"
+							}
+						]
+					},
+					"toggledIcon": {
+						"iconType": "LIBRARY_ADD"
+					},
+					"toggledServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "LIKE",
+							"target": {
+								"playlistId": cacheItem.mfId
+							}
+						}
+					}
+				}
+			};
+
+			return {
+				"toggleMenuServiceItemRenderer": {
+					"defaultText": {
+						"runs": [
+							{
+								"text": "Save album to library"
+							}
+						]
+					},
+					"defaultIcon": {
+						"iconType": "LIBRARY_ADD"
+					},
+					"defaultServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "LIKE",
+							"target": {
+								"playlistId": cacheItem.mfId
+							}
+						}
+					},
+					"toggledText": {
+						"runs": [
+							{
+								"text": "Remove album from library"
+							}
+						]
+					},
+					"toggledIcon": {
+						"iconType": "LIBRARY_SAVED"
+					},
+					"toggledServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "INDIFFERENT",
+							"target": {
+								"playlistId": cacheItem.mfId
+							}
+						}
+					}
+				}
+			};
+		};
+
+		if (this.UCacheItemIsSong(cacheItem)) {
+			if (cacheItem.liked === "LIKE") return {
+				"toggleMenuServiceItemRenderer": {
+					"defaultText": {
+						"runs": [
+							{
+								"text": "Remove from liked songs"
+							}
+						]
+					},
+					"defaultIcon": {
+						"iconType": "UNFAVORITE"
+					},
+					"defaultServiceEndpoint": {
+						
+						"likeEndpoint": {
+							"status": "INDIFFERENT",
+							"target": {
+								"videoId": cacheItem.id
+							}
+						}
+					},
+					"toggledText": {
+						"runs": [
+							{
+								"text": "Add to liked songs"
+							}
+						]
+					},
+					"toggledIcon": {
+						"iconType": "FAVORITE"
+					},
+					"toggledServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "LIKE",
+							"target": {
+								"videoId": cacheItem.id
+							}
+						}
+					}
+				}
+			};
+
+			return { // ALSO DO THIS IF DISLIKED.
+				"toggleMenuServiceItemRenderer": {
+					"defaultText": {
+						"runs": [
+							{
+								"text": "Add to liked songs"
+							}
+						]
+					},
+					"defaultIcon": {
+						"iconType": "FAVORITE"
+					},
+					"defaultServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "LIKE",
+							"target": {
+								"videoId": cacheItem.id
+							}
+						}
+					},
+					"toggledText": {
+						"runs": [
+							{
+								"text": "Remove from liked songs"
+							}
+						]
+					},
+					"toggledIcon": {
+						"iconType": "UNFAVORITE"
+					},
+					"toggledServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "INDIFFERENT",
+							"target": {
+								"videoId": cacheItem.id
+							}
+						}
+					}
+				}
+			};
+		};
+	};
+
+
 	static UBuildTwoRowItemRendererFromData(data) {
 		return {				
 			"musicTwoRowItemRenderer": {
@@ -2176,16 +2356,10 @@ class Utils {
 					"runs": [
 						{
 							"text": data.name,
-							"navigationEndpoint": {
-								"browseEndpoint": {
-									"browseId": data.id,
-									"browseEndpointContextSupportedConfigs": {
-										"browseEndpointContextMusicConfig": {
-											"pageType": "MUSIC_PAGE_TYPE_ALBUM"
-										}
-									}
-								}
-							}
+							"navigationEndpoint": this.UBuildEndpoint({
+								browseId: data.id,
+								navType: "browse"
+							})
 						}
 					]
 				},
@@ -2202,16 +2376,10 @@ class Utils {
 						}
 					]
 				},
-				"navigationEndpoint": {
-					"browseEndpoint": {
-						"browseId": data.id,
-						"browseEndpointContextSupportedConfigs": {
-							"browseEndpointContextMusicConfig": {
-								"pageType": "MUSIC_PAGE_TYPE_ALBUM"
-							}
-						}
-					}
-				},
+				"navigationEndpoint": this.UBuildEndpoint({
+					browseId: data.id,
+					navType: "browse"
+				}),
 				"menu": {
 					"menuRenderer": {
 						"items": [
@@ -2343,46 +2511,7 @@ class Utils {
 									}
 								}
 							},
-							{
-								"toggleMenuServiceItemRenderer": {
-									"defaultText": {
-										"runs": [
-											{
-												"text": "Save album to library"
-											}
-										]
-									},
-									"defaultIcon": {
-										"iconType": "LIBRARY_ADD"
-									},
-									"defaultServiceEndpoint": {
-										"likeEndpoint": {
-											"status": "LIKE",
-											"target": {
-												"playlistId": data.mfId
-											}
-										}
-									},
-									"toggledText": {
-										"runs": [
-											{
-												"text": "Remove album from library"
-											}
-										]
-									},
-									"toggledIcon": {
-										"iconType": "LIBRARY_SAVED"
-									},
-									"toggledServiceEndpoint": {
-										"likeEndpoint": {
-											"status": "INDIFFERENT",
-											"target": {
-												"playlistId": data.mfId
-											}
-										}
-									}
-								}
-							},
+							UCreateToggleMenuItemForLikeButton(data),
 							{
 								"menuServiceItemDownloadRenderer": {
 									"serviceEndpoint": {
@@ -2751,6 +2880,10 @@ class Utils {
 		current.videoId = vId;
 		current.queueNavigationEndpoint.queueAddEndpoint.videoId = vId;
 
+		let likeButton;
+
+		if (replacement.video.liked)
+
 		current.menu.menuRenderer.items = [
 			{
 				"menuServiceItemRenderer": {
@@ -2842,46 +2975,7 @@ class Utils {
 					}
 				}
 			},
-			{
-				"toggleMenuServiceItemRenderer": {
-					"defaultText": {
-						"runs": [
-							{
-								"text": "Add to liked songs"
-							}
-						]
-					},
-					"defaultIcon": {
-						"iconType": "FAVORITE"
-					},
-					"defaultServiceEndpoint": {
-						"likeEndpoint": {
-							"status": "LIKE",
-							"target": {
-								"videoId": vId
-							}
-						}
-					},
-					"toggledText": {
-						"runs": [
-							{
-								"text": "Remove from liked songs"
-							}
-						]
-					},
-					"toggledIcon": {
-						"iconType": "UNFAVORITE"
-					},
-					"toggledServiceEndpoint": {
-						"likeEndpoint": {
-							"status": "INDIFFERENT",
-							"target": {
-								"videoId": vId
-							}
-						}
-					}
-				}
-			},
+			this.UCreateToggleMenuItemForLikeButton(replacement.video),
 			{
 				"menuServiceItemDownloadRenderer": {
 					"serviceEndpoint": {
@@ -3027,7 +3121,6 @@ class Utils {
 			firstVideo: video,
 			index: index, // zero base index.
 			playlistSetVideoId: video.playlistSetVideoId
-			//cParams: { buildingQueueFrom: realAlbum.id }
 		});
 
 		return {
@@ -3286,7 +3379,7 @@ class Utils {
 									"target": {
 										"videoId": video.id
 									},
-									"likeStatus": "LIKE",
+									"likeStatus": video.liked || "INDIFFERENT",
 									"likesAllowed": true,
 									"serviceEndpoints": [
 										{
@@ -3493,48 +3586,7 @@ class Utils {
 									}
 								}
 							},
-							{
-								"toggleMenuServiceItemRenderer": {
-									"defaultText": {
-										"runs": [
-											{
-												"text": "Remove from liked songs"
-											}
-										]
-									},
-									"defaultIcon": {
-										"iconType": "UNFAVORITE"
-									},
-									"defaultServiceEndpoint": {
-										"likeEndpoint": {
-											"status": "INDIFFERENT",
-											"target": {
-												"videoId": video.id
-											},
-											"removeLikeParams": "OAI%3D"
-										}
-									},
-									"toggledText": {
-										"runs": [
-											{
-												"text": "Add to liked songs"
-											}
-										]
-									},
-									"toggledIcon": {
-										"iconType": "FAVORITE"
-									},
-									"toggledServiceEndpoint": {
-										"likeEndpoint": {
-											"status": "LIKE",
-											"target": {
-												"videoId": video.id
-											},
-											"likeParams": "OAI%3D"
-										}
-									}
-								}
-							},
+							this.UCreateToggleMenuItemForLikeButton(video),
 							{
 								"menuServiceItemDownloadRenderer": {
 									"serviceEndpoint": {
