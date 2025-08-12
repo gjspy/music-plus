@@ -204,10 +204,12 @@ add album metadata, icon from google drive!!
 
 on playlist create isnt adding to top of paperitemorder. is prob because of no storage space.
 
+ensure that playlistSetId caching only applies if has come from the album.
+will have a different playlistsetid if its a different playlist, eg LM?
+n3rds-inc.time
 
-
-
-
+onDeletePlaylist, still deleting the wrong one?
+check there is no artPlaylistSetId
 
 //error with propagation, is browsing when click play button on sidebar
 

@@ -41,7 +41,7 @@
 		"storage",
 		"activeTab",
 		"unlimitedStorage",
-		"scripting"
+		"scripting"		
 	],
 
 	"browser_specific_settings": {
@@ -55,5 +55,5 @@
 		"default_icon":"icons/testlogo.png",
 		"default_title":"YTMUSIC Test",
 		"default_popup":"popup/index.html"
-	}	  
+	}
 }

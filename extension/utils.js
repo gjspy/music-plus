@@ -10,17 +10,14 @@ class Utils {
 				accountPhoto: "",
 				channelHandle: ""
 			},
-			cache: {
-				mfIdMap: {}
-			},
-
-			syncEnabled: true,
-			syncContents: {}
+			username: "",
+			token: "",
+			cachedLastResponse: {}
 		},
 		
-		sync: {
-			config:{
-				masterToggle: true
+		external: {
+			cache: {
+				mfIdMap: {}
 			},
 	
 			sidebar: {
@@ -34,8 +31,7 @@ class Utils {
 				},
 				separators: {
 					separators: {} // id: {id: `CS${id}`,name: request.title}
-				},
-				fakeNames: {}
+				}
 			},
 
 			customisation: {
@@ -97,8 +93,7 @@ class Utils {
 			badges: [],
 			type: "",
 			views: 0,
-			//artPlaylistSetId: "",
-			playlistSetVideoId: ""
+			albumPlSetVideoId: ""
 		},
 		USER_CHANNEL: {
 			name: "",
@@ -111,10 +106,10 @@ class Utils {
 
 	};
 
+	static U_STORAGE_ENDPOINT = "https://music.gtweb.dev/api";
+
 	static U_VARIOUS_ARTISTS = "Various Artists";
 	static U_VARIOUS_ARTISTS_EXTID = "VARIOUS";
-
-	static UDEFAULT_STORAGE = Object.assign({}, this.U_REAL_DEFAULT_STORAGE.sync, this.U_REAL_DEFAULT_STORAGE.local);
 
 	static UGeneralCustomEventMWToEW = "extGeneralCustomEventMWToEW";
 	static UGeneralCustomEventEWToMW = "extGeneralCustomEventEWToMW";
@@ -255,134 +250,99 @@ class Utils {
 		return cont;
 	};
 
-	static async UStorageGetRaw() {
-		return {
-			grabbedFromLocal: (await browser.storage.local.get()),
-			grabbedFromSync: (await browser.storage.sync.get())
+	static async UStorageGetLocal() {
+		let storage = await browser.storage.local.get();
+
+		if (Object.keys(storage).length === 0) {
+			return this.U_REAL_DEFAULT_STORAGE.local;
 		};
+
+		return this.UCheckHasKeys(storage, this.U_REAL_DEFAULT_STORAGE.local);
 	};
 
-	static async UStorageGet() {
-		let storageLocal = await browser.storage.local.get();
-		let storageSync = await browser.storage.sync.get();
-
-		let storage = Object.assign({}, storageLocal, storageSync);
-
-		let storageKeys = Object.keys(storage);
-		
-		if (storageKeys.length === 0) {
-			storage = this.UDEFAULT_STORAGE;
-
-		} else {
-			storage = this.UCheckHasKeys(storage, this.UDEFAULT_STORAGE);
-		};
-
-		if (storage.syncEnabled === false) {
-			console.warn("storageget only loading from local.");
-
-			let syncContents = structuredClone(storageLocal.syncContents);
-			delete storageLocal.syncContents
-
-			storage = Object.assign(storageLocal, syncContents);
-			storage = _CheckHasKeys(storage, this.UDEFAULT_STORAGE);
-		};
-	
-		return storage;
-	};
-
-	static async UStorageClean(beDangerous, storageLocal, storageSync) {
-		// cleans top level of storage to remove inconsistency.
-		// using beDangerous is only done manually, otherwise is used to strip from setting bad values.
-		// this function does not set values, just returns a cleaned up version,
-		// and clears old storage if beDagnerous.
-
-		let DEF_LOC_STO = Object.keys(this.U_REAL_DEFAULT_STORAGE.local);
-		let DEF_SYN_STO = Object.keys(this.U_REAL_DEFAULT_STORAGE.sync);
-
-
-		if (storageLocal === undefined || storageSync === undefined) {
-			let storage = await this.UStorageGetRaw();
-
-			if (storageLocal === undefined) { storageLocal = storage.grabbedFromLocal; };
-			if (storageSync === undefined) { storageSync = storage.grabbedFromSync; };
-		};
-		
-
-		if (beDangerous) {
-			await browser.storage.local.clear();
-			await browser.storage.sync.clear();
-		};		
-
-		for (let key of Object.keys(storageLocal)) {
-			if (DEF_LOC_STO.indexOf(key) === -1 || DEF_SYN_STO.indexOf(key) !== -1) {
-				delete storageLocal[key];
-			};
-		};
-
-		for (let key of Object.keys(storageSync)) {
-			if (DEF_SYN_STO.indexOf(key) === -1 || DEF_LOC_STO.indexOf(key) !== -1) {
-				delete storageSync[key];
-			};
-		};
-
-		return [storageLocal, storageSync];
-	};
-
-	static async UStorageSet(toSave) {
-
+	static UStorageGetExternal(fetchNew, localStorage) {
+		// HAVE TO USE "THIS" IN EXTERNAL, IS A MODULE, NOT GLOBAL FUNCTIONS.
 		let that = this;
 
 		return new Promise(async function(resolve, reject) {
-			let DEF_LOC_STO = that.U_REAL_DEFAULT_STORAGE.local;
-			let DEF_SYN_STO = that.U_REAL_DEFAULT_STORAGE.sync;
+			if (!localStorage) localStorage = await that.UStorageGetLocal();
 
-			// when editing storage, local and sync are merged.
-			// when setting, we need to separate them.
-			let storageLocal = {};
-			let storageSync = {};
-	
-			for (let key of Object.keys(DEF_LOC_STO)) { // match expected keys from local
-				let val = toSave[key];
-				if (!val) val = that.UDEFAULT_STORAGE[key];
-	
-				storageLocal[key] = val; // add to local
+			if (fetchNew || !localStorage.cachedLastResponse) {
+				let username = localStorage.username;
+				let token = localStorage.token;
+
+				if (!username || !token) {
+					reject("no credentials");
+					return;
+				};
+
+				let fetched = await fetch(that.U_STORAGE_ENDPOINT + `/storage/get?user_id=${username}&token=${token}`);
+				//if (fetched.status !== 200) reject("External storage response was", fetched.status,"for get", fetched);
+
+				let json = JSON.parse(await fetched.text());
+				json = that.UCheckHasKeys(json, that.U_REAL_DEFAULT_STORAGE.external)
+
+				resolve(json);
+
+				localStorage.cachedLastResponse = json;
+				that.UStorageSetLocal(localStorage);
+				return;
 			};
-	
-			for (let key of Object.keys(DEF_SYN_STO)) { // match expected keys from sync
-				let val = toSave[key];
-				if (!val) val = that.UDEFAULT_STORAGE[key];
-	
-				storageSync[key] =  val; // add to sync
-			};
-	
-	
-			// StorageArea.clear() is dangerous, instead remove keys not wanted each time.
-			// only .clear() manually for now.
-	
-			[storageLocal, storageSync] = await that.UStorageClean(false, storageLocal, storageSync);
-	
-			browser.storage.sync.set(storageSync).then(
-				function() { // resolved
-					storageLocal["syncEnabled"] = true;
-					delete storageLocal["syncContents"];
 
-					browser.storage.local.set(storageLocal);
-
-					resolve("syncEnabled true");
-				},
-			
-				function() { // rejected
-					console.error("error writing to sync. using local storage only.");
-
-					storageLocal["syncEnabled"] = false;
-					storageLocal["syncContents"] = storageSync;
-
-					browser.storage.local.set(storageLocal);
-
-					resolve("syncEnabled false");
-				}
-			);
+			resolve(that.UCheckHasKeys(localStorage.cachedLastResponse, that.U_REAL_DEFAULT_STORAGE.external));
 		});
+		
+	};
+
+	static async UStorageSetLocal(toStore) {
+		let defaultData = this.U_REAL_DEFAULT_STORAGE.local;
+		let storageLocal = {};
+
+		for (let key of Object.keys(defaultData)) {
+			let val = toStore[key];
+			console.log(key, val, defaultData[key]);
+			
+			storageLocal[key] = (val) ? val : defaultData[key];
+		};
+
+		await browser.storage.local.set(toStore);
+	};
+
+	static async UStorageSetExternal(toStore, localStorage) {
+		if (!localStorage) {
+			localStorage = await this.UStorageGetLocal();
+		};
+
+		console.log(localStorage);
+		
+		let username = localStorage.username;
+		let token = localStorage.token;
+
+		if (!username || !token) {
+			console.log("no credetials");
+			throw Error("No credentials");
+		};
+
+		let defaultData = this.U_REAL_DEFAULT_STORAGE.external;
+		let storageExt = {};
+
+		for (let key of Object.keys(defaultData)) {
+			let val = toStore[key];
+			
+			storageExt[key] = (val) ? val : defaultData[key];
+		};
+
+		let response = await fetch(this.U_STORAGE_ENDPOINT + `/storage/set?user_id=${username}&token=${token}`, {
+			method: "POST",
+			body: JSON.stringify(storageExt),
+			headers: {"Content-Type": "application/json"}
+		});
+
+		if (response.status !== 200) throw Error("External response was", response.status,"for POST.", response);
+
+		localStorage.cachedLastResponse = storageExt;
+
+		this.UStorageSetLocal(localStorage);
 	};
 
 
@@ -3418,7 +3378,7 @@ class Utils {
 					}
 				},
 				playlistItemData: {
-					playlistSetVideoId: video.artPlaylistSetId,
+					playlistSetVideoId: video.albumPlSetVideoId,
 					videoId: video.id
 				},
 				itemHeight: "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_MEDIUM",
@@ -3476,7 +3436,7 @@ class Utils {
 						"videoId": video.id,
 						"playlistId": realAlbum.mfId,
 						"index": index,
-						"playlistSetVideoId": video.artPlaylistSetId,
+						"playlistSetVideoId": video.albumPlSetVideoId,
 						"watchEndpointMusicSupportedConfigs": {
 							"watchEndpointMusicConfig": {
 								"hasPersistentPlaylistPanel": true,
@@ -3723,7 +3683,7 @@ class Utils {
 						}
 					}
 				},
-				"playlistSetVideoId": video.artPlaylistSetId,
+				"playlistSetVideoId": video.albumPlSetVideoId,
 				"canReorder": true,
 				"queueNavigationEndpoint": {
 					"queueAddEndpoint": {

@@ -2,7 +2,6 @@
 <html>
 <head>
 	<meta charset="UTF-8">
-	<link rel="stylesheet" href="../../globalstyles.css">
 </head>
 
 <style>
@@ -21,7 +20,7 @@
 		margin: 0;
 	}
 	#debug-cont {
-		max-width: 200px;
+		max-width: 100%;
 		gap: 0px;
 		display: flex;
 		flex-direction: row;
@@ -68,23 +67,20 @@
 		<h1 id="header">YTMusic+</h1>
 
 		<div class="btn-cont" id="main-btns">
-			<button type="button" id="upd-pl-ics">Append To Cache</button>
 			<button type="button" id="clr-cache">Clear Cache</button>
-			<button type="button" id="toggle-active" style="display: none;"></button>
-			<button type="button" id="tab-toggle" style="width: 100%;"></button>
+			<button type="button" id="tab-toggle" style="width: 100%;">Tab Toggle</button>
 			
 			<button type="button" id="debug" style="margin-top: 22px;">Debug Actions</button>
 		</div>
 
 		<div id="debug-cont" style="display: none;">
-			<button id="r-dmp">Dump Raw Storage</button>
-			<button id="c-dmp">Dump Clean Storage</button>
-			<button id="rm-order" class="danger">Remove Order + Folders</button>
-			<button id="clr-strg" class="danger">Actually Clear Storage (Danger)</button>
-			<button id="cln-strg">Clean Storage (Semi-Danger)</button>
+			<button id="r-dmp">Dump Local Storage</button>
+			<button id="c-dmp">Dump Ext Storage</button>
+			<button id="clr-strg" class="danger">Clear Browser Storage (EXT intact)</button>
 			<textarea rows="6" cols="25" id="run-code-input" placeholder="Paste in JSON to fully replace storage with. No undo. **MUST BE CLEAN STORAGE, NOT RAW**"></textarea>
-			<button id="run-code-mw" style="flex: 1; display: none;">throw eval csp</button>
-			<button id="run-code-bkg" style="flex: 1;">Set Storage to textarea value</button>
+			<button id="run-code-bkg" style="padding: 0;">Set ExtStorage to textarea value</button>
+			<button id="set-uid" style="padding: 0; font-size: 0.8em;">Set Storage UID to textarea value</button>
+			<button id="set-token" style="padding: 0;">Set API token to textarea value</button>
 		</div>
 
 		<a id="error" style="text-align: left; word-break: keep-all;"></a>

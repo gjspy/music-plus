@@ -233,17 +233,9 @@ async function main(request, sender, sendResponse) {
 	clonableUtils = utils.toString();
 	await EWInit(injectionTarget);
 
-	console.log(clonableUtils);
-
-	//let storage = await utils.UStorageGet();
-	
+	console.log(clonableUtils);	
 
 	console.log("TAB", tab.id);
-
-	//if (!storage.config.masterToggle) {
-	//	EWUnhideItemsCont();
-	//	return;
-	//};
 
 	await EWInitSidebarThings(injectionTarget);
 
@@ -273,18 +265,18 @@ async function main(request, sender, sendResponse) {
 
 
 async function EWOMSaveAccountInfo(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetLocal();
 
 	storage.accountInfo = request.accountInfo;
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetLocal(storage);
 };
 
 async function EWOMSidebarSaveChanges(request) {
 	console.log("GOT CUSTOM EVENT");
 	console.log(request);
 
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	for (let [cont,ids] of Object.entries(request.newInfo)) {
 		if (cont === "paperItemOrder") {
@@ -294,15 +286,13 @@ async function EWOMSidebarSaveChanges(request) {
 		}
 	};
 
-	//storage.sidebar.paperItemOrder = request.newOrder;
-
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 	console.log("SET STORAGE");
 	console.log(JSON.stringify(storage));
 };
 
 async function EWOMSidebarNewFolder(request, sender) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	let id = storage.sidebar.idCounter + 1;
 	storage.sidebar.idCounter += 1;
@@ -319,7 +309,7 @@ async function EWOMSidebarNewFolder(request, sender) {
 	storage.sidebar.paperItemOrder.unshift(thisId);
 	storage.sidebar.folders.folders[thisId] = folderInfo;
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 
 	// tabs, not runtime, bcs cant send to contentscripts with runtime
 	let response = {
@@ -339,13 +329,13 @@ async function EWOMSidebarNewFolder(request, sender) {
 };
 
 async function EWOMSidebarDeleteFolder(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	console.log(JSON.stringify(request));
 
 	delete storage.sidebar.folders.folders[request.folderId];
 	
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 
 	// the whole point of "count" in folders is to be a forever increasing counter
 	// so ids dont overlap, so we dont -= 1 to it.
@@ -355,7 +345,7 @@ async function EWOMSidebarDeleteFolder(request) {
 };
 
 async function EWOMSidebarRenameFolder(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	if (request.editInfo.title !== "") {
 		storage.sidebar.folders.folders[request.plId].title = request.editInfo.title;
@@ -363,19 +353,11 @@ async function EWOMSidebarRenameFolder(request) {
 
 	storage.sidebar.folders.folders[request.plId].subtitle = request.editInfo.subtitle;
 	console.log(request);
-	await utils.UStorageSet(storage);
-};
-
-async function EWOMMaskPLName(request) {
-	let storage = await utils.UStorageGet();
-	
-	storage.sidebar.fakeNames[request.plId] = request.editInfo;
-
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 };
 
 async function EWOMSidebarVisibilityChange(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 	console.log(JSON.stringify(request));
 
 	let id = request.change.id;
@@ -386,11 +368,11 @@ async function EWOMSidebarVisibilityChange(request) {
 		storage.sidebar.hidden.push(id);
 	};
 	
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 };
 
 async function EWOMSidebarNewSep(request, sender) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	let id = storage.sidebar.idCounter + 1;
 	storage.sidebar.idCounter += 1;
@@ -405,7 +387,7 @@ async function EWOMSidebarNewSep(request, sender) {
 	storage.sidebar.paperItemOrder.unshift(thisId);
 	storage.sidebar.separators.separators[thisId] = sepInfo;
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 
 	
 	// tabs, not runtime, bcs cant send to contentscripts with runtime
@@ -426,15 +408,15 @@ async function EWOMSidebarNewSep(request, sender) {
 };
 
 async function EWOMSidebarDeleteSep(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	delete storage.sidebar.separators.separators[request.sepId];
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 };
 
 async function EWOMSidebarNewCarousel(request, sender) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	let id = storage.sidebar.idCounter + 1;
 	storage.sidebar.idCounter += 1;
@@ -452,7 +434,7 @@ async function EWOMSidebarNewCarousel(request, sender) {
 	storage.sidebar.paperItemOrder.unshift(thisId); // insert at position 0 of array.
 	storage.sidebar.folders.folders[thisId] = folderInfo;
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 
 	
 	// tabs, not runtime, bcs cant send to contentscripts with runtime
@@ -475,7 +457,7 @@ async function EWOMSidebarNewCarousel(request, sender) {
 
 
 async function EWOMGetStorage(request, sender, sendResponse) {
-	let gotStorage = await utils.UStorageGet();
+	let gotStorage = await utils.UStorageGetExternal(request.fetchNew);
 	// sendResponse({toHide: toHide}); could do this, would mean more logic in cs, just making new customEvent instead.
 
 	if (request.path) {
@@ -483,10 +465,6 @@ async function EWOMGetStorage(request, sender, sendResponse) {
 			gotStorage = gotStorage[seg];
 		};
 	};
-
-	//if (request.filter) {
-		//
-	//}
 
 	// tabs, not runtime, bcs cant send to contentscripts with runtime
 	let response = {
@@ -503,19 +481,20 @@ async function EWOMGetStorage(request, sender, sendResponse) {
 
 
 async function EWOMOnNewPlaylist(request, sender) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	storage.sidebar.paperItemOrder.unshift(request.data.id);
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 
-	EWOMOnPostCacheData(request, sender); // do this, so it sends new storage back.
+	//EWOMOnPostCacheData(request, sender); // do this, so it sends new storage back.
+	EWSendRefreshContSignalToMW(storage, sender.tab.id);
 };
 
 async function EWOMOnDeletePlaylist(request, sender) {
 	let id = request.data.id;
 
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	storage.sidebar.paperItemOrder = storage.sidebar.paperItemOrder.filter( v => v !== id );
 	
@@ -523,7 +502,7 @@ async function EWOMOnDeletePlaylist(request, sender) {
 		folder.contents = folder.contents.filter( v => v !== id );
 	};
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 
 	//DONT SEND REFERSH SIGNAL. PAGE WILL REFRESH SOON ON ITS OWN.
 
@@ -573,7 +552,7 @@ function EWCacheLinkPrivateCounterparts(cache) {
 			if (!matches.album[o.name]) matches.album[o.name] = [];
 			matches.album[o.name].push([k, o.private]);
 
-			cache.mfIdMap[o.mfId] = o.id; // MAP MFID IN THIS ITERATION
+			if (o.mfId) cache.mfIdMap[o.mfId] = o.id; // MAP MFID IN THIS ITERATION
 		};
 	};
 
@@ -597,11 +576,12 @@ function EWCacheLinkPrivateCounterparts(cache) {
 };
 
 async function EWCacheUpdateWithData(storable) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 	let cache = storage.cache;
 
 	for (let toStore of storable) {
 		console.log(JSON.stringify(toStore));
+
 		let defaultData = utils.U_CACHE_FORMATS[toStore.type.match("VIDEO_TYPE") ? "SONG" : toStore.type];
 		let currentData = cache[toStore.id];
 
@@ -623,12 +603,6 @@ async function EWCacheUpdateWithData(storable) {
 			let oldV = currentData[k];
 			let newV = toStore[k];
 			let isArray = newV && newV.constructor === Array;
-
-			if (k === "artPlaylistSetId" && oldV === defaultData[k]) {
-				let songAlbum = toStore.album || currentData.album;
-
-				if (songAlbum && songAlbum.startsWith("FEmusic")) newV = utils.UGenerateArtificialPlaylistSetId();
-			};
 
 			if (newV === undefined || newV === "" || (isArray && newV.length === 0)) continue;
 
@@ -654,10 +628,6 @@ async function EWCacheUpdateWithData(storable) {
 				let inserted = nonDuplicate.concat(notInNewV);
 				currentData[k] = inserted;
 
-				//let continuation = oldV.splice(newV.length, oldV.length); // songs NOT in newV
-				//continuation = continuation.filter(v => newV.indexOf(v) === -1);
-
-				//currentData[k] = newV.concat(continuation);
 				continue;
 			};
 				
@@ -675,12 +645,9 @@ async function EWCacheUpdateWithData(storable) {
 
 	console.log(cache);
 
-	let storage2 = await utils.UStorageGet();
-	storage2.cache = cache;
+	await utils.UStorageSetExternal(storage);
 
-	await utils.UStorageSet(storage2);
-
-	return storage2;
+	return storage;
 };
 
 function EWCacheCreateStorableFromListItem(item, listData, albumId) {
@@ -733,6 +700,15 @@ function EWCacheCreateStorableFromListItem(item, listData, albumId) {
 		formattedItem.artists.push(listData.id);
 		item.artists = [{id: listData.id}];
 
+	};
+
+
+	if (itemIsSong) {
+		if (listData.type === "ALBUM") {
+			formattedItem.albumPlSetVideoId = formattedItem.playlistSetVideoId;
+		};
+		
+		delete formattedItem.playlistSetVideoId;
 	};
 
 	
@@ -936,7 +912,7 @@ async function EWOMOnPostCacheData(request, sender) {
 
 
 async function EWOMDefineLink(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	if (!storage.customisation.albumLinks[request.baseItem]) {
 		storage.customisation.albumLinks[request.baseItem] = [];
@@ -944,28 +920,28 @@ async function EWOMDefineLink(request) {
 
 	storage.customisation.albumLinks[request.baseItem].push(request.linkedItem);
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 };
 
 async function EWOMRemoveLink(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	let currentLinks = storage.customisation.albumLinks[request.baseItem];
 	storage.customisation.albumLinks[request.baseItem] = currentLinks.filter((v) => v !== request.linkedItem);
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 };
 
 async function EWOMSetPrimaryAlbum(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	storage.customisation.primaryAlbums[request.chosen] = request.alts;
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 };
 
 async function EWOMHideSongFromAlbum(request) {
-	let storage = await utils.UStorageGet();
+	let storage = await utils.UStorageGetExternal(false);
 
 	let hiddenSongs = storage.customisation.hiddenSongs;
 	if (!hiddenSongs[request.album]) hiddenSongs[request.album] = [];
@@ -973,7 +949,7 @@ async function EWOMHideSongFromAlbum(request) {
 	if (request.deleted) hiddenSongs[request.album].push(request.videoId);
 	else hiddenSongs[request.album] = hiddenSongs[request.album].filter( v => v !== request.videoId );
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 };
 
 
@@ -988,7 +964,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "sidebar-new-folder")        EWOMSidebarNewFolder(request, sender);
 	else if (f === "sidebar-delete-folder")     EWOMSidebarDeleteFolder(request);
 	else if (f === "sidebar-rename-folder")     EWOMSidebarRenameFolder(request);
-	else if (f === "sidebar-mask-pl-name")      EWOMMaskPLName(request);
+	//else if (f === "sidebar-mask-pl-name")      EWOMMaskPLName(request);
 	else if (f === "sidebar-visibility-change") EWOMSidebarVisibilityChange(request);
 	else if (f === "sidebar-new-sep")           EWOMSidebarNewSep(request, sender);
 	else if (f === "sidebar-delete-sep")        EWOMSidebarDeleteSep(request);
@@ -1050,17 +1026,3 @@ for (let [i,v] of Object.entries(clonedUtils)) {
 	};
 };/
 */
-
-`T1.prototype.navigate({
-  "JSC$9848_innertubePath": "/browse",
-	//"clickTrackingParams": "CB8QpoULGCQiEwjstL-12fmIAxW_wUIFHbdDN0Y="
-	//clickTrackingVe: null
-	//createScreenConfig: null
-	"data": {
-		"browseEndpointContextSupportedConfigs": {
-			"browseEndpointContextMusicConfig": {
-				"pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
-      }
-    }
-		browseId: "VLPLhYV96hJwkJY0fs5XGnXeJaVrknwZM5W7"
-  })`

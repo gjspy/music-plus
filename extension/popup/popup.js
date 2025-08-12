@@ -5,146 +5,6 @@ let tab;
 // MAIN WORLD
 
 //CACHE IMAGES
-async function MWCacheFromLibraryPage(accountInfo) {
-	function CleanSubtitle(runs, accountInfo) {
-		let clean = "";
-		
-		let artistNameIndex = 0;
-		let extraInfoIndex = 2;
-
-		if (runs[0].text === "Playlist" || runs[0].text === "Album" || runs[0].text === "EP") {
-			//isPlaylistPage = false; // CasualContent . 33 tracks
-
-			artistNameIndex = 2;
-			extraInfoIndex = 4;
-
-			// (else) Album . Tewnty One Pilots . 2024
-		};
-
-		// Sounds From Shorts: Auto Playlist . CasualContent
-		if (runs[0].text === "Auto playlist") return "";
-
-		console.log(runs);
-
-		if (runs.length < artistNameIndex + 1) return clean;
-		if (runs[artistNameIndex].text !== accountInfo.accountName) { // artist name
-			clean += runs[artistNameIndex].text;
-		};
-
-		if (runs.length < extraInfoIndex + 1) return clean;
-
-		if (clean !== "") clean += U_YT_DOT;
-		clean += runs[extraInfoIndex].text; // year or amt of tracks
-
-		return clean;
-	};
-
-	console.log("hi");
-
-	function _main() {
-		let cardItems = document.querySelectorAll("ytmusic-two-row-item-renderer:not(:has([href=\"#\"]))");
-		// extra nonsense on the end to remove "New Playlist" card with href "#".
-
-		console.log(cardItems);
-		let toCache = {};
-	
-		for (let item of cardItems) {
-			let imageWrapper = item.getElementsByTagName("a")[0];
-			let imgElem = imageWrapper.getElementsByTagName("img")[0];
-			let data = imageWrapper.__dataHost.__data.data;
-
-			// for now, ignore artists and only playlists/albums.
-			console.log(imageWrapper.parentElement.hasAttribute("has-circle-cropped-thumbnail"));
-			if (imageWrapper.parentElement.hasAttribute("has-circle-cropped-thumbnail")) continue;
-	
-			/*let plHref = imageWrapper.href;
-			
-
-			//nicer href (remove music.youtube.com/playlist...)
-			//regex matching / or =
-			// "=" for playlist?list=PL..., "/" for channel/UC...
-			let charMatches = [...String(plHref).matchAll(/\/|=/g)]; 
-			let sliceIndexStart = charMatches[charMatches.length - 1].index + 1;
-			plHref = plHref.slice(sliceIndexStart);*/
-
-
-			//let imHref = imgElem.src;
-
-			// href or other normal methods return stupid things for albums.
-			console.log(data.thumbnailOverlay.musicItemThumbnailOverlayRenderer.content.musicPlayButtonRenderer.playNavigationEndpoint);
-			let playNavEndp = data.thumbnailOverlay.musicItemThumbnailOverlayRenderer.content.musicPlayButtonRenderer.playNavigationEndpoint;
-			let plId = "";
-
-			if (playNavEndp.watchEndpoint) {
-				plId = playNavEndp.watchEndpoint.playlistId;
-
-				// TIMPORTANT, CAN DO THIS TO DEFINE FIRST SONG
-				// REMOVING SO WILL SHUFFLE AND NOT PLAY FIRST SONG ALWAYS (ALBUMS)
-				delete playNavEndp.watchEndpoint.videoId;
-			}
-			else plId = playNavEndp.watchPlaylistEndpoint.playlistId;
-
-			let thumbnails = data.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails;
-			let largestThumbURL = "";
-			let largest = 0;
-
-			for (let thumb of thumbnails) {
-				// did this cus idk could have non-squares?
-				let size = thumb.width * thumb.height;
-
-				if (size > largest) {
-					largest = size;
-					largestThumbURL = thumb.url;
-				};
-			};
-
-			let title = "";
-			for (let run of data.title.runs) title += run.text;	
-
-			/*let subtitle = "";
-			let subRuns = data.subtitle.runs;
-			let i = -1;
-
-			for (let run of subRuns) {
-				i ++;
-
-				// if is a spot and we will want to remove the next cus its us, dont add the spot
-				if (run.text.indexOf("•") !== -1 && subRuns[i+1].text === accountInfo.accountName) {
-					continue;
-				};
-				if (run.text === accountInfo.accountName) continue;
-
-				subtitle += run.text;				
-			};*/
-
-			let playEndp = data.thumbnailOverlay.musicItemThumbnailOverlayRenderer.content.musicPlayButtonRenderer.playNavigationEndpoint;
-
-	
-			toCache[plId] = {
-				id: plId,
-				image: largestThumbURL,
-				title: title,
-				subtitle: CleanSubtitle(data.subtitle.runs, accountInfo),
-				//clickTrack: data.trackingParams,
-				//browseId: data.navigationEndpoint.
-				navEndp: data.navigationEndpoint,
-				playEndp: playEndp
-			};
-		};
-
-		return toCache;
-	};
-
-	return new Promise((resolve,reject) => {
-		try {
-			let toCache = _main();
-			resolve(toCache);
-		} catch (err) {
-			console.log("ERROR:",err);
-			reject(["failure", err.toString()]);
-		};
-	});
-}
 
 async function MWManualCodeInject(code) {
 	console.log(code);
@@ -165,22 +25,11 @@ async function MWManualCodeInject(code) {
 }
 
 async function toggleActive() {
-	let storage = await utils.UStorageGet();
-	let toggleElem = document.querySelector("#toggle-active");
-
-	storage.config.masterToggle = !storage.config.masterToggle;
-
-	await utils.UStorageSet(storage);
-
-	if (storage.config.masterToggle) {
-		toggleElem.textContent = "Disable All Features";
-	} else {
-		toggleElem.textContent = "Enable All Features"
-	};
+	console.log("this does nothing");
 }
 
-async function rawDump() {
-	let storage = await utils.UStorageGetRaw();
+async function lclDump() {
+	let storage = await utils.UStorageGetLocal();
 
 	let stringified = JSON.stringify(storage);
 
@@ -188,8 +37,12 @@ async function rawDump() {
 	browser.tabs.create({url:URL.createObjectURL(blob)});
 };
 
-async function cleanDump()  {
-	const blob = new Blob([JSON.stringify((await utils.UStorageGet()))], {type: "application/json"});
+async function extDump()  {
+	let storage = await utils.UStorageGetExternal(true);
+
+	let stringified = JSON.stringify(storage);
+
+	const blob = new Blob([stringified], {type:"application/json"});
 	browser.tabs.create({url:URL.createObjectURL(blob)});
 };
 
@@ -201,42 +54,23 @@ function openDebug() {
 	div.style.display = display;
 };
 
-async function cleanStorage() {
-	await utils.UStorageClean(true);
-
-	rawDump();
-}
-
 async function clearStorage() {
 	await browser.storage.local.clear();
 	await browser.storage.sync.clear();
 
-	await utils.UStorageSet(utils.UDEFAULT_STORAGE);
-
 	console.log("Cleared Matches!");
-	rawDump();
-};
-
-async function removeOrder() {
-	let storage = await utils.UStorageGet();
-	storage.sidebar = utils.UDEFAULT_STORAGE.sidebar;
-
-	await utils.UStorageSet(storage);
-
-	console.log("Cleared Matches!");
-
-	rawDump();
+	lclDump();
 };
 
 async function clearCache() {
-	let storage = await utils.UStorageGet();
-	storage.cache = utils.UDEFAULT_STORAGE.cache;
+	let storage = await utils.UStorageGetExternal(true);
+	storage.cache = utils.U_REAL_DEFAULT_STORAGE.external.cache;
 
-	await utils.UStorageSet(storage);
+	await utils.UStorageSetExternal(storage);
 
 	console.log("Cleared Matches!");
 
-	rawDump();
+	lclDump();
 };
 
 async function init() {
@@ -247,17 +81,11 @@ async function init() {
 	tab = await browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT});
 	tab = tab[0];
 
-	let storage = await utils.UStorageGet();
-	console.log(storage.config);
-	let toggleElem = document.querySelector("#toggle-active");
+	let storage = await utils.UStorageGetLocal();
 
-	if (storage.config.masterToggle) {
-		toggleElem.textContent = "Disable All Features";
-	} else {
-		toggleElem.textContent = "Enable All Features"
+	if (Object.keys(storage.cachedLastResponse).length > 0) {
+		document.querySelector("#error").innerHTML = String(JSON.stringify(storage.cachedLastResponse.cache).length / 1000) + "KB of cache.<br/>" + String(JSON.stringify(storage).length / 1000) + "KB total.";
 	};
-
-	document.querySelector("#error").innerHTML = String(JSON.stringify(storage.cache).length / 1000) + "KB of cache.<br/>" + String(JSON.stringify(storage).length / 1000) + "KB total.";
 
 	let tabToggleBtn = document.querySelector("#tab-toggle");
 	let result = {};
@@ -269,6 +97,7 @@ async function init() {
 			world: "MAIN"
 		}))[0];
 	} catch { return; };
+	console.log(result);
 
 	if (!result) return;
 
@@ -293,94 +122,65 @@ async function init() {
 	});
 };
 
-async function updatePlaylistIcons() {
-	let storage = await utils.UStorageGet();
 
-	console.log(tab);
-	let resp = await browser.scripting.executeScript({
-		func:MWCacheFromLibraryPage,
-		target:{tabId:tab.id},
-		args:[storage.accountInfo],
-		world:"MAIN"
-	});
-
-	resp = resp[0].result;
-
-	console.log("resp", JSON.stringify(resp));
-
-	storage = await utils.UStorageGet();
-
-	for (let [i,v] of Object.entries(resp)) {
-		console.log(i,v);
-		storage.cache.playlists[i] = v;
-	};
-
-	await utils.UStorageSet(storage);
-	cleanDump();
-};
-
-async function runCodeinBKG() {
+async function setStorage() {
 	let code = document.querySelector("#run-code-input").value;
 
-	await rawDump();
+	await lclDump();
 
-	let coded =JSON.parse(code);
+	let coded = JSON.parse(code);
 	console.log(code);
 	console.log(coded);
 
-	await utils.UStorageSet(coded);
+	await utils.UStorageSetExternal(coded);
 
-	await rawDump();
-
-
-	/*let result = await MWManualCodeInject(code);
-
-	console.log(JSON.stringify(result));
-
-	if (result.error) {
-		document.querySelector("#error").textContent = "error: " + JSON.stringify(result.error);
-	}
-
-	if (result.result) {
-		document.querySelector("#error").textContent = "result: " + JSON.stringify(result.result);
-	}
-*/
-	//document.querySelector("#error").textContent = JSON.stringify(result);
+	await lclDump();
 };
 
-async function runCodeinMW() {
-	let code = document.querySelector("#run-code-input").value;
 
-	let result = (await browser.scripting.executeScript({
-		func: MWManualCodeInject,
-		target: {tabId: tab.id},
-		args: [code],
-		world: "MAIN"
-	}))[0];
+async function setUid() {
+	let content = document.querySelector("#run-code-input").value;
 
-	console.log(JSON.stringify(result));
+	let storage = await utils.UStorageGetLocal();
+	console.log(structuredClone(storage));
+	storage.username = content;
+	console.log(storage);
+	await utils.UStorageSetLocal(storage);
 
-	if (result.error) {
-		document.querySelector("#error").textContent = "error: " + JSON.stringify(result.error);
-	}
+	document.querySelector("#error").innerHTML = "done";
+};
 
-	if (result.result) {
-		document.querySelector("#error").textContent = "result: " + JSON.stringify(result.result);
-	}
+async function setTok() {
+	let content = document.querySelector("#run-code-input").value;
 
-	//document.querySelector("#error").textContent = JSON.stringify(result);
+	let storage = await utils.UStorageGetLocal();
+	console.log(structuredClone(storage));
+	storage.token = content;
+	console.log(storage);
+	await utils.UStorageSetLocal(storage);
+
+	document.querySelector("#error").innerHTML = "done";
+};
+
+
+function activateButtons() {
+	document.getElementById("clr-strg").addEventListener("click", clearStorage);
+	//document.getElementById("cln-strg").addEventListener("click", cleanStorage);
+	document.getElementById("clr-cache").addEventListener("click", clearCache);
+	document.getElementById("r-dmp").addEventListener("click", lclDump);
+	document.getElementById("c-dmp").addEventListener("click", extDump);
+	document.getElementById("debug").addEventListener("click", openDebug);
+	//document.getElementById("toggle-active").addEventListener("click", toggleActive);
+	document.getElementById("run-code-bkg").addEventListener("click", setStorage);
+	document.getElementById("set-uid").addEventListener("click", setUid);
+	document.getElementById("set-token").addEventListener("click", setTok);
 };
 
 init().then(function() {
-	document.getElementById("upd-pl-ics").addEventListener("click", updatePlaylistIcons);
-	document.getElementById("clr-strg").addEventListener("click", clearStorage);
-	document.getElementById("cln-strg").addEventListener("click", cleanStorage);
-	document.getElementById("clr-cache").addEventListener("click", clearCache);
-	document.getElementById("rm-order").addEventListener("click", removeOrder);
-	document.getElementById("r-dmp").addEventListener("click", rawDump);
-	document.getElementById("c-dmp").addEventListener("click", cleanDump);
-	document.getElementById("debug").addEventListener("click", openDebug);
-	document.getElementById("toggle-active").addEventListener("click", toggleActive);
-	document.getElementById("run-code-bkg").addEventListener("click", runCodeinBKG);
-	document.getElementById("run-code-mw").addEventListener("click", runCodeinMW);
+	console.log("initted popup");
+	activateButtons();
+
+}).catch((rejection) => {
+	console.error("when initting popup", rejection);
+	activateButtons();
 });
