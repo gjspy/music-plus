@@ -177,35 +177,61 @@ done:
 		folders to contain playlists (or other folders!)
 		extra playlists that youtube doesn't load in (>50) added.
 		any albums saved to your library added.
-		filtering names and subtitles to what you want them to be called.
 		hiding elements
 		our paper items added/removed when you create/delete a playlist without a refresh.
 		can open playlists in new tab with middle mouse!!
 		separators with/without titles depending what you want.
 		rearranging elements by moving them to a temporary overflow
 		carousel elements to have icons only which are still interactable.
+		separators are allowe din carousels for more styling options
 		"add to queue" buttons, instead of just abruptly playing.
+		on cache update, sidebar refreshes too.
+		our sidebar refreshes when youtube refreshes theirs.
+		can middle-click primary buttons - home, explore and library
+		paper items have text runs, so can navigate to album artist from subtitle.
 	
 	fixed background gradient on album pages.
 	player-bar has nicer background.
 	player-slider has nice background or better gradient.
 	player-page shares the nice background
 	sidebar can share the nice background, but nowadays is better, it is default to transparent, so:
-		- it shares bkg of palyer page when open
-		- shares bkg of whatever other page when player closed.
+		it shares bkg of player page when open
+		shares bkg of whatever other page when player closed.
 	hovering over an element on the sidebar gives a nice effect - hiding text behind for play buttons. (!!!!)
 
-	sync AND local storage
+	__sync AND local storage
 		sync used for configs
-		local used for cache
+		local used for cache__
 
-	converts old album page (used for custom ones) to updated style
-		- also shows cached view count for private songs
-	fixes player bar not showing year for custom albums
-	player bar leads to actual artist, not private version
-	auto sorts artist discog by recency
-	artist discography shows custom albums
-	artist page always has "more" button for albums/singles/eps
+	storage now external, my own system with backend + backups
+		user authenticates, stored in local storage.
+		data is cached for quick reuse.
+
+	private counterparts
+		upload an album with the same name as a public album to overwrite or add songs
+		ensure the artist has the same name as the public artist too.
+
+	artist page
+		artist discography shows custom albums
+		artist page always has "more" button for albums/singles/eps
+		auto sorts artist discography by recency
+
+	album page
+		converts old album page (used for custom uploads) to updated style
+		shows cached view count for private songs
+		you can define the primary version, to overwrite the non-deluxe songs in the deluxe album
+		you can link other albums to overwrite songs
+		you can hide songs
+
+	for any page that has been modified, you can click the revert button to see the original
+	automatic subtitles - playlists and albums get updated subtitles based on their modified or not lengths.
+
+	player
+		fixed player bar not showing year for custom albums
+		player bar leads to actual artist, not private counterpart
+
+
+
 
 bugs fixed:
 	patch 1:

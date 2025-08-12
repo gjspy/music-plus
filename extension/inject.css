@@ -1260,7 +1260,7 @@ ytmusic-app-layout#layout[player-page-open] .c-player-bkg {
 .c-paper-button-cont .c-player-bkg {
 	width: 100vw;
 	height: 100vh;
-	position: fixed; /*TODO*/
+	position: fixed;
 
 	left: 0;
 	top: calc(var(--scrolled-height) * -1);

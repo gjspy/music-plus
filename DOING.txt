@@ -7,7 +7,7 @@
 
 /XCACHE MULTIPLE ARTISTS PER ALBUM (WHO BELIEVES IN ANGELS) (WILL BE VERY EASY TO DO, JUST PLS CHANGE NETWORKMIDDLEWARE!)
 
-AFTER EDITING C_PRIVATE_ALBUM TO LOOK LIKE NORMAL ALBUM, OD WE SWAP BACK PAGE TYPE? IF SO, HOW? IS BASED ON BROWSEID.!!
+/.AFTER EDITING C_PRIVATE_ALBUM TO LOOK LIKE NORMAL ALBUM, OD WE SWAP BACK PAGE TYPE? IF SO, HOW? IS BASED ON BROWSEID.!!
 
 
 //PRIVATE ALBUM NEW PAGE:
@@ -73,8 +73,8 @@ DONE IN NEW  INJECTPAPERITEMS:
 	elems live update when cache is edited
 
 
-LETS TRY and have ZERO DOMMutationWatchers.
-YTMusic is always much smoother when the extension isnt running. try and figure out why!
+/XLETS TRY and have ZERO DOMMutationWatchers.
+/-YTMusic is always much smoother when the extension isnt running. try and figure out why!
 
 //lots of TODOS in injectPaperItems.
 //FIX INJECTIONTARGET in BKG SCRIPT TO ALLOW MULTI TAB :)
@@ -83,7 +83,7 @@ YTMusic is always much smoother when the extension isnt running. try and figure 
 TAB IGNORING DOES NOT WORK :(
 
 //folders and carousels and separators
-primaryelements keeping active attribute since wrapping in a.c-paper-wrapper
+//primaryelements keeping active attribute since wrapping in a.c-paper-wrapper
 //respond to savedplaybutton/playerbar, need to be able to click paperitem to pause ETC
 //ADD "ADD TO QUEUE" BUTTON!!! (thumbnail overlay?)
 //clean up bkgscript, insertcss whats happening?
@@ -98,7 +98,7 @@ primaryelements keeping active attribute since wrapping in a.c-paper-wrapper
 /?GET MFID FROM TWOROWITEMRENDERER AND WHATEVER U CAN (ONLY ALBUM, PRIV ALBUM????)
 //ADDING EDIT BUTTONS TO OVFELEMS OH MY FUCK
 //(ON PLAYLIST ADD
-LISTITEM SAVE
+//LISTITEM SAVE
 //AND PLAYLIST DELETE!) -> DO BY NETWORK!
 //find all global injectionTargets and delete
 //look at weird dragging combos (no sep in cfmore, no sep in carousel, etc)
@@ -118,12 +118,11 @@ LISTITEM SAVE
 //how do alterante albums work? cache separately i hope, how will they appear when making sidebar?
 //allow to select primary ver of album
 
-STORE DATA IN MYSQL DB!!
-
 /Xfor adding to sidebar, have pane for "non saved" items, but do by search,, dont create all the elems
 for songs with too many plays (we are never ever getting back together 1b tv), see video detail from playerResponse.
 	- this returns viewCount for this instance, not including non-explicit/deluxe album/other alts of song. (for "we are never." the original is included in the sum with tv.)
-	- on select lyric (css:select) in lyrics pane,, popup window like spotify thing that people always tweet
+
+on select lyric (css:select) in lyrics pane,, popup window like spotify thing that people always tweet
 
 /Xhttps://music.youtube.com/youtubei/v1/guide?prettyPrint=false FOR REFRESHING GUIDE, EVENT FOR DOING MINE AGAIN
 body: fetchLiveState: true
@@ -132,7 +131,7 @@ FIX PLAYER PAGE SIZING
 //FIX PLAYER PAGE FULLSCREN VIDEO
 UPGRADE QUALITY OF FULLSCREEN VIDEO?
 
-WATCH NEXT IS ALL YOU NEED. playerApi.updateVideoData, sort by this.
+/?WATCH NEXT IS ALL YOU NEED. playerApi.updateVideoData, sort by this.
 
 EDITING ALBUMS:
 //	- private version, change songs based on it
@@ -197,19 +196,19 @@ how does shuffling work when theres two playlists?
 
 LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD, LIKE EDITMODE. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
 //*******GET RID OF "REMOVE FROM PLAYLIST" BUTTON IN PLAYLISTPANELS, ONLY HAVE IT IN LISTITEMS, MAKE IT A DIALOG ARE YOU SURE.
-check TODOs
+//check TODOs
 
 add album metadata, icon from google drive!!
+/Xwhen changed n of items in album, update subtitle of page, not just on page refresh>
 
+//on playlist create isnt adding to top of paperitemorder. is prob because of no storage space.
 
-on playlist create isnt adding to top of paperitemorder. is prob because of no storage space.
-
-ensure that playlistSetId caching only applies if has come from the album.
-will have a different playlistsetid if its a different playlist, eg LM?
+//ensure that playlistSetId caching only applies if has come from the album.
+//will have a different playlistsetid if its a different playlist, eg LM?
 n3rds-inc.time
 
 onDeletePlaylist, still deleting the wrong one?
-check there is no artPlaylistSetId
+//check there is no artPlaylistSetId
 
 //error with propagation, is browsing when click play button on sidebar
 
@@ -234,16 +233,13 @@ can i edit the request before its sent? change videoId to videoIds and add all e
 
 
 playerBar.inst.__data.currentItem has what we want!!
-look at tracking player instead of next. try editing then calling console.trace() and log that, to see where we are.. need this!!
+/?look at tracking player instead of next. try editing then calling console.trace() and log that, to see where we are.. need this!!
 
 //***** PLAYER BAR DATA IS ON api/next CALL. CONTENTS>singlEColumnMusicWeatchENxtResultsRenderer.tabbedRenderer.watchNextTabbedResultsRenderer.tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents[x].playlistPanelVideoRenderer.longBylineText!!!
-
-
-MAKE MINI WINDOW FOR TABLET, YT MUSIC WIDGET, make it auto appear on login and fill screen, using firefox as desktop backgorund ish user showcase mode smth
 //sidebar carousel paper items, make play buttons appear after a delay of hovering
 //(can animate visibility, not display. replace display: none with visibility: hidden)
 
-
+MAKE MINI WINDOW FOR TABLET, YT MUSIC WIDGET, make it auto appear on login and fill screen, using firefox as desktop backgorund ish user showcase mode smth
 COULD DEFINE OWN MUSIC VIDEOS, IN /NEXT API CALL, playlistPanelVideoWrapperRenderer.counterpart.counterpartRenderer + segmentMan
 
 

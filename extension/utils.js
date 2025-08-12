@@ -300,7 +300,6 @@ class Utils {
 
 		for (let key of Object.keys(defaultData)) {
 			let val = toStore[key];
-			console.log(key, val, defaultData[key]);
 			
 			storageLocal[key] = (val) ? val : defaultData[key];
 		};
@@ -312,8 +311,6 @@ class Utils {
 		if (!localStorage) {
 			localStorage = await this.UStorageGetLocal();
 		};
-
-		console.log(localStorage);
 		
 		let username = localStorage.username;
 		let token = localStorage.token;
@@ -332,6 +329,11 @@ class Utils {
 			storageExt[key] = (val) ? val : defaultData[key];
 		};
 
+		// even though errors could happen, do this before, to stop
+		// a spam of requests being misaligned, eg request 1 then 2 then 3,
+		// if 2 took longer for whatever reason, cachedLastResponse would be 2 and not 3.
+		localStorage.cachedLastResponse = storageExt;
+
 		let response = await fetch(this.U_STORAGE_ENDPOINT + `/storage/set?user_id=${username}&token=${token}`, {
 			method: "POST",
 			body: JSON.stringify(storageExt),
@@ -340,30 +342,21 @@ class Utils {
 
 		if (response.status !== 200) throw Error("External response was", response.status,"for POST.", response);
 
-		localStorage.cachedLastResponse = storageExt;
-
 		this.UStorageSetLocal(localStorage);
 	};
 
 
 	static UGetUserAccountInfo() {
 		if (!polymerController) this.UGetPolymerController();
+		
+		let juicyInfo = polymerController.accountService.cachedGetAccountMenuRequestPromise.result_.actions[0]. 
+		openPopupAction.popup.multiPageMenuRenderer.header.activeAccountHeaderRenderer;		
 
-		//try {			
-			let juicyInfo = polymerController.accountService.cachedGetAccountMenuRequestPromise.result_.actions[0]. 
-			openPopupAction.popup.multiPageMenuRenderer.header.activeAccountHeaderRenderer;		
-	
-			return {
-				accountName: juicyInfo.accountName.runs[0].text,
-				accountPhoto: juicyInfo.accountPhoto.thumbnails[0].url,
-				channelHandle: juicyInfo.channelHandle.runs[0].text
-			};
-
-		//} catch (err) {
-		//	console.warn("ERROR GRABBING ACCOUNTINFO:", err);
-
-		//	return undefined;
-		//};
+		return {
+			accountName: juicyInfo.accountName.runs[0].text,
+			accountPhoto: juicyInfo.accountPhoto.thumbnails[0].url,
+			channelHandle: juicyInfo.channelHandle.runs[0].text
+		};
 	};
 
 	static UUpscaleThumbQualityStr(imgUrl) {
@@ -443,7 +436,7 @@ class Utils {
 		}, 300);
 	}
 
-	// messy function, todo: clean, but it creates a popup :)
+	// messy function, but it creates a popup :)
 	static UCreatePopup(layout) {
 		function _TextInputFloating(inputElem, label, underline) {
 			if (inputElem.type !== "text") return;
@@ -1670,34 +1663,6 @@ class Utils {
 		return cont;
 	};
 
-	static UGetModifiedCacheItem(storage, id) {
-		let cache = storage.cache;
-
-		let item = this.FunctionToString.UGetBaseCacheItem(cache, id);
-
-		let modifications = this.UGetModificationsFromStorage(storage, id);
-
-		if (item.type === "ALBUM") {
-			let counterpart = this.UGetCounterpartFromData(cache, item);
-
-			// items
-
-			// names
-			// icons
-			// subType
-			// badges!!
-
-
-			// TODO: update length of albums in subtitle runs
-		};
-
-
-	};
-
-	static UGetBaseCacheItem(cache, id) {
-		return structuredClone(cache[id]) || {};
-	};
-
 	static UCacheItemIsSong(cacheItem) {
 		return cacheItem.type.match("VIDEO_TYPE");
 	};
@@ -1937,16 +1902,6 @@ class Utils {
 		if (!data || (data.privateCounterparts || []).length === 0) return;
 
 		return (cache || {})[data.privateCounterparts[0]];
-	};
-
-	static UGetModificationsFromStorage(storage, id) {
-		let data = {};
-
-		let albumLinks = storage.customisation.albumLinks[id];
-		if (albumLinks) data.albumLinks = albumLinks;
-
-
-		return data;
 	};
 
 	static UGetPrimaryVersions(storage, nonMainId) {
@@ -2615,7 +2570,7 @@ class Utils {
 		]);
 
 		let vId = replacement.video.id;
-		let setPlId = replacement.video.playlistSetVideoId;
+		let setPlId = replacement.video.albumPlSetVideoId;
 
 		// want to make play button work with playlistId being base, then adding extra from deluze version.
 		// different relationship, dont want deluxe to be overwriting.
@@ -2815,7 +2770,7 @@ class Utils {
 
 	static UModifyPlaylistPanelRendererFromData(current, replacement, realAlbum, artist) {
 		let vId = replacement.video.id;
-		let plSetId = replacement.video.playlistSetVideoId;
+		let plSetId = replacement.video.albumPlSetVideoId;
 
 		current.title.runs[0].text = replacement.video.name;
 
@@ -2835,14 +2790,10 @@ class Utils {
 		we.videoId = vId;
 		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (realAlbum.private === true) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
 		if (plSetId) we.playlistSetVideoId = plSetId;
-		// TODO not editing params, playerParams, playlistSetVideoId, may need to? test it
+		// war
 
 		current.videoId = vId;
 		current.queueNavigationEndpoint.queueAddEndpoint.videoId = vId;
-
-		let likeButton;
-
-		if (replacement.video.liked)
 
 		current.menu.menuRenderer.items = [
 			{
@@ -3080,7 +3031,7 @@ class Utils {
 			playlistId: realAlbum.mfId,
 			firstVideo: video,
 			index: index, // zero base index.
-			playlistSetVideoId: video.playlistSetVideoId
+			playlistSetVideoId: video.albumPlSetVideoId
 		});
 
 		return {

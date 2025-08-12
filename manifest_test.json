@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 	"name": "YTMUSIC TEST",
 	"version": "1.1",
-  
+
 	"description": "TEST BUILD: Provides additional features to the Youtube Music site.",
 
 	"icons": {
@@ -52,12 +52,8 @@
 	},
 
 	"action": {
-		"default_icon":"icons/testlogo.png",
-		"default_title":"YTMUSIC Test",
-		"default_popup":"popup/index.html"
-	},
-	
-	"content_security_policy": {
-		"extension_pages": "default-src 'self'; connect-src 'self' https://music.gtweb.dev; img-src 'self' https://music.gtweb.dev; style-src 'self'"
+		"default_icon": "icons/testlogo.png",
+		"default_title": "YTMUSIC Test",
+		"default_popup": "popup/index.html"
 	}
 }

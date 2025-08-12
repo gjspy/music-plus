@@ -670,17 +670,17 @@ MiddlewareEditors = class MiddlewareEditors {
 		};
 	};
 
-	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFrom, loadedQueueFrom, videoIdToSelect, isShuffle, areQueueDatas) {
-		let buildFromAlbum = storage.cache[buildQueueFrom] || {};
-		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFrom) || {};
-		console.log(buildQueueFrom, loadedQueueFrom, buildFromAlbum, loadedFromAlbum);
+	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas) {
+		let buildFromAlbum = storage.cache[buildQueueFromBId] || {};
+		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFromMfId) || {};
+		console.log(buildQueueFromBId, loadedQueueFromMfId, buildFromAlbum, loadedFromAlbum);
 
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, buildFromAlbum.id, loadedFromAlbum.id) || {};
 		console.log("replacements", idsToReplace);
 		console.log("queueContentsBefore", structuredClone(queueContents));
 
 		let cachedArtist = (buildFromAlbum.artist) ? storage.cache[buildFromAlbum.artist] : undefined;
-		let hiddenSongs = storage.customisation.hiddenSongs[buildQueueFrom] || [];
+		let hiddenSongs = storage.customisation.hiddenSongs[buildQueueFromBId] || [];
 
 		let backingPlaylistId; // for use later. get it in this loop from anything we can!
 
@@ -709,7 +709,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			if (videoIdToSelect) videoRenderer.selected = videoRenderer.videoId === videoIdToSelect;
 		};
 
-		if (!buildQueueFrom) {
+		if (!buildQueueFromBId) {
 			// USER HAS CLICKED TO LOAD FROM ORIGINAL, OR OTHER.
 			// ONLY WANTED TO DO FIRST ITERATION, TO EDIT LONGBYLINE.
 			console.log("leaving early!");
@@ -734,7 +734,6 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			let newVideoItem = UBuildPlaylistPanelRendererFromData(replacement, buildFromAlbum, cachedArtist, backingPlaylistId);
 
-			if (videoIdToSelect) newVideoItem.playlistPanelVideoRenderer.selected = newVideoItem.playlistPanelVideoRenderer.videoId === videoIdToSelect;
 			if (areQueueDatas) newVideoItem = { content: newVideoItem };
 
 			// INSERT IN RANDOM POSITION FOR SHUFFLE!
@@ -755,6 +754,10 @@ MiddlewareEditors = class MiddlewareEditors {
 		let currentVideoWE;
 		let indexCount = 0;
 
+		if (hiddenSongs.includes(videoIdToSelect)) {
+			videoIdToSelect = undefined;
+		};
+
 		// LAST ITERATION. HIDE ANY WE NEED TO, AND UPDATE ENDPOINT INDEXES.
 		// THIS CLEANS THE MESS FOR US, SO WE CAN ADD SONGS WHEREVER WE WANT!
 		for (let item of queueContents) {
@@ -766,16 +769,39 @@ MiddlewareEditors = class MiddlewareEditors {
 			};
 
 			let we = UDigDict(videoRenderer, ["navigationEndpoint", "watchEndpoint"]);
-			console.log(item, videoRenderer, videoIdToSelect, (videoRenderer) ? [videoRenderer.selected, videoRenderer.videoId] : undefined, we, "deleting", hiddenSongs.includes(we.videoId));
 
-			if (hiddenSongs.includes(we.videoId) && !videoRenderer.cData) continue;
+			console.log(
+				item,
+				videoRenderer,
+				videoIdToSelect,
+				(videoRenderer) ? [videoRenderer.selected, videoRenderer.videoId] : undefined,
+				we,
+				"deleting",
+				hiddenSongs.includes(we.videoId),
+				(!videoRenderer.cData) || (videoRenderer.cData && videoRenderer.cData.from.id === loadedFromAlbum.id)
+			);
+
+			if (
+				hiddenSongs.includes(we.videoId) &&
+				(!videoRenderer.cData || 
+					(videoRenderer.cData && videoRenderer.cData.from.id === loadedFromAlbum.id)
+				)
+			) continue; // dont add to new list
+
 			indexCount ++;
 
 			if (we.index !== 0) we.index = indexCount;
 			newContents.push(item);
 
+			if (videoIdToSelect === undefined) { // if first item in playlist deleted.
+				videoIdToSelect = we.videoId;
+			};
+
+			if (videoIdToSelect) videoRenderer.selected = videoRenderer.videoId === videoIdToSelect;
 			if (we.videoId === videoIdToSelect) currentVideoWE = we;
 		};
+
+		
 
 		console.log("newContents", newContents, hiddenSongs);
 
@@ -1032,6 +1058,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		for (let album of privateArtist.discography) {
 			album = cache[album];
 			if (!album) continue;
+			if (album.privateCounterparts) continue; // dont show duplicates
 
 			releaseToYear[album.id] = album.year;
 		};
@@ -1081,7 +1108,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		};
 
 		gridRenderer.items = newItems;
-		return response; // changed in-place
+		return newItems;
 	};
 
 

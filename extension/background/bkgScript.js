@@ -177,7 +177,7 @@ async function EWExtras(injectionTarget) {
 
 		let resp = await browser.scripting.executeScript({
 			"target": injectionTarget,
-			"files": [f], // todo: no for loop, put all files here
+			"files": [f],
 			"world": "MAIN"
 		});
 
@@ -707,7 +707,7 @@ function EWCacheCreateStorableFromListItem(item, listData, albumId) {
 		if (listData.type === "ALBUM") {
 			formattedItem.albumPlSetVideoId = formattedItem.playlistSetVideoId;
 		};
-		
+
 		delete formattedItem.playlistSetVideoId;
 	};
 

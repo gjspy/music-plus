@@ -52,6 +52,23 @@ export async function MWEventDriven_PageChanges() {
 		};
 	};
 
+	function _UpdateMainSidebarButtons(state) {
+		let browseHref = "browse/" + UDigDict(state, [
+			"navigation", "mainContent", "endpoint",
+			"data", "browseId"
+		]);
+
+		let allButtons = document.querySelectorAll(".c-paper-wrapper[is-primary] ytmusic-guide-entry-renderer");
+		let thisButton = document.querySelector(`.c-paper-wrapper[is-primary][href='${browseHref}'] ytmusic-guide-entry-renderer`);
+
+		for (let button of allButtons) {
+			button.removeAttribute("active");
+		};
+
+		if (thisButton) thisButton.setAttribute("active", "");
+	};
+
+
 	function _EvaluateNewValue(browsePage, state, newValue) {
 		browsePage.setAttribute("c-page-type", newValue);
 
@@ -71,6 +88,8 @@ export async function MWEventDriven_PageChanges() {
 		browsePage.setAttribute("c-edited", edited);
 
 		ButtonBar.UpdateButtons(state);
+
+		_UpdateMainSidebarButtons(state);
 	};
 
 	async function _OnDOMChange(changes, browsePage) {
