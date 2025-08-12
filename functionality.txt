@@ -273,6 +273,214 @@ bugs fixed:
 	
 
 
+	jobs before v3:
+	//why eventdrven timeout?
+
+	//find primary version of alternate albums.
+	//store alternate albums separately, not just alternate: [], have an entry for them.
+	//not using albumdatafromsubtitle for artists. should be, i ebtter, has info other than id [should be fixed]
+	//check various artists stores consistently, and nto storing separate entry for them. unless want to?
+
+	/XCACHE MULTIPLE ARTISTS PER ALBUM (WHO BELIEVES IN ANGELS) (WILL BE VERY EASY TO DO, JUST PLS CHANGE NETWORKMIDDLEWARE!)
+
+	/.AFTER EDITING C_PRIVATE_ALBUM TO LOOK LIKE NORMAL ALBUM, OD WE SWAP BACK PAGE TYPE? IF SO, HOW? IS BASED ON BROWSEID.!!
+
+
+	//PRIVATE ALBUM NEW PAGE:
+	//	header:
+	//		left 2 buttons not showing icons
+	//		"play next" endpoint doesnt work? shows toast ele, does not add to queue (DOES work going through menu)
+	//	contents:
+	/-		each item, remove album name from flexcolumns
+	//		fix playbutton, is too black
+	//		look at fixing not showing when playing? dont think its an issue actually here, new page is correct!!
+	/-		custom "x plays" for flexcolumn!!!
+
+	//FINISH CLEANING CACHING, REMOVING CONTENTLENGTH N STUFF (ONLY DOES RAW RESP FROM MIDDLEWARE NOW)
+	//	NEED TO FINISH GRIDRENDERER
+	//	liked and badges not working listitem
+
+	//FEmusic_library_corpus_track_artists - listitems!
+
+	//WHAT IS CREATORNAVENDPOINT FOR IN TWOITEMRENDERER?
+	//CACHING ON CLICK AND UPDATE SIDEBAR BASED ON NEW CACHE!! -> WILL NEED TO FULLY UPDATE INSERT() WITH NEW CACHING!! NO MORE CACHE.PLAYLIST!!
+	//what happens when anvigate t channel
+	//improve eventdriven stuff, stop console spam
+	//CACHE ON INITAL OPEN OF PAGE (NEW TAB)
+
+	//FEmusic_liked_albums FEmusic_liked_playlists FEmusic_library_corpus_track_artists FEmusic_liked_videos
+	//FEmusic_liked_playlists [no specification for private, which makes sense] FEmusic_library_privately_owned_releases FEmusic_library_privately_owned_artists FEmusic_library_privately_owned_tracks
+
+
+	//CHECK DOWNLOADS, MAKE SURE IT DOESNT ERR (STILL DONT WANT TO DO IT)
+
+	//CLEAR QUEUE BUTTON DELETES when changing queue, eg clicking a new play button which refreshes queue.
+	//[DISMISS_QUEUE SVG EXISTS]
+
+
+	//TEXT RUNS FOR SIDEBAR PAPERITEM SUBTITLES!! SO CAN NAV TO CREATOR ETC!!
+	//SUBTITLE BADGES!!
+
+	//when editing anything to do with caching,need to come back to insert to fix metadata for subtitle.
+
+	//sidebar paperelem still add if no cache inf, just have title / subtitle ? ? and no img obvs
+	//MAKE IT /browse!!
+
+	/.REMOVED let fakeInfo = savedCustomConfigs.fakeNames[id]; from _CreateNewPaperItem. will be overhauled for custom infos.
+	//NEED TO DO NAVIGATION OF PAPERELEMS AGAIN (NOT STORING WHOLE PLAYENDPOINTS OR NAVENDPOINTS)
+
+	//FIX ALL DOMUATIONWATCHER (get it to do sidebaredit also)
+
+	//UAddToClass(customTemplateElem, "c-template"); CHECK SIDEBAREDIT, INSTEAD OF c-tempaltes, templates > c-paper-wrapper
+
+	DONE IN NEW  INJECTPAPERITEMS:
+		elems now use /browse, so can point anywhere
+		newTabbable primarybuttons (home, explore, lib)
+		mfId (microformat), from ALBUM CACHING
+		cfmore is more efficient, no longer on sidebar, just for editing purposes
+		automatic subtitles
+		seps allowed in carousel for styling
+		carousels allowed in folders
+		subtitleRuns for navigating to artists
+		artists can be added to sidebar
+		elems will appear even if only id is present, no detail. can click to update through cache
+		elems live update when cache is edited
+
+
+	/XLETS TRY and have ZERO DOMMutationWatchers.
+	/-YTMusic is always much smoother when the extension isnt running. try and figure out why!
+
+	//lots of TODOS in injectPaperItems.
+	//FIX INJECTIONTARGET in BKG SCRIPT TO ALLOW MULTI TAB :)
+
+	//WHEN GENERATING CFMORE LATER IN EDIT, SHOW FOLDERS NOT IN PAPERORDER!
+
+	//folders and carousels and separators
+	//primaryelements keeping active attribute since wrapping in a.c-paper-wrapper
+	//respond to savedplaybutton/playerbar, need to be able to click paperitem to pause ETC
+	//ADD "ADD TO QUEUE" BUTTON!!! (thumbnail overlay?)
+	//clean up bkgscript, insertcss whats happening?
+	//todos in injectPaperItems
+	//addNewAndSave
+	//look at artists being there!! playing radio types. selecting mfid as the radio!
+	//NULL IN CACHE ARTIST DISCOG!! COMING FROM PLAYLIST ITEM
+	//CHECk that papers load even if only have id (click on and cache updates it)
+	//NEED TO ADD NON USED FOLDERS TO OVF, AND USE CREATEFOLDER NOT CREATEELEM
+	//HOW TO GET MFID FOR PRIVATE ALBUM? IS THERE ONE? WHAT IS IT?
+	//on live update of cache when got, readd play button if mid is not undefined!!
+	/?GET MFID FROM TWOROWITEMRENDERER AND WHATEVER U CAN (ONLY ALBUM, PRIV ALBUM????)
+	//ADDING EDIT BUTTONS TO OVFELEMS OH MY FUCK
+	//(ON PLAYLIST ADD
+	//LISTITEM SAVE
+	//AND PLAYLIST DELETE!) -> DO BY NETWORK!
+	//find all global injectionTargets and delete
+	//look at weird dragging combos (no sep in cfmore, no sep in carousel, etc)
+	//saveorder in utils check is ok
+	//check deleting folders, hiding elems, deleting sep
+	//PROBABLY PROBLEM IF CACHE NAVIGATE AND EDITING, DONT WANT TO REFRESH CONT IF EDITING
+	/X(refresh cont after ending edit?)
+	//ON YOUTUBE SIDEBAR REFRESH!! (ALSO REFRESHES PRIMARY BUTTONS, NEED TO WRAP IN <A> AGAIN)
+	//FEmusic_liked_playlists etc, any page with gridRenderer do
+	//BROWSING IS SLOW!!
+	//RADIOS dont cache, browsePageTypeFromBrowseId issue RD types
+	/Xmultiple reading to storage at once? need queue
+	//need to set draggingCarousel to false on next click
+	//WORKING ON SHELFRENDERER, ERRORS IN BROWSER console
+	/XALSO ANOTHER THING I TESTED ERRORED? WHAT WAS IT?
+	//BROWSEID PARAMS IN newFetch, FOR BUTTON TO "LOAD ORIGINAL"
+	//how do alterante albums work? cache separately i hope, how will they appear when making sidebar?
+	//allow to select primary ver of album
+
+	/Xfor adding to sidebar, have pane for "non saved" items, but do by search,, dont create all the elems
+
+	/Xhttps://music.youtube.com/youtubei/v1/guide?prettyPrint=false FOR REFRESHING GUIDE, EVENT FOR DOING MINE AGAIN
+	body: fetchLiveState: true
+
+	//FIX PLAYER PAGE FULLSCREN VIDEO
+
+	/?WATCH NEXT IS ALL YOU NEED. playerApi.updateVideoData, sort by this.
+
+	EDITING ALBUMS:
+	//	- private version, change songs based on it
+	//	- deluxe versions of albums, use base songs
+	//	- priv album, send 
+	//	- STARTED ADDING OVERWRITING SONGS. NEED TO ADD TO END, AND ALLOW USER TO SELECT ALBUM TO USE (EG UPLOADED DELUXE)
+
+	ARTISTS:
+	//	- add private uploads to their album playerPageFeatures
+	//	- auto sort discog by age
+
+	//CHECK GET_QUEUE, FOR ADDING ALBUM TO QUEUE, MAKE SURE IT REPLACES SONGS
+	//ALL LISTITEMS WORK. now adding to queue (for extra non-replacing ids.)
+	/XDOES SELCTEG WORK? NON INDEXED THINGS?
+	//ARE NON INDEX ITEMS EDITED? TO REPLACE ARTIST WITH PUBLIC AND ETC
+	//fix like buttons everywhere - FIXED LISTITEMRENDERERS, JUST PLAYLISTPANEL NOW.
+	//	- is so crude. no "toggled = true", they define default and toggled based on how the state starts.
+	//	eg, user has already liked the video. default text = "remove from liked songs", toggled text = "add to liked songs". 
+	//		if user has not liked the video yet, default text = "add to liked songs", and toggled = "remove from liked songs" !!!!! **********************
+
+	now:
+	//list items and playlist panels work.
+	//need to make playlist panels work when you start playing a primary ver song.
+	/Xchange "playing from" text?
+	//decide whats happening with longByline, with album name. make consistent everwhere, lots of places.
+	//need to make sidebar play buttons work? does it already?
+	//cache on like!!! really important now, making our own listitemrenderers.
+	//CHECK THAT "add to queue" does not add whole thing, if we're asking to add one song, if we edit indexes.
+	//REALLY BAD trying to make main ver songs play with extra items. need rewrite, rename addedBulkFrom -> grouper or smth, then perspective = album which was clicked to start playing.
+	//	- think about midnights, the shitton of albums that will have.
+
+	//THINK it works. test it, try midnights, then try with shuffling. then get rid of "test [album name]" and clear console.logs.
+	//make it eexit quick if request.body.plyylistId starts with RDAMPL. this is automix, will make our own later! and normal playlists, make ti only work for albums.
+
+	***USE THIS NOW** QUEUE NAV CMD, CAN have videoIds: [...] IN REQUEST, WORKS WITH ENDPOINT
+	"queueAddEndpoint":{
+		"queueInsertPosition":"INSERT_AT_END",
+		"commands":[{"addToToastAction":{"item":{"notificationTextRenderer":{"successResponseText":{"runs":[{"text":"4 songs added to queue"}]}}}}}],
+		"queueTargets":[{"videoId":"2tVs8JVU48M"},{"videoId":"5CbWqM0K2v8"},{"videoId":"_vjfkBSTpyk"},{"videoId":"s-QGeo_dpn4"}]
+	}
+
+	//THINK it works. test it, try midnights, then try with shuffling. then get rid of "test [album name]" and clear console.logs.
+	//make it eexit quick if request.body.plyylistId starts with RDAMPL. this is automix, will make our own later! and normal playlists, make ti only work for albums.
+
+	//*******GET RID OF "REMOVE FROM PLAYLIST" BUTTON IN PLAYLISTPANELS, ONLY HAVE IT IN LISTITEMS, MAKE IT A DIALOG ARE YOU SURE.
+	//check TODOs
+
+	/Xwhen changed n of items in album, update subtitle of page, not just on page refresh>
+
+	//on playlist create isnt adding to top of paperitemorder. is prob because of no storage space.
+
+	//ensure that playlistSetId caching only applies if has come from the album.
+	//will have a different playlistsetid if its a different playlist, eg LM?
+
+	//check there is no artPlaylistSetId
+
+	//error with propagation, is browsing when click play button on sidebar
+
+	//dragging carousel into carousel
+	//folders in cfmore
+
+	/XREDO BUTTONS (AND CAN DO WITHOUT ENDING EDIT MODE NOW?)
+
+	//clicking private release doesnt have browsepagetype
+	//getting mfid for private release
+
+	/Xsave "privateCounterparts" separate, in edits sect, not cache? or should be cache because is automatic?
+	/?add isDeleted to playlist, will get removed once cache is _CollectTwoRowDataFromGridRenderer
+
+	/?playerBar.inst.__data.currentItem has what we want!!
+	/?look at tracking player instead of next. try editing then calling console.trace() and log that, to see where we are.. need this!!
+
+	//***** PLAYER BAR DATA IS ON api/next CALL. CONTENTS>singlEColumnMusicWeatchENxtResultsRenderer.tabbedRenderer.watchNextTabbedResultsRenderer.tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents[x].playlistPanelVideoRenderer.longBylineText!!!
+	//sidebar carousel paper items, make play buttons appear after a delay of hovering
+	//(can animate visibility, not display. replace display: none with visibility: hidden)
+
+
+
+
+
+
+
 
 how this works:
 	content script injected (iso)

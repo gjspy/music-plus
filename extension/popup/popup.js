@@ -128,8 +128,8 @@ async function setStorage() {
 
 	await lclDump();
 
-	let coded = JSON.parse(code);
 	console.log(code);
+	let coded = JSON.parse(code);
 	console.log(coded);
 
 	await utils.UStorageSetExternal(coded);
