@@ -75,7 +75,7 @@ AlbumEditMode = class AlbumEditMode {
 
 		browsePage.setAttribute("c-editing", "hideSongs");
 
-		let listItems = await UWaitForBySelector("ytmusic-browse-response #contents ytmusic-responsive-list-item-renderer");
+		let listItems = await UWaitForBySelector("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-list-item-renderer");
 
 		let binIcon = UGetSVGFromRaw("delete", true, false);
 		UAddToClass(binIcon, "c-edit-btn");

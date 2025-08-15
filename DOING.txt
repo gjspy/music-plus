@@ -53,3 +53,8 @@ can i edit the request before its sent? change videoId to videoIds and add all e
 
 MAKE MINI WINDOW FOR TABLET, YT MUSIC WIDGET, make it auto appear on login and fill screen, using firefox as desktop backgorund ish user showcase mode smth
 COULD DEFINE OWN MUSIC VIDEOS, IN /NEXT API CALL, playlistPanelVideoWrapperRenderer.counterpart.counterpartRenderer + segmentMan
+
+
+MAKE IT CHANGE BROWSER THEME: browser.theme.update(), TO IMAGE OF ALBUM PLAYING!!
+ON PAGE CLOSE, RESET TO STORED VALUE OF browser.theme.getCurrent() BEFORE STARTING.
+STORE THIS! CAN TEL IF ITS OURS OR NOT, BASED ON IF IMG URL IS YT OR NOT.
