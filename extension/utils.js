@@ -1106,7 +1106,7 @@ class Utils {
 
 		let total = 0;
 
-		for (let trackId of cachedList.items) {
+		for (let trackId of cachedListPage.items) {
 			if (hiddenSongs.includes(trackId)) continue;
 
 			let track = cache[trackId];
