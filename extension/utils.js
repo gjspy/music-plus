@@ -1100,7 +1100,7 @@ class Utils {
 		return strs.join(":");
 	};
 
-	static UGetTotalSecondsOfList(storage, cachedListPage, excludeHidden) {
+	static UGetTotalSecondsOfList(storage, cachedListPage) {
 		let hiddenSongs = storage.customisation.hiddenSongs[cachedListPage.id] || [];
 		// DONT exclude skipped songs. theyre still part of the album.
 
@@ -1109,7 +1109,7 @@ class Utils {
 		for (let trackId of cachedListPage.items) {
 			if (hiddenSongs.includes(trackId)) continue;
 
-			let track = cache[trackId];
+			let track = storage.cache[trackId];
 			if (!track || track.lengthSec === -1) continue;
 
 			total += track.lengthSec;

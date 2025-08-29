@@ -37,7 +37,7 @@ export async function MWInjectMyPaperItems() {
 					});
 
 				} else {
-					let len = UGetTotalSecondsOfList(this.storage, cachedInfo, true);
+					let len = UGetTotalSecondsOfList(this.storage, cachedInfo);
 
 					subtitle.push({
 						text: USecondsToLengthStr(len, true, false)
