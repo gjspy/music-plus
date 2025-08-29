@@ -41,7 +41,9 @@
 		"storage",
 		"activeTab",
 		"unlimitedStorage",
-		"scripting"
+		"scripting",
+		"theme",
+		"menus"
 	],
 
 	"browser_specific_settings": {

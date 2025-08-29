@@ -1,9 +1,16 @@
 // functionality for when sidebar is collapsed. adds YTMUSIC logo.
 
 function NiceMiniGuide() {
-	function _AddLogoToMiniGuide(found) {
-		let sections = found.querySelector("#sections");
+	function onClickHamburger() {
+		let miniGuide = document.querySelector("#mini-guide");
+		if (!miniGuide) return;
 
+		if (miniGuide.querySelector(".c-yt-logo")) {
+			hamburger.removeEventListener("click", onClickHamburger);
+			return;
+		};
+
+		let sections = miniGuide.querySelector("#sections");
 		let div = document.createElement("div");
 		div.setAttribute("class", "c-yt-logo");
 
@@ -12,41 +19,13 @@ function NiceMiniGuide() {
 
 		div.append(img);
 		sections.append(div);
+
+		hamburger.removeEventListener("click", onClickHamburger);
 	};
 
-	function _DOMChange(changes) {
-		let found = false;
+	let hamburger = document.querySelector("ytmusic-nav-bar #left-content #guide-button");
 
-		for (let change of changes) {
-			if (found) break;
-			if (change.type !== "childList") continue;
-			if (!change.addedNodes) continue;
-
-			for (let node of change.addedNodes) {
-				if (!node) continue;
-				if (!node.matches) continue; // ye idk
-				if (!node.matches("#mini-guide")) continue;
-
-				found = node;
-				break;
-			};
-		};
-
-		if (!found) return;
-
-		_AddLogoToMiniGuide(found);
-		observer.disconnect();
-	};
-
-	let currentMiniGuide = document.querySelector("#mini-guide");
-
-	if (currentMiniGuide) {
-		_AddLogoToMiniGuide(currentMiniGuide);
-		return;
-	};
-
-	let observer = new MutationObserver(_DOMChange);
-	observer.observe(document.querySelector("ytmusic-app-layout"), {attributes: false, subtree: true, childList: true});
+	hamburger.addEventListener("click", onClickHamburger);
 };
 
 async function _AsyncStartProcesses() {

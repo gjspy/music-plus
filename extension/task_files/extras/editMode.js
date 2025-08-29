@@ -3,9 +3,10 @@
 AlbumEditMode = class AlbumEditMode {
 	static buttons = [
 		{ // ask whether should be that songs ALWAYS or just when playing the album
-			type: "skip",
+			type: "skip", // "type" IS THE ID!
 			icon: "no-circle",
-			text: "Define Auto-Skips"
+			text: "Define Skips",
+			onclick: this.HideSongs
 		},
 		{
 			type: "hide",
@@ -26,7 +27,8 @@ AlbumEditMode = class AlbumEditMode {
 		{ // change name, cover, single/ep/album!!, exact release date!!
 			type: "details",
 			icon: "pencil",
-			text: "Edit Album Metadata"
+			text: "Edit Album Metadata",
+			onclick: this.EditMetadata
 		},
 		{ // when linking other albums, use the longest ver as base. eg folklore: base = folklore, "link" deluxe version, not base = deluxe and link folklore.
 			type: "link",
@@ -48,37 +50,44 @@ AlbumEditMode = class AlbumEditMode {
 		}
 	];
 
-	static async HideSongs(state, browsePage, id) {
+	static async HideSongs(state, browsePage, id, buttonType) {
 		function OnClickItem(item, clickedId, isDeleted) {
 			UDispatchEventToEW({
-				func: "setDeletion",
+				func: (buttonType === "hide") ? "setDeletion" : "setSkip",
 				videoId: clickedId,
 				deleted: isDeleted,
 				album: id
 			});
 
-			if (isDeleted) item.setAttribute("c-hidden", isDeleted);
-			else item.removeAttribute("c-hidden");
+			let attr = (buttonType === "hide") ? "c-hidden" : "c-skipped";
+			if (isDeleted) item.setAttribute(attr, isDeleted);
+			else item.removeAttribute(attr);
 
 			let current = item.querySelector("div.fixed-columns .c-edit-btn");
 			if (isDeleted) current.innerHTML = undoIcon.innerHTML;
-			else current.innerHTML = binIcon.innerHTML;
+			else current.innerHTML = icon.innerHTML;
 
 			let data = item.controllerProxy.__data.data;
 			if (!data) return;
 
-			if (!data.cData) data.cData = { changedByDeletion: {} }
-			if (!data.cData.changedByDeletion) data.cData.changedByDeletion = {};
+			if (buttonType === "hide") {
+				if (!data.cData) data.cData = { changedByDeletion: {} }
+				if (!data.cData.changedByDeletion) data.cData.changedByDeletion = {};
 
-			data.cData.changedByDeletion.isDeleted = isDeleted;
+				data.cData.changedByDeletion.isDeleted = isDeleted;
+			};
+		};
+
+		for (let oldIcon of document.querySelectorAll(".c-skip-icon")) {
+			oldIcon.remove();
 		};
 
 		browsePage.setAttribute("c-editing", "hideSongs");
 
-		let listItems = await UWaitForBySelector("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-list-item-renderer");
+		let listItems = document.querySelectorAll("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-list-item-renderer");
 
-		let binIcon = UGetSVGFromRaw("delete", true, false);
-		UAddToClass(binIcon, "c-edit-btn");
+		let icon = UGetSVGFromRaw((buttonType === "hide") ? "delete" : "no-circle", true, false)
+		UAddToClass(icon, "c-edit-btn");
 
 		let undoIcon = UGetSVGFromRaw("undo", true, false);
 		UAddToClass(undoIcon, "c-edit-btn");
@@ -93,23 +102,166 @@ AlbumEditMode = class AlbumEditMode {
 			let videoId = data.playlistItemData.videoId;
 			
 			let isDeleted = !!listItem.getAttribute("c-hidden");
+			let isSkipped = !!listItem.getAttribute("c-skipped");
 
-			if (changedByDeletionData) {
+			listItem.removeAttribute("unplayable");
+
+			if (buttonType === "hide" && changedByDeletionData) {
 				if (changedByDeletionData.originalIndex) {
 					let index = listItem.querySelector(".left-items yt-formatted-string.index");
 					if (index) index.textContent = changedByDeletionData.originalIndex;
 				};
 			};
 
-			let newButton = ((isDeleted) ? undoIcon : binIcon).cloneNode(true);
+			let newButton = ((isDeleted || isSkipped) ? undoIcon : icon).cloneNode(true);
 			if (videoId) newButton.onclick = () => {
-				isDeleted = !isDeleted;
-				OnClickItem(listItem, videoId, isDeleted);
+				if (buttonType === "hide") isDeleted = !isDeleted;
+				if (buttonType === "skip") isSkipped = !isSkipped;
+
+				OnClickItem(listItem, videoId, (buttonType === "hide") ? isDeleted : isSkipped);
 			};
 
 			let fixedCols = listItem.querySelector("div.fixed-columns");
 			if (fixedCols) fixedCols.append(newButton);
 		};
+	};
+
+	static async EditMetadata(state, browsePage, id) {
+		let popup = UCreatePopup({
+			title: {
+				text: "Edit Album Metadata",
+				icon: "album"
+			},
+			content: [
+				{
+					class: "c-text-input",
+					id: "title",
+					config: [
+						["label", "textContent", "Title"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_title",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				},
+				{
+					class: "c-text-input",
+					id: "desc",
+					config: [
+						["label", "textContent", "Description"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_desc",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				},
+				{
+					class: "c-text-input",
+					id: "thumb",
+					config: [
+						["label", "textContent", "Thumbnail URL"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_thumb",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				},
+				{
+					class: "c-text-input",
+					id: "type",
+					config: [
+						["label", "textContent", "Release Type (Album, Single, EP)"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_type",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				},
+				{
+					class: "c-text-input",
+					id: "year",
+					config: [
+						["label", "textContent", "Year"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_year",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				}
+			],
+			actions: [
+				{
+					icon: null,
+					text: "Cancel",
+					id: "cancel",
+					style: "text-only",
+					defaultAction: "close"
+				},
+				{
+					icon: null,
+					text: "Submit",
+					id: "submit",
+					style: "light"
+				}
+			]
+		});
+
+		for (let check of popup.querySelectorAll(".c-check-input")) {
+			let id = check.getAttribute("id").replace("def_", "");
+			let textInput = popup.querySelector(`#${id}`);
+
+			check.addEventListener("change", function(e) {
+				if (e.target.checked) UAddToClass(textInput, "c-uninteractable");
+				else URemoveFromClass(textInput, "c-uninteractable");
+			});
+		};
+
+		popup.querySelector("#submit").addEventListener("click", function(e) {
+			let data = {};
+
+			for (let text of popup.querySelectorAll(".c-text-input")) {
+				let id = text.getAttribute("id");
+				let reset = popup.querySelector(`.c-check-input#def_${id} input`).checked;
+
+				if (reset) {
+					data["reset_" + id] = true;
+					continue;
+				};
+
+				let value = text.querySelector("input").value;
+				if (value !== "") data[id] = value;
+			};
+
+			UDispatchEventToEW({
+				func: "edit-metadata",
+				"data": data,
+				"id": id
+			});
+
+			URemovePopup(popup);
+
+			setTimeout(() => UNavigate(
+				UBuildEndpoint({
+					navType: "browse",
+					"id": id
+				})
+			), 70);
+		});
 	};
 
 	static async LinkMode(state, browsePage, id) {

@@ -219,9 +219,12 @@ done:
 	album page
 		converts old album page (used for custom uploads) to updated style
 		shows cached view count for private songs
-		you can define the primary version, to overwrite the non-deluxe songs in the deluxe album
-		you can link other albums to overwrite songs
-		you can hide songs
+		define the primary version, to overwrite the non-deluxe songs in the deluxe album
+		link other albums to overwrite songs
+		hide songs
+		auto-skip songs but keep them visible
+		edit metadata (title, subtitle, thumbnail URL, year, type (Album/EP/Single))
+		auto-detects release type for private uploads (single if only 1 song, identical to release name)
 
 	for any page that has been modified, you can click the revert button to see the original
 	automatic subtitles - playlists and albums get updated subtitles based on their modified or not lengths.
@@ -405,10 +408,14 @@ bugs fixed:
 	//	- deluxe versions of albums, use base songs
 	//	- priv album, send 
 	//	- STARTED ADDING OVERWRITING SONGS. NEED TO ADD TO END, AND ALLOW USER TO SELECT ALBUM TO USE (EG UPLOADED DELUXE)
+	//	- CUSTOM THUMBNAILS! FOR FT/VLOG SONGS. CAN HAVE IN GOOGLE DRIVE!!
 
 	ARTISTS:
 	//	- add private uploads to their album playerPageFeatures
 	//	- auto sort discog by age
+
+	RATINGS:
+	//	- skips
 
 	//CHECK GET_QUEUE, FOR ADDING ALBUM TO QUEUE, MAKE SURE IT REPLACES SONGS
 	//ALL LISTITEMS WORK. now adding to queue (for extra non-replacing ids.)
@@ -474,6 +481,8 @@ bugs fixed:
 	//***** PLAYER BAR DATA IS ON api/next CALL. CONTENTS>singlEColumnMusicWeatchENxtResultsRenderer.tabbedRenderer.watchNextTabbedResultsRenderer.tabs[0].tabRenderer.content.musicQueueRenderer.content.playlistPanelRenderer.contents[x].playlistPanelVideoRenderer.longBylineText!!!
 	//sidebar carousel paper items, make play buttons appear after a delay of hovering
 	//(can animate visibility, not display. replace display: none with visibility: hidden)
+
+	//home,explore and lib updating manually because of paper wrapper works, but icons are incorrect. one it was on stays bold, and others done turn bold.
 
 
 

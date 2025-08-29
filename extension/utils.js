@@ -37,7 +37,9 @@ class Utils {
 			customisation: {
 				albumLinks: {},
 				primaryAlbums: {},
-				hiddenSongs: {}
+				hiddenSongs: {},
+				skippedSongs: {},
+				metadata: {}
 			}
 		}
 	};
@@ -139,6 +141,19 @@ class Utils {
 	static UBrowseParamsByRequest = {};
 
 	static U_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+	static U_GUIDE_ICONS = {
+		active: {
+			FEmusic_home: "M4 21V10.08l8-6.96 8 6.96V21h-6v-6h-4v6H4z",
+			FEmusic_explore: "M11.23 13.08c-.29-.21-.48-.51-.54-.86-.06-.35.02-.71.23-.99.21-.29.51-.48.86-.54.35-.06.7.02.99.23.29.21.48.51.54.86.06.35-.02.71-.23.99-.21.29-.51.48-.86.54-.07.01-.15.02-.22.02-.28 0-.55-.08-.77-.25zM22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10zm-3.97-6.03L9.8 9.8l-3.83 8.23 8.23-3.83 3.83-8.23z",
+			FEmusic_library_landing: "M18 21H3V6h1v14h14v1zm3-18v15H6V3h15zm-5 3h-3v5.28c-.3-.17-.63-.28-1-.28-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2V8h2V6z"
+		},
+		inactive: {
+			FEmusic_home: "m12 4.44 7 6.09V20h-4v-6H9v6H5v-9.47l7-6.09m0-1.32-8 6.96V21h6v-6h4v6h6V10.08l-8-6.96z",
+			FEmusic_explore: "m9.8 9.8-3.83 8.23 8.23-3.83 3.83-8.23L9.8 9.8zm3.28 2.97c-.21.29-.51.48-.86.54-.07.01-.15.02-.22.02-.28 0-.54-.08-.77-.25-.29-.21-.48-.51-.54-.86-.06-.35.02-.71.23-.99.21-.29.51-.48.86-.54.35-.06.7.02.99.23.29.21.48.51.54.86.06.35-.02.7-.23.99zM12 3c4.96 0 9 4.04 9 9s-4.04 9-9 9-9-4.04-9-9 4.04-9 9-9m0-1C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z",
+			FEmusic_library_landing: "M16 6v2h-2v5c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.37 0 .7.11 1 .28V6h3zm2 14H4V6H3v15h15v-1zm3-17H6v15h15V3zM7 4h13v13H7V4z"
+		}
+	};
 
 	static async _ULoadTemplateElements() {
 		let file = await fetch(this._UTemplateElementsFP);
@@ -407,10 +422,10 @@ class Utils {
 		return svg;
 	};
 
-	static UCreateButton(icon, textContent, style) {
+	static UCreateButton(icon, textContent, style, id) {
 		let btn = document.createElement("div");
 		btn.setAttribute("class", `${style} c-button`);
-		btn.setAttribute("id", textContent.toLowerCase().replaceAll(" ","-"));
+		btn.setAttribute("id", id);
 
 		if (icon) {
 			let svg = this.UGetSVGFromRaw(icon);
@@ -547,12 +562,14 @@ class Utils {
 					rowElem.querySelector(".c-underline"+selector+">*")
 				);
 			};
+
+			if (rowInfo.id) rowElem.setAttribute("id", rowInfo.id);
 		};
 
 		const actionsCont = popup.querySelector(".c-popup-actions");
 
 		for (let actionInfo of layout.actions) {
-			const btn = this.UCreateButton(actionInfo.icon, actionInfo.text, actionInfo.style);
+			const btn = this.UCreateButton(actionInfo.icon, actionInfo.text, actionInfo.style, actionInfo.id || actionInfo.text.toLowerCase().replaceAll(" ","-"));
 			actionsCont.append(btn);
 
 			const defaultAction = actionInfo.defaultAction;
@@ -598,7 +615,7 @@ class Utils {
 				if (onClickAlwaysRun) onClickAlwaysRun();
 
 				cont.remove();
-				button.onclick.call(onClickContext, ...onClickParams);
+				button.onclick.call(onClickContext, ...onClickParams, button.type);
 			};
 
 			b.style.height = String(this.U_DROPDOWN_ROW_SIZE) + "px";
@@ -1083,13 +1100,18 @@ class Utils {
 		return strs.join(":");
 	};
 
-	static UGetTotalSecondsOfList(cache, cachedList, includeOverwriteEdits) {
+	static UGetTotalSecondsOfList(storage, cachedListPage, excludeHidden) {
+		let hiddenSongs = storage.customisation.hiddenSongs[cachedListPage.id] || [];
+		// DONT exclude skipped songs. theyre still part of the album.
+
 		let total = 0;
 
 		for (let trackId of cachedList.items) {
+			if (hiddenSongs.includes(trackId)) continue;
+
 			let track = cache[trackId];
-			if (!track) continue;
-			if (track.lengthSec === -1) continue;
+			if (!track || track.lengthSec === -1) continue;
+
 			total += track.lengthSec;
 		};
 
@@ -3670,6 +3692,21 @@ class Utils {
 		};
 	};
 
+	static UAddSkipIconsToListItems(listItems) {
+		for (let item of listItems) {
+			let isSkipped = item.getAttribute("c-skipped");
+			if (!isSkipped) continue;
+
+			item.setAttribute("c-skipped", "true");
+			item.setAttribute("unplayable", "true");
+
+			let icon = this.UGetSVGFromRaw("no-circle", true, false);
+			this.UAddToClass(icon, "c-skip-icon");
+
+			item.querySelector(".left-items").append(icon);
+		};
+	};
+
 	static UEndListItemPageEditMode(browsePage) {
 		browsePage.removeAttribute("c-editing");
 
@@ -3677,10 +3714,12 @@ class Utils {
 			item.remove();
 		};
 
+		let listItems = browsePage.querySelectorAll("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-list-item-renderer");
+
 		let indexCount = 0;
-		for (let item of browsePage.querySelectorAll("#content-wrapper > #contents ytmusic-responsive-list-item-renderer")) {
+		for (let item of listItems) {
 			let data = this.UDigDict(item, ["controllerProxy", "__data", "data"]);
-			if (!data) continue;
+			if (!data) continue;			
 
 			let isDeleted = this.UDigDict(data, ["cData", "changedByDeletion", "isDeleted"]);
 			if (isDeleted) continue;
@@ -3699,8 +3738,25 @@ class Utils {
 				data.cData.changedByDeletion.originalIndex = thisIndex;
 				data.cData.changedByDeletion.updatedIndex = indexCount;
 			};
-
 		};
+
+		this.UAddSkipIconsToListItems(listItems);
+	};
+
+	static UIsEntryPrivateSingle(storage, bId) {
+		let cachedEntry = storage.cache[bId];
+		if (!cachedEntry) return;
+
+		if (!cachedEntry.private) return false;
+		if (cachedEntry.items.length > 1) return false;
+
+		let item = cachedEntry.items[0];
+		let cachedItem = storage.cache[item];
+		if (!cachedItem) return;
+
+		if (cachedItem.name !== cachedEntry.name) return false;
+
+		return true;
 	};
 
 

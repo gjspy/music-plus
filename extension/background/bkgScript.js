@@ -943,11 +943,31 @@ async function EWOMSetPrimaryAlbum(request) {
 async function EWOMHideSongFromAlbum(request) {
 	let storage = await utils.UStorageGetExternal(false);
 
-	let hiddenSongs = storage.customisation.hiddenSongs;
+	let hiddenSongs = (request.func === "setDeletion") ? storage.customisation.hiddenSongs : storage.customisation.skippedSongs;
 	if (!hiddenSongs[request.album]) hiddenSongs[request.album] = [];
 
 	if (request.deleted) hiddenSongs[request.album].push(request.videoId);
 	else hiddenSongs[request.album] = hiddenSongs[request.album].filter( v => v !== request.videoId );
+
+	await utils.UStorageSetExternal(storage);
+};
+
+async function EWOMEditMetadata(request) {
+	let storage = await utils.UStorageGetExternal(false);
+
+	let metadata = storage.customisation.metadata[request.id] || {};
+
+	for (let [k, v] of Object.entries(request.data)) {
+		if (k.startsWith("reset_")) {
+			let id = k.replace("reset_", "");
+			delete metadata[id];
+			continue;
+		};
+
+		metadata[k] = v;
+	};
+
+	storage.customisation.metadata[request.id] = metadata;
 
 	await utils.UStorageSetExternal(storage);
 };
@@ -979,6 +999,8 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "removeLink")				EWOMRemoveLink(request, sender);
 	else if (f === "setPrimaryAlbum")			EWOMSetPrimaryAlbum(request, sender);
 	else if (f === "setDeletion")				EWOMHideSongFromAlbum(request, sender);
+	else if (f === "setSkip")					EWOMHideSongFromAlbum(request, sender);
+	else if (f === "edit-metadata")				EWOMEditMetadata(request, sender);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);

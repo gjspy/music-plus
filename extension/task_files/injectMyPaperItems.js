@@ -19,10 +19,13 @@ export async function MWInjectMyPaperItems() {
 		};
 
 		GetMetadataFromCachedInfo(cachedInfo) {
+			let customMetadata = this.storage.customisation.metadata[cachedInfo.id] || {};
+
 			let subtitle = [];
 
 			if (cachedInfo.type === "PLAYLIST" && cachedInfo.items && cachedInfo.items.length !== 0) {
-				let nTracks = cachedInfo.items.length; // TODO: get overwrite changes here!!
+				let hiddenSongs = this.storage.customisation.hiddenSongs[cachedInfo.id] || [];
+				let nTracks = cachedInfo.items.length - hiddenSongs.length;
 
 				subtitle.push({
 					text: String(nTracks) + " track" + (nTracks === 1 ? "" : "s")
@@ -34,7 +37,7 @@ export async function MWInjectMyPaperItems() {
 					});
 
 				} else {
-					let len = UGetTotalSecondsOfList(this.storage.cache, cachedInfo, true); // TODO: includeOverwriteEdits here[true]
+					let len = UGetTotalSecondsOfList(this.storage, cachedInfo, true);
 
 					subtitle.push({
 						text: USecondsToLengthStr(len, true, false)
@@ -43,9 +46,12 @@ export async function MWInjectMyPaperItems() {
 			};
 
 			if (cachedInfo.type === "ALBUM") {
-				let subType = cachedInfo.subType;
+				let subType = customMetadata.type;
+				if (!subType && UIsEntryPrivateSingle(this.storage, cachedInfo.id)) subType = "Single";
+				if (!subType) subType = cachedInfo.subType;
+				
 				let artist = cachedInfo.artist;
-				let year = cachedInfo.year;
+				let year = customMetadata.year || cachedInfo.year;
 
 				if (subType) subtitle.push({text: subType});
 
@@ -57,15 +63,19 @@ export async function MWInjectMyPaperItems() {
 						if (!!c && this.storage.cache[c]) artistObj = this.storage.cache[c];
 					};
 
-					if (artistObj && artistObj.name) subtitle.push({
-						text: artistObj.name,
-						navigationEndpoint: UBuildEndpoint({
-							id: artist,
-							navType: "browse",
-							browsePageType: "MUSIC_PAGE_TYPE_ARTIST",
-							cParams: { stopPropagation: true }
-						})
-					});
+					if (artistObj && artistObj.name) {
+						let artistCustomisation = this.storage.customisation.metadata[artistObj.id] || {};
+
+						subtitle.push({
+							text: artistCustomisation.title || artistObj.name,
+							navigationEndpoint: UBuildEndpoint({
+								id: artist,
+								navType: "browse",
+								browsePageType: "MUSIC_PAGE_TYPE_ARTIST",
+								cParams: { stopPropagation: true }
+							})
+						});
+					};
 				};
 
 				if (year && year !== -1) subtitle.push({text: year});
@@ -422,7 +432,7 @@ export async function MWInjectMyPaperItems() {
 			let newElem = this.templates.paperWrapper.cloneNode(true);
 
 			let cachedInfo = this.storage.cache[id] || {};
-			let overwriteInfo = {}; // TODO: check for overwrite info
+			let overwriteInfo = this.storage.customisation.metadata[id];
 			let ytLoadedInfo = this.ytLoadedPlaylists[id];
 
 			let mfId = "";
@@ -449,8 +459,8 @@ export async function MWInjectMyPaperItems() {
 			// title hierarchy: overwrite, ytLoaded, cached.
 
 			let title;
-			if (overwriteInfo && overwriteInfo.name) {
-				title = overwriteInfo.name;
+			if (overwriteInfo && overwriteInfo.title) {
+				title = overwriteInfo.title;
 
 			} else if (ytLoadedInfo && ytLoadedInfo.title) {
 				title = ytLoadedInfo.title;
@@ -482,7 +492,10 @@ export async function MWInjectMyPaperItems() {
 
 			let iconElem = newElem.querySelector(".c-paper-icon");
 
-			if (cachedInfo && cachedInfo.thumb) {
+			if (overwriteInfo && overwriteInfo.thumb) {
+				iconElem.src = overwriteInfo.thumb;
+
+			} else if (cachedInfo && cachedInfo.thumb) {
 				iconElem.src = cachedInfo.thumb;
 
 			} else {

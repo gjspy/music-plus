@@ -2132,3 +2132,54 @@ ytmusic-browse-response[c-editing] ytmusic-responsive-list-item-renderer[c-hidde
 ytmusic-responsive-list-item-renderer[c-hidden] {
 	display: none;
 }
+
+
+
+ytmusic-responsive-list-item-renderer[unplayable] yt-formatted-string.index {
+	display: none !important;
+}
+
+ytmusic-responsive-list-item-renderer[unplayable]:has(.c-skip-icon) yt-icon.error {
+	display: none;
+}
+
+ytmusic-responsive-list-item-renderer .c-skip-icon {
+	width: 24px;
+	height: 24px;
+	fill: #aaa;
+}
+
+
+
+.c-check-input {
+	height: 20px;
+	margin: 3px 0;
+}
+
+.c-check-input input {
+	width: 14px;
+	height: 14px;
+	margin: 3px 0 0 0;
+	box-sizing: border-box;
+	
+	display: inline-block;
+}
+
+.c-check-input label {
+	color: var(--yt-spec-text-secondary);
+	font-size: 13px;
+	line-height: 20px;
+	height: 20px;
+	vertical-align: top;
+	
+	padding: 0px 0px 0px 5px;
+
+	user-select: none;
+	pointer-events: none;
+	display: inline;
+}
+
+.c-text-input.c-uninteractable {
+	opacity: 0.5;
+	pointer-events: none;
+}

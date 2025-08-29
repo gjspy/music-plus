@@ -579,7 +579,9 @@ MiddlewareEditors = class MiddlewareEditors {
 		}
 	};
 
-	static _EditLongBylineOfPlaylistPanelVideoRenderer(cache, videoRenderer, realAlbum) {
+	static _EditLongBylineOfPlaylistPanelVideoRenderer(storage, videoRenderer, realAlbum) {
+		let cache = storage.cache;
+
 		let longBylineData = UGetDataFromSubtitleRuns({}, videoRenderer.longBylineText);
 
 		let songCacheData = cache[videoRenderer.videoId];
@@ -600,6 +602,8 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		// used to only edit priv, not anymore.if (!(albumCacheData && albumCacheData.private === true) && !(artistCacheData && artistCacheData.private === true)) return;
 
+		let albumMetadata = storage.customisation.metadata[realAlbum.id] || {};
+
 		let newRuns = [];
 
 		for (let run of videoRenderer.longBylineText.runs) {
@@ -608,10 +612,11 @@ MiddlewareEditors = class MiddlewareEditors {
 			if (!run.navigationEndpoint) continue;
 
 			let type = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"]);
+			let id;
 			if (!type) continue;
 
 			if (!type || type === "MUSIC_PAGE_TYPE_UNKNOWN") {
-				let id = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseId"]);
+				id = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseId"]);
 				if (!id) continue;
 
 				type = UGetBrowsePageTypeFromBrowseId(id, false, true);
@@ -620,6 +625,8 @@ MiddlewareEditors = class MiddlewareEditors {
 			let counterpartData;
 
 			if (type === "MUSIC_PAGE_TYPE_ALBUM" && realAlbum.id) {
+				if (albumMetadata.title) run.text = albumMetadata.title;
+
 				run.navigationEndpoint = UBuildEndpoint({
 					navType: "browse",
 					id: realAlbum.id
@@ -642,6 +649,25 @@ MiddlewareEditors = class MiddlewareEditors {
 					navType: "browse",
 					id: counterpartData.id
 				});
+
+				type = "MUSIC_PAGE_TYPE_ARTIST";
+			};
+
+			if (type === "MUSIC_PAGE_TYPE_ARTIST") {
+				if (!id) id = UDigDict(run.navigationEndpoint, ["browseEndpoint", "browseId"]);
+				if (!id) continue;
+
+				let artistCustomisation = storage.customisation.metadata[id] || {};
+
+				if (artistCustomisation.title) {
+					run.text = artistCustomisation.title;
+
+					if (videoRenderer.shortBylineText) {
+						videoRenderer.shortBylineText.runs[0] = {
+							text: artistCustomisation.title
+						};
+					};
+				};
 			};
 		};
 
@@ -681,6 +707,9 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		let cachedArtist = (buildFromAlbum.artist) ? storage.cache[buildFromAlbum.artist] : undefined;
 		let hiddenSongs = storage.customisation.hiddenSongs[buildQueueFromBId] || [];
+		let skippedSongs = storage.customisation.skippedSongs[buildQueueFromBId] || [];
+
+		hiddenSongs.push(...skippedSongs);
 
 		let backingPlaylistId; // for use later. get it in this loop from anything we can!
 
@@ -695,7 +724,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			if (replacement) UModifyPlaylistPanelRendererFromData(videoRenderer, replacement, buildFromAlbum, cachedArtist);
 			else {
-				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage.cache, videoRenderer, buildFromAlbum);
+				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage, videoRenderer, buildFromAlbum);
 				videoRenderer.cData = { video: cachedVideo, from: buildFromAlbum };// why did we set cData here? dont think it worked?
 
 				this._DeleteRemoveFromPlaylistButtonFromPPVR(videoRenderer);
@@ -821,7 +850,6 @@ MiddlewareEditors = class MiddlewareEditors {
 		// need to edit album subtitleTwo total minutes based on contents.
 
 		let type = UGetBrowsePageTypeFromBrowseId(id);
-		if (type === "C_PAGE_TYPE_PRIVATE_ALBUM") return;
 
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id) || {};
 
@@ -836,6 +864,7 @@ MiddlewareEditors = class MiddlewareEditors {
 
 		let cachedAlbum = storage.cache[id] || {};
 		let hiddenSongs = storage.customisation.hiddenSongs[id] || [];
+		let skippedSongs = storage.customisation.skippedSongs[id] || [];
 
 		UBrowseParamsByRequest.pageSpecific[cachedAlbum.mfId] = { buildQueueFrom: cachedAlbum.id };
 
@@ -879,7 +908,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			};
 
 			UModifyListItemRendererFromData(replacement, cachedAlbum, item);
-			newContents.push(item)
+			newContents.push(item);
 		};
 		
 		musicShelfRenderer.contents = newContents;
@@ -916,6 +945,12 @@ MiddlewareEditors = class MiddlewareEditors {
 			// hiding song stuff. dont delete, just give hidden attr, so can readd in edit mode.
 			let hideThis = hiddenSongs.includes(lirId);
 			let thisIndex = Number(lir.index.runs[0].text);
+
+			let skipThis = skippedSongs.includes(lirId);
+			if (skipThis) {
+				if (!lir.cData) lir.cData = {};
+				lir.cData.skip = true;
+			};
 
 			if (hideThis && (!lir.cData || !lir.cData.changedByDeletion)) {
 				if (!lir.cData) lir.cData = { changedByDeletion: {} };
@@ -966,12 +1001,37 @@ MiddlewareEditors = class MiddlewareEditors {
 
 
 		// EDIT HEADER DETAILS, AUTOMATICALLY, BASED ON NEW CONTENTS.
+		let customMetadata = storage.customisation.metadata[id] || {};
+
 		let headerRenderer = UDigDict(response, [
 			"contents", "twoColumnBrowseResultsRenderer", "tabs",
 			0, "tabRenderer", "content",
 			"sectionListRenderer", "contents", 0,
 			"musicResponsiveHeaderRenderer"
 		]);
+
+		if (customMetadata.title) headerRenderer.title.runs = [ { text: customMetadata.title } ];
+		if (customMetadata.description) {
+			headerRenderer.description.musicDescriptionShelfRenderer.description.runs = [
+				{ text: customMetadata.description }
+			];
+		};
+		
+		if (customMetadata.thumb) {
+			let thumbnails = [
+				{ url: customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
+			];
+
+			headerRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
+			response.background.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
+		};
+
+		let albumType = customMetadata.type;
+		if (!albumType && UIsEntryPrivateSingle(storage, cachedAlbum.id)) albumType = "Single";
+		
+		if (albumType) headerRenderer.subtitle.runs[0].text = albumType;
+		if (customMetadata.year) headerRenderer.subtitle.runs[2].text = customMetadata.year;
+
 		headerRenderer.secondSubtitle.runs[0].text = `${songCount} songs`;
 		headerRenderer.secondSubtitle.runs[2].text = USecondsToLengthStr(totalSeconds, true, false);
 

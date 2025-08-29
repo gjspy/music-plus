@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "YTMUSIC Fixer",
-	"version": "3.01",
+	"version": "3.1",
 
 	"description": "Provides additional features to the Youtube Music site.",
 
@@ -41,7 +41,9 @@
 		"storage",
 		"activeTab",
 		"unlimitedStorage",
-		"scripting"
+		"scripting",
+		"theme",
+		"menus"
 	],
 
 	"browser_specific_settings": {

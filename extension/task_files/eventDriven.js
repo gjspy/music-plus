@@ -48,24 +48,37 @@ export async function MWEventDriven_PageChanges() {
 			if (data.changedByDeletion) {
 				if (data.changedByDeletion.isDeleted) listItem.setAttribute("c-hidden", true);
 			};
-			
+
+			if (data.skip) {
+				listItem.setAttribute("c-skipped", "true");
+			};
 		};
+
+		UAddSkipIconsToListItems(listItems);
 	};
 
 	function _UpdateMainSidebarButtons(state) {
-		let browseHref = "browse/" + UDigDict(state, [
+		let browseId = UDigDict(state, [
 			"navigation", "mainContent", "endpoint",
 			"data", "browseId"
 		]);
+		let browseHref = "browse/" + browseId;
 
-		let allButtons = document.querySelectorAll(".c-paper-wrapper[is-primary] ytmusic-guide-entry-renderer");
+		let allWrappers = document.querySelectorAll(".c-paper-wrapper[is-primary]");
 		let thisButton = document.querySelector(`.c-paper-wrapper[is-primary][href='${browseHref}'] ytmusic-guide-entry-renderer`);
 
-		for (let button of allButtons) {
-			button.removeAttribute("active");
+		for (let wrapper of allWrappers) {
+			let icon = U_GUIDE_ICONS.inactive[wrapper.getAttribute("href").replace("browse/", "")];
+
+			wrapper.querySelector("ytmusic-guide-entry-renderer").removeAttribute("active");
+			wrapper.querySelector("ytmusic-guide-entry-renderer yt-icon.guide-icon path").setAttribute("d", icon);
 		};
 
-		if (thisButton) thisButton.setAttribute("active", "");
+		if (thisButton) {
+			thisButton.setAttribute("active", "");
+
+			thisButton.querySelector("yt-icon.guide-icon path").setAttribute("d", U_GUIDE_ICONS.active[browseId]);
+		};
 	};
 
 

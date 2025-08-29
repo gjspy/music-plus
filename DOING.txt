@@ -9,17 +9,13 @@ on select lyric (css:select) in lyrics pane,, popup window like spotify thing th
 FIX PLAYER PAGE SIZING
 UPGRADE QUALITY OF FULLSCREEN VIDEO?
 
-
-EDITING ALBUMS:
-	- CUSTOM THUMBNAILS! FOR FT/VLOG SONGS. CAN HAVE IN GOOGLE DRIVE!!
-
 ARTISTS:
 	- custom discog order (or just in album metadata set exact date!!)
 	- custom names (twenty one pilots)
 
 RATINGS:
-	- add to playlist
-	- skips
+	- custom ratings (star count?)
+	- tags to label songs with
 
 SONGS:
 	- add lyrics to private
@@ -31,9 +27,9 @@ ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED
 hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 
 
-now:
-next, please do naming stuff to make ti consistent, artists and albums.
-how does shuffling work when theres two playlists?
+next, please do naming stuff to make ti consistent, artists and //albums.
+does album editing work with two being queued?
+shuffling with two?
 
 LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD, LIKE EDITMODE. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
 n3rds-inc.time
@@ -50,6 +46,8 @@ SERVER RETURNS QUEUE WHICH HAS STUFF FROM OLD QUEUE IN IT!!
 can i edit the request before its sent? change videoId to videoIds and add all except the 1
 (egiting QP backing playlist, see dissmiss queue endpoint, in buildQueuePanelRenderer stuff)
 
+have feature to have player page popout, and "add to queue" adds to that. while popped out, disable play buttons on playlist pages etc? or, make it only play if current is paused.
+
 
 MAKE MINI WINDOW FOR TABLET, YT MUSIC WIDGET, make it auto appear on login and fill screen, using firefox as desktop backgorund ish user showcase mode smth
 COULD DEFINE OWN MUSIC VIDEOS, IN /NEXT API CALL, playlistPanelVideoWrapperRenderer.counterpart.counterpartRenderer + segmentMan
@@ -58,3 +56,8 @@ COULD DEFINE OWN MUSIC VIDEOS, IN /NEXT API CALL, playlistPanelVideoWrapperRende
 MAKE IT CHANGE BROWSER THEME: browser.theme.update(), TO IMAGE OF ALBUM PLAYING!!
 ON PAGE CLOSE, RESET TO STORED VALUE OF browser.theme.getCurrent() BEFORE STARTING.
 STORE THIS! CAN TEL IF ITS OURS OR NOT, BASED ON IF IMG URL IS YT OR NOT.
+couldnt set image from external url, try base64? (str repr of img)
+
+MAKE IT NOT EVEN CALL YT, AND RETURN THE RESPONSE IN newFetch, NOT ACCESSING originalFetch()!
+
+now need to edit tworowitemrenderers with custom metadata.
