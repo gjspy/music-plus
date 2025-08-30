@@ -425,7 +425,7 @@ class Utils {
 	static UCreateButton(icon, textContent, style, id) {
 		let btn = document.createElement("div");
 		btn.setAttribute("class", `${style} c-button`);
-		btn.setAttribute("id", id);
+		btn.setAttribute("id", id || textContent.toLowerCase().replace(" ","-"));
 
 		if (icon) {
 			let svg = this.UGetSVGFromRaw(icon);
