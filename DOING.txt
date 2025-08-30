@@ -62,12 +62,10 @@ MAKE IT NOT EVEN CALL YT, AND RETURN THE RESPONSE IN newFetch, NOT ACCESSING ori
 
 now need to edit tworowitemrenderers with custom metadata.
 
-bugs 2.3:
-//make selecting skips better, dim immediately not on cancel
-/user clicks on skipped song to sample it, won't play, just goes to first non-skipped
-/	so need to remove firstVideoId from youtube's default play button on album page
-/get_queue not editing anything
-/private albums adding non-private songs, backwards privateCounterparts
+CUSTOM VIEW COUNTS PLEASE!!! QUICKLY!!
+CAN GET FROM YT, WHEN queueImpress COMES THRU, MIGHT BE IN /next API REQUEST?
+
+
 MAKE Remove From Playlist A CONFIRMATION!!
 MAKE ADDING EXTRA SONGS, JUST POPUP WITH videoId and index
 give ability to hide releases: Dawn FM alternate worlds, let me delete the others

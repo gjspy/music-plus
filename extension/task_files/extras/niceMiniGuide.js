@@ -26,6 +26,8 @@ function NiceMiniGuide() {
 	let hamburger = document.querySelector("ytmusic-nav-bar #left-content #guide-button");
 
 	hamburger.addEventListener("click", onClickHamburger);
+	
+	setTimeout(onClickHamburger, 100); // incase youtube loaded with collapsed guide
 };
 
 async function _AsyncStartProcesses() {

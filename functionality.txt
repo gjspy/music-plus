@@ -484,6 +484,12 @@ bugs fixed:
 
 	//home,explore and lib updating manually because of paper wrapper works, but icons are incorrect. one it was on stays bold, and others done turn bold.
 
+	bugs 2.3:
+	//make selecting skips better, dim immediately not on cancel
+	//user clicks on skipped song to sample it, won't play, just goes to first non-skipped
+	//	so need to remove firstVideoId from youtube's default play button on album page
+	//get_queue not editing anything
+	//private albums adding non-private songs, backwards privateCounterparts
 
 
 
