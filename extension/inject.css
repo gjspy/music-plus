@@ -2149,6 +2149,10 @@ ytmusic-responsive-list-item-renderer .c-skip-icon {
 	fill: #aaa;
 }
 
+ytmusic-responsive-list-item-renderer[c-skipped]:not([unplayable]) {
+	opacity: 0.5;
+}
+
 
 
 .c-check-input {

@@ -61,3 +61,80 @@ couldnt set image from external url, try base64? (str repr of img)
 MAKE IT NOT EVEN CALL YT, AND RETURN THE RESPONSE IN newFetch, NOT ACCESSING originalFetch()!
 
 now need to edit tworowitemrenderers with custom metadata.
+
+bugs 2.3:
+//make selecting skips better, dim immediately not on cancel
+/user clicks on skipped song to sample it, won't play, just goes to first non-skipped
+/	so need to remove firstVideoId from youtube's default play button on album page
+/get_queue not editing anything
+/private albums adding non-private songs, backwards privateCounterparts
+MAKE Remove From Playlist A CONFIRMATION!!
+MAKE ADDING EXTRA SONGS, JUST POPUP WITH videoId and index
+give ability to hide releases: Dawn FM alternate worlds, let me delete the others
+
+
+
+{
+	"navigationEndpoint": {
+		"clickTrackingParams": "CA4Q__4FGAciEwjzhpKBzLKPAxV7F3MJHbLhOjI=",
+		"confirmDialogEndpoint": {
+			"content": {
+				"confirmDialogRenderer": {
+					"title": {
+						"runs": [
+							{
+								"text": "Delete playlist"
+							}
+						]
+					},
+					"trackingParams": "CA8QxjgiEwjzhpKBzLKPAxV7F3MJHbLhOjI=",
+					"dialogMessages": [
+						{
+							"runs": [
+								{
+									"text": "Are you sure you want to delete this playlist?"
+								}
+							]
+						}
+					],
+					"confirmButton": {
+						"buttonRenderer": {
+							"style": "STYLE_LIGHT_TEXT",
+							"size": "SIZE_DEFAULT",
+							"isDisabled": false,
+							"text": {
+								"runs": [
+									{
+										"text": "Delete"
+									}
+								]
+							},
+							"serviceEndpoint": {
+								"clickTrackingParams": "CBEQ8FsiEwjzhpKBzLKPAxV7F3MJHbLhOjI=",
+								"deletePlaylistEndpoint": {
+									"playlistId": "PLvyOHVv_irfesTBZ2_MfjKnSNdnHCpSGT"
+								}
+							},
+							"trackingParams": "CBEQ8FsiEwjzhpKBzLKPAxV7F3MJHbLhOjI="
+						}
+					},
+					"cancelButton": {
+						"buttonRenderer": {
+							"style": "STYLE_LIGHT_TEXT",
+							"size": "SIZE_DEFAULT",
+							"isDisabled": false,
+							"text": {
+								"runs": [
+									{
+										"text": "Cancel"
+									}
+								]
+							},
+							"trackingParams": "CBAQ8FsiEwjzhpKBzLKPAxV7F3MJHbLhOjI="
+						}
+					}
+				}
+			}
+		}
+	}
+}

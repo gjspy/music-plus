@@ -571,9 +571,10 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			let queueDatas = response.queueDatas;
 			if (!queueDatas) return;
+			let buildFrom = request.cParams ? request.cParams.buildQueueFrom : undefined;
 
-			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, queueDatas, request.cParams.buildQueueFrom, request.body.playlistId, undefined, false, true);
-			
+			let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, queueDatas, buildFrom, request.body.playlistId, undefined, false, true, request.body.videoIds);
+
 			if (newContents) response.queueDatas = newContents;
 			return response; // was changed in-place.
 		}
@@ -696,7 +697,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		};
 	};
 
-	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas) {
+	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas, queueDataRequestIds) {
 		let buildFromAlbum = storage.cache[buildQueueFromBId] || {};
 		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFromMfId) || {};
 		console.log(buildQueueFromBId, loadedQueueFromMfId, buildFromAlbum, loadedFromAlbum);
@@ -709,7 +710,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		let hiddenSongs = storage.customisation.hiddenSongs[buildQueueFromBId] || [];
 		let skippedSongs = storage.customisation.skippedSongs[buildQueueFromBId] || [];
 
-		hiddenSongs.push(...skippedSongs);
+		//hiddenSongs.push(...skippedSongs);
 
 		let backingPlaylistId; // for use later. get it in this loop from anything we can!
 
@@ -786,6 +787,11 @@ MiddlewareEditors = class MiddlewareEditors {
 		if (hiddenSongs.includes(videoIdToSelect)) {
 			videoIdToSelect = undefined;
 		};
+		// videoIdToSelect ONLY PROVIDED WHEN WE CLICK THEIR PLAY BUTTON ON ALBUM PAGE
+		// OR USER PICKS AN INDIVIDUAL SONG.
+		// SKIPPED SONGS: DON'T SKIP IF IS videoIdToSelect.
+
+		// get_queue REQUEST HAS videoIds IF USER SELECTED, OR playlistId TO DO ALL.
 
 		// LAST ITERATION. HIDE ANY WE NEED TO, AND UPDATE ENDPOINT INDEXES.
 		// THIS CLEANS THE MESS FOR US, SO WE CAN ADD SONGS WHEREVER WE WANT!
@@ -816,6 +822,12 @@ MiddlewareEditors = class MiddlewareEditors {
 					(videoRenderer.cData && videoRenderer.cData.from.id === loadedFromAlbum.id)
 				)
 			) continue; // dont add to new list
+
+			if (
+				skippedSongs.includes(we.videoId) && // SONG SHOULD BE SKIPPED
+				videoIdToSelect !== we.videoId && // USER HASN'T CLICKED THIS SONG SPECIFICALLY
+				!(queueDataRequestIds || []).includes(we.videoId) // USER HASNT SPECIFICALLY ADDED TO QUEUE
+			) continue;
 
 			indexCount ++;
 
@@ -849,7 +861,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		// caching stuff
 		// need to edit album subtitleTwo total minutes based on contents.
 
-		let type = UGetBrowsePageTypeFromBrowseId(id);
+		//let type = UGetBrowsePageTypeFromBrowseId(id);
 
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id) || {};
 
@@ -897,7 +909,7 @@ MiddlewareEditors = class MiddlewareEditors {
 					continue;
 				};
 
-				let newListItem = UBuildListItemRendererFromData(replacement, cachedAlbum);
+				let newListItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
 				newContents.push(newListItem); // actually delete this, as if overwritten
 				continue;
 			};
@@ -907,7 +919,7 @@ MiddlewareEditors = class MiddlewareEditors {
 				continue;
 			};
 
-			UModifyListItemRendererFromData(replacement, cachedAlbum, item);
+			UModifyListItemRendererFromDataForAlbumPage(replacement, cachedAlbum, item);
 			newContents.push(item);
 		};
 		
@@ -921,7 +933,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			let replacement = byIndex[index];
 
 			// use cachedAlbum from before, to keep public playlistIds etc.
-			let newListItem = UBuildListItemRendererFromData(replacement, cachedAlbum);
+			let newListItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
 
 			if (index === "0") musicShelfRenderer.contents.unshift(newListItem);
 			else musicShelfRenderer.contents.push(newListItem);
@@ -1043,6 +1055,9 @@ MiddlewareEditors = class MiddlewareEditors {
 		]);
 
 		playButton.playNavigationEndpoint.watchEndpoint = firstWE;
+		delete playButton.playNavigationEndpoint.watchEndpoint.videoId;
+		delete playButton.playNavigationEndpoint.watchEndpoint.playlistSetVideoId;
+		delete playButton.playNavigationEndpoint.watchEndpoint.index;
 
 		console.log("listitems after", structuredClone(musicShelfRenderer.contents));
 
@@ -1250,6 +1265,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 			(request.body) ? request.body.videoId : undefined,
 			(request.body) ? request.body.playlistId : undefined
 		];
+		if (request.body && request.body.videoIds) refs.push(...request.body.videoIds);
 
 		for (let ref of refs) {
 			if (ref === undefined) continue;
@@ -1318,7 +1334,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		if (cParamsRef) delete UBrowseParamsByRequest[cParamsRef];
 		if (cParams.returnOriginal) return oldResp;
 
-		request["cParams"] = cParams;
+		request.cParams = cParams;
 	};
 
 	console.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation, request);

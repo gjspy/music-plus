@@ -1950,6 +1950,7 @@ class Utils {
 		let indexToVideoIdOfThis = {}; // list of indexes to videoIds in REAL ALBUM (loadedFrom) only.
 
 		if (!buildingFromAlbum || !loadedFromAlbum) return;
+		if (buildingFromAlbum.private) return;
 
 		// MAP INDEX TO VIDEO OF ALBUM WE HAVE LOADED.
 		// DO ALL BASED ON CACHE NOW, SO SHUFFLING DOESNT MATTER.
@@ -2581,7 +2582,7 @@ class Utils {
 		}
 	};
 
-	static UModifyListItemRendererFromData(replacement, realAlbum, current) {
+	static UModifyListItemRendererFromDataForAlbumPage(replacement, realAlbum, current) {
 		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
 		// eg, realAlbum = deluxe, replacement.from = original.
 
@@ -3042,7 +3043,7 @@ class Utils {
 		return current;
 	};
 
-	static UBuildListItemRendererFromData(replacement, realAlbum) {
+	static UBuildListItemRendererFromDataForAlbumPage(replacement, realAlbum) {
 		let video = replacement.video;
 
 		let index = Number(video.index);
