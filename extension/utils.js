@@ -39,7 +39,8 @@ class Utils {
 				primaryAlbums: {},
 				hiddenSongs: {},
 				skippedSongs: {},
-				metadata: {}
+				metadata: {},
+				extraSongs: {}
 			}
 		}
 	};
@@ -1563,6 +1564,62 @@ class Utils {
 				}
 			};
 		};
+
+		if (opts.navType === "menuNavigationItemRenderer") {
+			return {
+				menuNavigationItemRenderer: {
+					icon: { iconType: opts.icon },
+					text: { runs: [ { text: opts.text } ] },
+					navigationEndpoint: opts.endpoint
+				}
+			};
+		};
+
+		if (opts.navType === "confirmDialog") {
+			return {
+				confirmDialogEndpoint: {
+					content: {
+						confirmDialogRenderer: {
+							title: { runs: [ { text: opts.title } ] },
+							dialogMessages: [{ runs: [ { text: opts.prompt } ] }],
+							confirmButton: this.UBuildEndpoint({
+								navType: "confirmButton",
+								text: opts.confirmText,
+								endpoint: opts.endpoint,
+								cParams: opts.cParamsOnConfirm
+							}),
+							cancelButton: this.UBuildEndpoint({
+								navType: "cancelButton"
+							})
+						}
+					}
+				}
+			};
+		};
+
+		if (opts.navType === "confirmButton") {
+			return {
+				buttonRenderer: {
+					style: "STYLE_LIGHT_TEXT",
+					size: "SIZE_DEFAULT",
+					isDisabled: false,
+					text: { runs: [ { text: opts.text } ] },
+					serviceEndpoint: opts.endpoint
+				},
+				cParams: opts.cParams
+			};
+		};
+
+		if (opts.navType === "cancelButton") {
+			return {
+				buttonRenderer: {
+					style: "STYLE_LIGHT_TEXT",
+					size: "SIZE_DEFAULT",
+					isDisabled: false,
+					text: { runs: [ { text: "Cancel" } ] }
+				}
+			};
+		};
 	};
 
 	static UGetIsResponseEditedFromState(state) {
@@ -1963,8 +2020,10 @@ class Utils {
 		let primaryVersions = this.UGetPrimaryVersions(storage, buildQueueFrom) || [];
 		let linkedAlbums = storage.customisation.albumLinks[buildQueueFrom] || [];
 		let counterparts = buildingFromAlbum.privateCounterparts || [];
+
+		let extraSongs = storage.customisation.extraSongs[buildQueueFrom] || [];
 		
-		// priority order (last overwrite first)
+		// priority order (later overwrite earlier)
 		if (primaryVersions) albumsToUse.push(...primaryVersions);
 		if (linkedAlbums) {
 			linkedAlbums = linkedAlbums
@@ -2014,6 +2073,22 @@ class Utils {
 					video: item,
 					from: album
 				};
+			};
+		};
+		
+		// add extra songs that overwrite, easy for now
+		for (let song of extraSongs) {
+			if (!song.overwrite) continue;
+
+			let item = cache[song.videoId];
+			if (!item) continue;
+
+			let fromAlbum = cache[item.album];
+			if (!fromAlbum) continue;
+
+			changesByIndex[song.index] = {
+				video: item,
+				from: fromAlbum
 			};
 		};
 

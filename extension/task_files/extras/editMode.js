@@ -2,7 +2,7 @@
 
 AlbumEditMode = class AlbumEditMode {
 	static buttons = [
-		{ // ask whether should be that songs ALWAYS or just when playing the album
+		{
 			type: "skip", // "type" IS THE ID!
 			icon: "no-circle",
 			text: "Define Skips",
@@ -22,7 +22,13 @@ AlbumEditMode = class AlbumEditMode {
 		{
 			type: "insert",
 			icon: "add",
-			text: "Insert/Remove Extra Songs"
+			text: "Insert Extra Songs",
+			onclick: this.InsertSongs
+		},
+		{
+			type: "remove-inserted",
+			icon: "delete",
+			text: "Remove Extra Songs"
 		},
 		{ // change name, cover, single/ep/album!!, exact release date!!
 			type: "details",
@@ -84,7 +90,7 @@ AlbumEditMode = class AlbumEditMode {
 
 		browsePage.setAttribute("c-editing", "hideSongs");
 
-		let listItems = document.querySelectorAll("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-list-item-renderer");
+		let listItems = document.querySelectorAll("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-section-list-renderer > #contents :first-child ytmusic-responsive-list-item-renderer");
 
 		let icon = UGetSVGFromRaw((buttonType === "hide") ? "delete" : "no-circle", true, false)
 		UAddToClass(icon, "c-edit-btn");
@@ -124,6 +130,92 @@ AlbumEditMode = class AlbumEditMode {
 			let fixedCols = listItem.querySelector("div.fixed-columns");
 			if (fixedCols) fixedCols.append(newButton);
 		};
+	};
+
+	static async InsertSongs(state, browsePage, id) {
+		let popup = UCreatePopup({
+			title: {
+				text: "Insert extra song to album",
+				icon: "album"
+			},
+			content: [
+				{
+					class: "c-text-input",
+					id: "vid",
+					config: [
+						["label", "textContent", "YouTube Video ID"]
+					]
+				},
+				{
+					class: "c-popup-text-line",
+					config: [
+						["label", "innerHTML", "Video ID must only be the 11 character id, and cache entries must exist of the song and its album."],
+						["label", "style", "font-size: 13px; line-height: 13px; display: block; margin-top: 3px;"],
+						
+					]
+				},
+				{
+					class: "c-text-input",
+					id: "index",
+					config: [
+						["label", "textContent", "Index"]
+					]
+				},
+				{
+					class: "c-popup-text-line",
+					config: [
+						["label", "innerHTML", "Index should be relative to first song in list, 0 or 1, and based on the list before any custom song deletions change it."],
+						["label", "style", "font-size: 13px; line-height: 13px; display: block; margin-top: 3px;"],
+						
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "overwrite",
+					config: [
+						["label", "textContent", "Overwrite existing item at index? (If it exists)"]
+					]
+				}
+			],
+			actions: [
+				{
+					icon: null,
+					text: "Cancel",
+					id: "cancel",
+					style: "text-only",
+					defaultAction: "close"
+				},
+				{
+					icon: null,
+					text: "Submit",
+					id: "submit",
+					style: "light"
+				}
+			]
+		});
+
+		popup.querySelector("#submit").addEventListener("click", function(e) {
+			let data = {
+				videoId: popup.querySelector(".c-text-input#vid input").value,
+				index: popup.querySelector(".c-text-input#index input").value,
+				overwrite: popup.querySelector(".c-check-input#overwrite input").checked
+			};
+
+			UDispatchEventToEW({
+				func: "insert-song",
+				"data": data,
+				"id": id
+			});
+
+			URemovePopup(popup);
+
+			setTimeout(() => UNavigate(
+				UBuildEndpoint({
+					navType: "browse",
+					"id": id
+				})
+			), 70);
+		});
 	};
 
 	static async EditMetadata(state, browsePage, id) {

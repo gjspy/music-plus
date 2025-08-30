@@ -34,7 +34,6 @@ shuffling with two?
 LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD, LIKE EDITMODE. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
 n3rds-inc.time
 
-add album metadata, icon from google drive!!
 onDeletePlaylist, still deleting the wrong one?
 update eventdriven & playerPageFeatures.
 
@@ -66,73 +65,8 @@ CUSTOM VIEW COUNTS PLEASE!!! QUICKLY!!
 CAN GET FROM YT, WHEN queueImpress COMES THRU, MIGHT BE IN /next API REQUEST?
 
 
-MAKE Remove From Playlist A CONFIRMATION!!
 MAKE ADDING EXTRA SONGS, JUST POPUP WITH videoId and index
+	- "remove" page, do squre popups, with cached information if its available, otherwise just videoId, index and whatever. do rows instead of square?
 give ability to hide releases: Dawn FM alternate worlds, let me delete the others
 
-
-
-{
-	"navigationEndpoint": {
-		"clickTrackingParams": "CA4Q__4FGAciEwjzhpKBzLKPAxV7F3MJHbLhOjI=",
-		"confirmDialogEndpoint": {
-			"content": {
-				"confirmDialogRenderer": {
-					"title": {
-						"runs": [
-							{
-								"text": "Delete playlist"
-							}
-						]
-					},
-					"trackingParams": "CA8QxjgiEwjzhpKBzLKPAxV7F3MJHbLhOjI=",
-					"dialogMessages": [
-						{
-							"runs": [
-								{
-									"text": "Are you sure you want to delete this playlist?"
-								}
-							]
-						}
-					],
-					"confirmButton": {
-						"buttonRenderer": {
-							"style": "STYLE_LIGHT_TEXT",
-							"size": "SIZE_DEFAULT",
-							"isDisabled": false,
-							"text": {
-								"runs": [
-									{
-										"text": "Delete"
-									}
-								]
-							},
-							"serviceEndpoint": {
-								"clickTrackingParams": "CBEQ8FsiEwjzhpKBzLKPAxV7F3MJHbLhOjI=",
-								"deletePlaylistEndpoint": {
-									"playlistId": "PLvyOHVv_irfesTBZ2_MfjKnSNdnHCpSGT"
-								}
-							},
-							"trackingParams": "CBEQ8FsiEwjzhpKBzLKPAxV7F3MJHbLhOjI="
-						}
-					},
-					"cancelButton": {
-						"buttonRenderer": {
-							"style": "STYLE_LIGHT_TEXT",
-							"size": "SIZE_DEFAULT",
-							"isDisabled": false,
-							"text": {
-								"runs": [
-									{
-										"text": "Cancel"
-									}
-								]
-							},
-							"trackingParams": "CBAQ8FsiEwjzhpKBzLKPAxV7F3MJHbLhOjI="
-						}
-					}
-				}
-			}
-		}
-	}
-}
+custom automix!! or custom radio, based on selected albums (exclude skips!!)

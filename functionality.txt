@@ -225,6 +225,9 @@ done:
 		auto-skip songs but keep them visible
 		edit metadata (title, subtitle, thumbnail URL, year, type (Album/EP/Single))
 		auto-detects release type for private uploads (single if only 1 song, identical to release name)
+	
+	playlist page
+		"remove from playlist" button on a song item's dropdown presents a popup confirmation dialog before removing.
 
 	for any page that has been modified, you can click the revert button to see the original
 	automatic subtitles - playlists and albums get updated subtitles based on their modified or not lengths.
@@ -232,6 +235,7 @@ done:
 	player
 		fixed player bar not showing year for custom albums
 		player bar leads to actual artist, not private counterpart
+		dropdown of player menu doesn't have "remove from playlist" button, but still "remove from queue"
 
 
 

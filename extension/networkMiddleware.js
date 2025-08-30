@@ -9,7 +9,8 @@ MiddlewareEditors = class MiddlewareEditors {
 		"/youtubei/v1/player",
 		"/youtubei/v1/music/get_queue",
 		"/youtubei/v1/subscription/subscribe",
-		"/youtubei/v1/subscription/unsubscribe"
+		"/youtubei/v1/subscription/unsubscribe",
+		"/youtubei/v1/browse/edit_playlist"
 	];
 
 	static _ShouldModifyURL(url) {
@@ -379,6 +380,41 @@ MiddlewareEditors = class MiddlewareEditors {
 
 			return;
 		},
+
+		"/youtubei/v1/browse/edit_playlist": function OnPlaylistEdit(request, response) {
+			let currentState = polymerController.store.getState();
+			let browsedToId = UDigDict(currentState, [
+				"navigation", "mainContent", "endpoint",
+				"data", "browseId"
+			]);
+			if (!browsedToId) return;
+
+			browsedToId = browsedToId.replace(/^VL/, "");
+			if (browsedToId !== request.body.playlistId) return;
+
+			let listItems = document.querySelectorAll("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-section-list-renderer > #contents :first-child ytmusic-responsive-list-item-renderer");
+			if (!listItems || listItems.length === 0) return;
+
+			let videoIdsToListItem = {};
+			for (let listItem of listItems) {
+				let videoId = UDigDict(listItem, [
+					"controllerProxy", "__data", "data",
+					"playlistItemData", "videoId"
+				]);
+				if (!videoId) continue;
+
+				videoIdsToListItem[videoId] = listItem;
+			};
+
+			for (let action of (request.body.actions || [])) {
+				if (action.action !== "ACTION_REMOVE_VIDEO") continue;
+
+				let listItem = videoIdsToListItem[action.removedVideoId];
+				if (!listItem) continue;
+
+				listItem.remove();
+			};
+		}
 
 		/* this is bad, think theres something going on with topic channels?
 		request does not have the browsed to id of the channel. eg, cage the elephant, endpoint = UCOk9wZlQNsWjb7gJhnvmbkQ but
@@ -900,7 +936,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			let delBaseVideo = hiddenSongs.includes(data.id);
 
 			if (delBaseVideo) {
-				if (!replacement) {
+				if (!replacement) { // can delete base video, but have replacement. do this for custom view count.
 					if (!listItemRenderer.cData) listItemRenderer.cData = {};
 
 					listItemRenderer.cData.changedByDeletion = { isDeleted: true };
@@ -939,7 +975,34 @@ MiddlewareEditors = class MiddlewareEditors {
 			else musicShelfRenderer.contents.push(newListItem);
 		};
 
-		// ALL REPLACEMENT NOW DONE, NOW UPDATE DELETION ATTRIBUTES
+		// NOW DO extraSongs CUSTOMISATION
+		let extraSongs = storage.customisation.extraSongs[id] || [];
+		let extraSongsById = {};
+		for (let song of extraSongs) {
+			if (song.overwrite) continue; // DONE EARLIER, IN UGetIdsToReplaceFromRealAlbum.
+
+			extraSongsById[song.id] = extraSongs;
+		};
+		let extraSongsIds = Object.keys(extraSongsById);
+		console.log(extraSongs, extraSongsById, structuredClone(extraSongsIds))
+
+		let ii = -1;
+		for (let lir of structuredClone(musicShelfRenderer.contents)) {
+			ii ++;
+			lir = lir.musicResponsiveListItemRenderer;
+			
+			let thisIndex = Number(lir.index.runs[0].text);
+
+			let smaller = extraSongsIds.filter(v => v < thisIndex).sort();
+			for (let id of smaller) {
+				let newListItem = UBuildListItemRendererFromDataForAlbumPage(extraSongsById[id], cachedAlbum);
+				musicShelfRenderer.contents.splice(ii, 0, newListItem);
+
+				extraSongsIds.splice(extraSongsIds.indexOf(id), 1);
+			};
+		};
+
+		// ALL REPLACEMENT NOW DONE, NOW UPDATE DELETION ATTRIBUTES AND FILL GAPS OF INDEXES.
 		let indexCount = 0;
 		let totalSeconds = 0;
 		let songCount = 0;
@@ -1223,6 +1286,92 @@ MiddlewareEditors = class MiddlewareEditors {
 
 	static C_PAGE_TYPE_CHANNEL_OR_ARTIST(response, id) {
 		return this.MUSIC_PAGE_TYPE_ARTIST.apply(this, arguments);
+	};
+
+	static MUSIC_PAGE_TYPE_PLAYLIST(response, id) {
+		console.log("IN PLAYLIST");
+
+		let listItems = UDigDict(response, [
+			"contents", "twoColumnBrowseResultsRenderer", "secondaryContents",
+			"sectionListRenderer", "contents", 0, "musicPlaylistShelfRenderer", "contents"
+		]) || [];
+		console.log(listItems);
+
+		for (let lir of listItems) {
+			console.log(lir);
+			lir = lir.musicResponsiveListItemRenderer;
+			if (!lir) continue;
+
+			let indexToAddNew = -1;
+			let removingServiceEndpoint;
+
+			let menuItems = UDigDict(lir, [
+				"menu", "menuRenderer", "items"
+			]);
+			console.log(menuItems);
+			if (!menuItems) continue;
+
+			let i = -1;
+			for (let serviceItem of menuItems) {
+				i ++;
+
+				let serviceEndpoint = UDigDict(serviceItem, [
+					"menuServiceItemRenderer", "serviceEndpoint"
+				]);
+				console.log(serviceItem, serviceEndpoint);
+
+				if (!serviceEndpoint) continue;
+
+				let action = UDigDict(serviceEndpoint, [
+					"playlistEditEndpoint", "actions", 0, "action"
+				]);
+				console.log(action);
+
+				if (action !== "ACTION_REMOVE_VIDEO") continue;
+				
+				indexToAddNew = i;
+				removingServiceEndpoint = serviceEndpoint;
+
+				break;
+			};
+			console.log(indexToAddNew, removingServiceEndpoint);
+
+			if (indexToAddNew === -1) continue;
+
+			let songName = UDigDict(lir, [
+				"flexColumns", 0, "musicResponsiveListItemFlexColumnRenderer",
+				"text", "runs", 0, "text"
+			]) || "this song";
+
+			let videoId = UDigDict(lir, [
+				"playlistitemData", "videoId"
+			]);
+
+			let toAdd = UBuildEndpoint({
+				navType: "menuNavigationItemRenderer",
+				icon: "REMOVE_FROM_PLAYLIST",
+				text: "Remove from playlist",
+				endpoint: UBuildEndpoint({
+					navType: "confirmDialog",
+					title: "Delete from playlist",
+					prompt: `Are you sure you want to remove "${songName}" from this playlist?`,
+					confirmText: "Remove",
+					endpoint: removingServiceEndpoint,
+					/*cParamsOnConfirm: {
+						cAction: {
+							deleteListItem: {
+								videoId: videoId
+							}
+						}
+					}*/
+				})
+			});
+			console.log(toAdd);
+
+			menuItems.splice(indexToAddNew, 1, toAdd);
+		};
+
+		return response; // changed in place, still return so acknowledges change
 	};
 };
 

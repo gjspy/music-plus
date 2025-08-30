@@ -972,6 +972,18 @@ async function EWOMEditMetadata(request) {
 	await utils.UStorageSetExternal(storage);
 };
 
+async function EWOMInsertSongToAlbum(request) {
+	let storage = await utils.UStorageGetExternal(false);
+
+	let extraSongs = storage.customisation.extraSongs[request.id] || [];
+
+	extraSongs.push(request.data);
+
+	storage.customisation.extraSongs[request.id] = extraSongs;
+
+	await utils.UStorageSetExternal(storage);
+};
+
 
 function OnMessage(request, sender, sendResponse) {
 	console.log("received in EW", JSON.stringify(request), sender, sendResponse);
@@ -1001,6 +1013,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "setDeletion")				EWOMHideSongFromAlbum(request, sender);
 	else if (f === "setSkip")					EWOMHideSongFromAlbum(request, sender);
 	else if (f === "edit-metadata")				EWOMEditMetadata(request, sender);
+	else if (f === "insert-song")				EWOMInsertSongToAlbum(request);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);
