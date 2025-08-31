@@ -37,13 +37,18 @@ async function lclDump() {
 	browser.tabs.create({url:URL.createObjectURL(blob)});
 };
 
-async function extDump()  {
-	let storage = await utils.UStorageGetExternal(true);
+async function extDump(fetchNew)  {
+	let storage = await utils.UStorageGetExternal(fetchNew);
 
 	let stringified = JSON.stringify(storage);
 
 	const blob = new Blob([stringified], {type:"application/json"});
 	browser.tabs.create({url:URL.createObjectURL(blob)});
+};
+
+async function sDump() {
+	const blob = new Blob([JSON.stringify(await browser.storage.session.get())], {type: "application/json"});
+	browser.tabs.create({url: URL.createObjectURL(blob)});
 };
 
 function openDebug() {
@@ -168,7 +173,9 @@ function activateButtons() {
 	//document.getElementById("cln-strg").addEventListener("click", cleanStorage);
 	document.getElementById("clr-cache").addEventListener("click", clearCache);
 	document.getElementById("r-dmp").addEventListener("click", lclDump);
-	document.getElementById("c-dmp").addEventListener("click", extDump);
+	document.getElementById("er-dmp").addEventListener("click", () => extDump(true));
+	document.getElementById("e-dmp").addEventListener("click", () => extDump(false));
+	document.getElementById("s-dmp").addEventListener("click", sDump);
 	document.getElementById("debug").addEventListener("click", openDebug);
 	//document.getElementById("toggle-active").addEventListener("click", toggleActive);
 	document.getElementById("run-code-bkg").addEventListener("click", setStorage);

@@ -70,3 +70,7 @@ MAKE ADDING EXTRA SONGS, JUST POPUP WITH videoId and index
 give ability to hide releases: Dawn FM alternate worlds, let me delete the others
 
 custom automix!! or custom radio, based on selected albums (exclude skips!!)
+
+
+
+extra songs working, but check playlistSetVideoIds please, is looking odd. click first item in album (this is how tomorrow moves) and it stays hovered without a play button icon?

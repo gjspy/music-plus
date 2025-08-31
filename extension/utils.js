@@ -283,7 +283,15 @@ class Utils {
 		return new Promise(async function(resolve, reject) {
 			if (!localStorage) localStorage = await that.UStorageGetLocal();
 
-			if (fetchNew || !localStorage.cachedLastResponse) {
+			let allowUsingCachedResponse = true;
+			if (!fetchNew && localStorage.cachedLastResponse) {
+				let sessionStorage = await browser.storage.session.get() || {};
+				allowUsingCachedResponse = sessionStorage.fetchedThisSession;
+			};
+
+			if (fetchNew || !localStorage.cachedLastResponse || !allowUsingCachedResponse) {
+				console.log("getting new because", fetchNew, !localStorage.cachedLastResponse, !allowUsingCachedResponse);
+
 				let username = localStorage.username;
 				let token = localStorage.token;
 
@@ -302,6 +310,8 @@ class Utils {
 
 				localStorage.cachedLastResponse = json;
 				that.UStorageSetLocal(localStorage);
+
+				browser.storage.session.set({ fetchedThisSession: true });
 				return;
 			};
 
@@ -359,6 +369,7 @@ class Utils {
 		if (response.status !== 200) throw Error("External response was", response.status,"for POST.", response);
 
 		this.UStorageSetLocal(localStorage);
+		browser.storage.session.set({ fetchedThisSession: true });
 	};
 
 
@@ -759,12 +770,13 @@ class Utils {
 		delete UWaitingForRespFromEW.waiting[id];
 	};
 
-	static async UMWStorageGet(path) {
+	static async UMWStorageGet(path, fetchNew) {
 		// path: string . separated, eg sidebar.folders.folders
 
 		let response = await this.UDispatchFunctionToEW({
 			func: "get-storage",
-			path: path
+			path: path,
+			fetchNew: fetchNew
 		});
 
 		return response.storage;
@@ -2132,6 +2144,66 @@ class Utils {
 		if (!id) return undefined;
 
 		return cache[id];
+	};
+
+	static UAddNonOverwriteExtraSongsTo(cont, albumId, cachedAlbum, storage, itemType, pprData) {
+		function _CreateItemFromIndex(index) {
+			let song = extraSongsByIndex[index];
+
+			let item = storage.cache[song.videoId];
+			if (!item) return;
+
+			item.index = index;
+
+			let album = storage.cache[item.album];
+			let replacement = {video: item};
+			if (album) replacement.from = album;
+
+			let newItem = (createLIRs) ? UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum)
+				: (createPPRs) ? UBuildPlaylistPanelRendererFromData(replacement, cachedAlbum, pprData.artist, pprData.backingQueuePlaylistId)
+				: undefined;
+
+			if (createQueueDatas) newItem = { content: newItem };
+			
+			return newItem;
+		};
+
+		let createLIRs = itemType === "listItem";
+		let createPPRs = itemType === "playlistPanelRenderer" || itemType === "queueData";
+		let createQueueDatas = itemType === "queueData";
+
+		let extraSongs = storage.customisation.extraSongs[albumId] || [];
+		let extraSongsByIndex = {};
+		for (let song of extraSongs) {
+			if (song.overwrite) continue; // DONE EARLIER, IN UGetIdsToReplaceFromRealAlbum.
+
+			extraSongsByIndex[song.index] = song;
+		};
+		let extraSongsIndexes = Object.keys(extraSongsByIndex);
+
+		// SLOT IN ANY SONGS
+		let ii = -1;
+		for (let item of structuredClone(cont)) {
+			if (createLIRs) item = item.musicResponsiveListItemRenderer;
+			if (createPPRs) item = this.UGetPlaylistPanelVideoRenderer(item);
+
+			ii ++;
+			
+			let thisIndex = (createLIRs) ? Number(item.index.runs[0].text) : item.navigationEndpoint.watchEndpoint.index;
+			let smaller = extraSongsIndexes.filter(v => Number(v) <= thisIndex).sort();
+
+			for (let index of smaller) {
+				let newItem = _CreateItemFromIndex(index);
+				cont.splice(ii, 0, newItem);
+				extraSongsIndexes.splice(extraSongsIndexes.indexOf(index), 1);
+			};
+		};
+
+		// APPEND ANY SONGS LEFT
+		for (let index of extraSongsIndexes) {
+			let newItem = _CreateItemFromIndex(index);
+			cont.push(newItem);
+		};
 	};
 
 

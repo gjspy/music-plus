@@ -739,7 +739,7 @@ export async function MWInjectMyPaperItems() {
 			};
 			
 			if (getNewStorage) {
-				UMWStorageGet().then((storage) => {
+				UMWStorageGet(undefined, true).then((storage) => {
 					this.storage = storage || {};
 
 					this.RefreshCont(false);
@@ -766,7 +766,7 @@ export async function MWInjectMyPaperItems() {
 		async MainTasks(startListening) {
 			await UWaitForPolymerController();
 			
-			this.storage = await UMWStorageGet() || {};
+			this.storage = await UMWStorageGet(undefined, true) || {};
 
 			if (!this.accountInfo) {
 				this.accountInfo = UGetUserAccountInfo();

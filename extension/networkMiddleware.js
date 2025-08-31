@@ -812,6 +812,13 @@ MiddlewareEditors = class MiddlewareEditors {
 			else queueContents.push(newVideoItem);
 		};
 
+		// EXTRA SONGS
+		UAddNonOverwriteExtraSongsTo(
+			queueContents, buildQueueFromBId, buildFromAlbum, storage,
+			(areQueueDatas) ? "queueData" : "playlistPanelRenderer", 
+			{ artist: cachedArtist, backingQueuePlaylistId: backingPlaylistId }
+		);
+
 		if (lastItem) queueContents.push(lastItem);
 
 		console.log("queueContents now", structuredClone(queueContents));
@@ -976,31 +983,7 @@ MiddlewareEditors = class MiddlewareEditors {
 		};
 
 		// NOW DO extraSongs CUSTOMISATION
-		let extraSongs = storage.customisation.extraSongs[id] || [];
-		let extraSongsById = {};
-		for (let song of extraSongs) {
-			if (song.overwrite) continue; // DONE EARLIER, IN UGetIdsToReplaceFromRealAlbum.
-
-			extraSongsById[song.id] = extraSongs;
-		};
-		let extraSongsIds = Object.keys(extraSongsById);
-		console.log(extraSongs, extraSongsById, structuredClone(extraSongsIds))
-
-		let ii = -1;
-		for (let lir of structuredClone(musicShelfRenderer.contents)) {
-			ii ++;
-			lir = lir.musicResponsiveListItemRenderer;
-			
-			let thisIndex = Number(lir.index.runs[0].text);
-
-			let smaller = extraSongsIds.filter(v => v < thisIndex).sort();
-			for (let id of smaller) {
-				let newListItem = UBuildListItemRendererFromDataForAlbumPage(extraSongsById[id], cachedAlbum);
-				musicShelfRenderer.contents.splice(ii, 0, newListItem);
-
-				extraSongsIds.splice(extraSongsIds.indexOf(id), 1);
-			};
-		};
+		UAddNonOverwriteExtraSongsTo(musicShelfRenderer.contents, id, cachedAlbum, storage, "listItem");
 
 		// ALL REPLACEMENT NOW DONE, NOW UPDATE DELETION ATTRIBUTES AND FILL GAPS OF INDEXES.
 		let indexCount = 0;
@@ -1049,7 +1032,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			songCount ++;
 
 			// EDIT INDEXES IF INCORRECT.
-			if (thisIndex !== 0 && thisIndex !== indexCount) {
+			if ((thisIndex !== 0 && thisIndex !== indexCount) || isNaN(thisIndex)) {
 				lir.index.runs[0].text = String(indexCount);
 
 				if (!lir.cData) lir.cData = { changedByDeletion: {} };
