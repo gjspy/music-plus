@@ -2,6 +2,11 @@ function NiceColours() {
 	const BKG_PARENTS = ["#player-bar-background.ytmusic-app-layout", "#player-bar-background.ytmusic-app-layout", "#mini-guide-background.ytmusic-app-layout","ytmusic-player-page"];
 	const OP_TRANSITION_TIME = 4;
 	const FAST_OP_TRANSITION = 0.5;
+	let dataNow = {
+		transition: 0,
+		playingThumbnail: "",
+		dimness: "dim"
+	};
 
 	function _CreatePlrBkgs() {
 		let made = [];
@@ -104,11 +109,25 @@ function NiceColours() {
 	};
 
 	function _SetTransitionValue(time) {
+		if (dataNow.transition === time) return;
 		root.style.setProperty("--c-player-bkg-transition", `opacity ${time}s ease`);
+		
+		currentTransitionTime = time;
+		dataNow.transition = time;
 	};
 
 	function _SetPlayingThumbnail(url) {
+		if (dataNow.playingThumbnail === url) return;
+
 		root.style.setProperty("--playing-thumbnail", `url(${url})`);
+
+		UDispatchEventToEW({
+			func: "auto-lights",
+			action: "setImg",
+			"url": url
+		});
+
+		dataNow.playingThumbnail = url;
 	};
 
 	function _SetBackgroundThumbnail(url) {
@@ -116,11 +135,29 @@ function NiceColours() {
 	};
 
 	function _Dim() {
+		if (dataNow.dimness === "dim") return;
 		root.style.setProperty("--c-player-bkg-opacity", 0);
+
+		UDispatchEventToEW({
+			func: "auto-lights",
+			action: "dim",
+			transition: dataNow.transition
+		});
+
+		dataNow.dimness = "dim";
 	};
 
 	function _Undim() {
+		if (dataNow.dimness === "undim") return;
 		root.style.setProperty("--c-player-bkg-opacity", 1);
+
+		setTimeout(() => UDispatchEventToEW({
+			func: "auto-lights",
+			action: "undim",
+			transition: dataNow.transition
+		}), 50);
+
+		dataNow.dimness = "undim";
 	};
 
 	function _DoBlockingTransition(thisImg) {

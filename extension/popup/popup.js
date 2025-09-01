@@ -78,6 +78,15 @@ async function clearCache() {
 	lclDump();
 };
 
+async function toggleLightControl(event) {
+	let storage = await utils.UStorageGetLocal();
+	console.log(event);
+
+	storage.lightApi.enabled = event.target.checked;
+
+	await utils.UStorageSetLocal(storage);
+};
+
 async function init() {
 	utils = await import(browser.runtime.getURL("../utils.js"));
 	utils = utils.Utils;
@@ -90,6 +99,13 @@ async function init() {
 
 	if (Object.keys(storage.cachedLastResponse).length > 0) {
 		document.querySelector("#error").innerHTML = String(JSON.stringify(storage.cachedLastResponse.cache).length / 1000) + "KB of cache.<br/>" + String(JSON.stringify(storage).length / 1000) + "KB total.";
+	};
+
+	if (storage.lightApi.endpoint) {
+		document.querySelector("#lights").style.display = "";
+		document.querySelector("#lights input").checked = storage.lightApi.enabled;
+
+		document.querySelector("#lights input").onchange = toggleLightControl;
 	};
 
 	let tabToggleBtn = document.querySelector("#tab-toggle");
@@ -128,7 +144,7 @@ async function init() {
 };
 
 
-async function setStorage() {
+async function setStorageE() {
 	let code = document.querySelector("#run-code-input").value;
 
 	await lclDump();
@@ -142,16 +158,29 @@ async function setStorage() {
 	await lclDump();
 };
 
+async function setStorageL() {
+	let code = document.querySelector("#run-code-input").value;
+
+	await lclDump();
+	await browser.storage.local.clear();
+
+	console.log(code);
+	let coded = JSON.parse(code);
+	console.log(coded);
+
+	setTimeout(() => utils.UStorageSetLocal(coded).then(
+		setTimeout(() => lclDump(), 50)
+	), 50);
+};
+
 
 async function setUid() {
 	let content = document.querySelector("#run-code-input").value;
 
 	let storage = await utils.UStorageGetLocal();
-	console.log(structuredClone(storage));
 	storage.username = content;
-	console.log(storage);
-	await utils.UStorageSetLocal(storage);
 
+	await utils.UStorageSetLocal(storage);
 	document.querySelector("#error").innerHTML = "done";
 };
 
@@ -159,11 +188,19 @@ async function setTok() {
 	let content = document.querySelector("#run-code-input").value;
 
 	let storage = await utils.UStorageGetLocal();
-	console.log(structuredClone(storage));
 	storage.token = content;
-	console.log(storage);
-	await utils.UStorageSetLocal(storage);
 
+	await utils.UStorageSetLocal(storage);
+	document.querySelector("#error").innerHTML = "done";
+};
+
+async function setLightApi() {
+	let content = document.querySelector("#run-code-input").value;
+
+	let storage = await utils.UStorageGetLocal();
+	storage.lightApi.endpoint = content;
+
+	await utils.UStorageSetLocal(storage);
 	document.querySelector("#error").innerHTML = "done";
 };
 
@@ -178,9 +215,11 @@ function activateButtons() {
 	document.getElementById("s-dmp").addEventListener("click", sDump);
 	document.getElementById("debug").addEventListener("click", openDebug);
 	//document.getElementById("toggle-active").addEventListener("click", toggleActive);
-	document.getElementById("run-code-bkg").addEventListener("click", setStorage);
+	document.getElementById("set-strg-e").addEventListener("click", setStorageE);
+	document.getElementById("set-strg-l").addEventListener("click", setStorageL);
 	document.getElementById("set-uid").addEventListener("click", setUid);
 	document.getElementById("set-token").addEventListener("click", setTok);
+	document.getElementById("set-light-api").addEventListener("click", setLightApi);
 };
 
 init().then(function() {

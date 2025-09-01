@@ -984,6 +984,49 @@ async function EWOMInsertSongToAlbum(request) {
 	await utils.UStorageSetExternal(storage);
 };
 
+async function EWOMAutoLights(request) {
+	let storage = await utils.UStorageGetLocal();
+
+	console.log(request, storage.lightApi.endpoint, storage.lightApi.enabled);
+	if (!storage.lightApi.endpoint || !storage.lightApi.enabled) return;
+
+	if (request.action === "dim") {
+		fetch(storage.lightApi.endpoint + "/api/brightness", {
+			method: "POST",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({
+				room: "bedroom",
+				brightness: 0,
+				transition: request.transition
+			})
+		}).then(v => console.log(v));
+
+	} else if (request.action === "undim") {
+		fetch(storage.lightApi.endpoint + "/api/brightness", {
+			method: "POST",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({
+				room: "bedroom",
+				brightness: 255,
+				transition: request.transition
+			})
+		}).then(v => console.log(v));
+
+	} else if (request.action === "setImg") {
+		let resp = await fetch(request.url);
+		let blob = await resp.blob();
+		let file = new File([blob], "image", {type: blob.type});
+
+		let formData = new FormData();
+		formData.append("file", file);
+
+		fetch(storage.lightApi.endpoint + "/api/set-by-img-file", {
+			method: "POST",
+			body: formData
+		}).then(v => console.log(v));
+	};
+};
+
 
 function OnMessage(request, sender, sendResponse) {
 	console.log("received in EW", JSON.stringify(request), sender, sendResponse);
@@ -1014,6 +1057,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "setSkip")					EWOMHideSongFromAlbum(request, sender);
 	else if (f === "edit-metadata")				EWOMEditMetadata(request, sender);
 	else if (f === "insert-song")				EWOMInsertSongToAlbum(request);
+	else if (f === "auto-lights")				EWOMAutoLights(request);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);

@@ -12,7 +12,11 @@ class Utils {
 			},
 			username: "",
 			token: "",
-			cachedLastResponse: {}
+			cachedLastResponse: {},
+			lightApi: {
+				endpoint: "",
+				enabled: false
+			}
 		},
 		
 		external: {
@@ -329,6 +333,8 @@ class Utils {
 			
 			storageLocal[key] = (val) ? val : defaultData[key];
 		};
+
+		console.log("toStore", toStore)
 
 		await browser.storage.local.set(toStore);
 	};

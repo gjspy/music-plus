@@ -69,8 +69,13 @@
 		<div class="btn-cont" id="main-btns">
 			<button type="button" id="clr-cache">Clear Cache</button>
 			<button type="button" id="tab-toggle" style="width: 100%;">Tab Toggle</button>
+			<div id="lights" style="display: none;">
+				<input type="checkbox">
+				<label class="lights-label">Enable Light Control</label>
+			</div>
 			
 			<button type="button" id="debug" style="margin-top: 22px;">Debug Actions</button>
+			
 		</div>
 
 		<div id="debug-cont" style="display: none;">
@@ -80,9 +85,11 @@
 			<button id="s-dmp">Dump Session Storage</button>
 			<button id="clr-strg" class="danger">Clear Local Storage</button>
 			<textarea rows="6" cols="25" id="run-code-input" placeholder="Paste in JSON to fully replace storage with. No undo. **MUST BE CLEAN STORAGE, NOT RAW**"></textarea>
-			<button id="run-code-bkg" style="padding: 0;">Set ExtStorage to textarea value</button>
+			<button id="set-strg-e" style="padding: 0;">Set ExtStorage to textarea value</button>
+			<button id="set-strg-l" style="padding: 0;">Set LclStorage to textarea value</button>
 			<button id="set-uid" style="padding: 0; font-size: 0.8em;">Set Storage UID to textarea value</button>
 			<button id="set-token" style="padding: 0;">Set API token to textarea value</button>
+			<button id="set-light-api" style="padding: 0;">Set Lights API to textarea value</button>
 		</div>
 
 		<a id="error" style="text-align: left; word-break: keep-all;"></a>

@@ -71,6 +71,12 @@ give ability to hide releases: Dawn FM alternate worlds, let me delete the other
 
 custom automix!! or custom radio, based on selected albums (exclude skips!!)
 
+what is makeAUtomixInteractable in playerPgaeFeatures?
+
+DOING NOW:
+extraSongs nearly work, need to go back to
+light control works okay, undimming is a bit slow
+DOES NOT work with private albums, no auth to get img in bkg script
 
 
 extra songs working, but check playlistSetVideoIds please, is looking odd. click first item in album (this is how tomorrow moves) and it stays hovered without a play button icon?
