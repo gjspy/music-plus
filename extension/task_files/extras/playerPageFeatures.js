@@ -155,7 +155,7 @@ function NiceColours() {
 			func: "auto-lights",
 			action: "undim",
 			transition: dataNow.transition
-		}), 50);
+		}), 100);
 
 		dataNow.dimness = "undim";
 	};
@@ -259,7 +259,8 @@ function NiceColours() {
 
 		// normal autoplay flow.
 		// no intervals / timeouts, simply always dim when at the end and undim at start.
-		if (diff < OP_TRANSITION_TIME + 1 && nextThumb !== thisImg && !tryingToFix) {
+		let shouldBeDim = diff < OP_TRANSITION_TIME + 1 && nextThumb !== thisImg && !tryingToFix;
+		if (shouldBeDim) {
 			_Dim();
 			// console.log("dimming");
 

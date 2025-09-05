@@ -204,6 +204,19 @@ async function setLightApi() {
 	document.querySelector("#error").innerHTML = "done";
 };
 
+async function dim() {
+	browser.runtime.sendMessage({
+		func: "auto-lights",
+		action: "dim"
+	});
+};
+
+async function undim() {
+	browser.runtime.sendMessage({
+		func: "auto-lights",
+		action: "undim"
+	});
+};
 
 function activateButtons() {
 	document.getElementById("clr-strg").addEventListener("click", clearStorage);
@@ -213,6 +226,8 @@ function activateButtons() {
 	document.getElementById("er-dmp").addEventListener("click", () => extDump(true));
 	document.getElementById("e-dmp").addEventListener("click", () => extDump(false));
 	document.getElementById("s-dmp").addEventListener("click", sDump);
+	document.getElementById("dim").addEventListener("click", dim);
+	document.getElementById("undim").addEventListener("click", undim);
 	document.getElementById("debug").addEventListener("click", openDebug);
 	//document.getElementById("toggle-active").addEventListener("click", toggleActive);
 	document.getElementById("set-strg-e").addEventListener("click", setStorageE);

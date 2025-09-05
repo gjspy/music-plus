@@ -1100,7 +1100,7 @@ MiddlewareEditors = class MiddlewareEditors {
 			"musicPlayButtonRenderer", "playNavigationEndpoint", "watchEndpoint"
 		]);
 
-		playButton.playNavigationEndpoint.watchEndpoint = firstWE;
+		playButton.playNavigationEndpoint.watchEndpoint = structuredClone(firstWE);
 		delete playButton.playNavigationEndpoint.watchEndpoint.videoId;
 		delete playButton.playNavigationEndpoint.watchEndpoint.playlistSetVideoId;
 		delete playButton.playNavigationEndpoint.watchEndpoint.index;

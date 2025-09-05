@@ -58,6 +58,16 @@
 		word-break: break-all;
 		word-wrap: break-word;
 	}
+
+	#lights {
+		width: 100%;
+		margin-top: 15px;
+	}
+
+	#lights-control {
+		display: flex;
+		width: 100%;
+	}
 </style>
 
 <body>
@@ -71,7 +81,11 @@
 			<button type="button" id="tab-toggle" style="width: 100%;">Tab Toggle</button>
 			<div id="lights" style="display: none;">
 				<input type="checkbox">
-				<label class="lights-label">Enable Light Control</label>
+				<label class="lights-label">Enable Auto Lights</label>
+				<div id="lights-control">
+					<button id="dim" style="flex: 50%;">Dim</button>
+					<button id="undim" style="flex: 50%;">Undim</button>
+				</div>
 			</div>
 			
 			<button type="button" id="debug" style="margin-top: 22px;">Debug Actions</button>

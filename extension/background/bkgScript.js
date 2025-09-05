@@ -991,7 +991,7 @@ async function EWOMAutoLights(request) {
 	if (!storage.lightApi.endpoint || !storage.lightApi.enabled) return;
 
 	if (request.action === "dim") {
-		fetch(storage.lightApi.endpoint + "/api/brightness", {
+		fetch(storage.lightApi.endpoint + "/api/brightness?auto_music=true", {
 			method: "POST",
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify({
@@ -1002,7 +1002,7 @@ async function EWOMAutoLights(request) {
 		}).then(v => console.log(v));
 
 	} else if (request.action === "undim") {
-		fetch(storage.lightApi.endpoint + "/api/brightness", {
+		fetch(storage.lightApi.endpoint + "/api/brightness?auto_music=true", {
 			method: "POST",
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify({
@@ -1020,7 +1020,7 @@ async function EWOMAutoLights(request) {
 		let formData = new FormData();
 		formData.append("file", file);
 
-		fetch(storage.lightApi.endpoint + "/api/set-by-img-file", {
+		fetch(storage.lightApi.endpoint + "/api/set-by-img-file?auto_music=true", {
 			method: "POST",
 			body: formData
 		}).then(v => console.log(v));

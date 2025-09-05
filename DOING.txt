@@ -75,8 +75,8 @@ what is makeAUtomixInteractable in playerPgaeFeatures?
 
 DOING NOW:
 extraSongs nearly work, need to go back to
-light control works okay, undimming is a bit slow
+//light control works okay, undimming is a bit slow
 DOES NOT work with private albums, no auth to get img in bkg script
+LIGHT ROTATING almost works, does 4 clicks then jumps one (cw), test acw
 
-
-extra songs working, but check playlistSetVideoIds please, is looking odd. click first item in album (this is how tomorrow moves) and it stays hovered without a play button icon?
+//extra songs working, but check playlistSetVideoIds please, is looking odd. click first item in album (this is how tomorrow moves) and it stays hovered without a play button icon?
