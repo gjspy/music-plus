@@ -214,7 +214,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 70);
+			), 500);
 		});
 	};
 
@@ -352,7 +352,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 70);
+			), 500);
 		});
 	};
 
@@ -371,7 +371,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 70);
+			), 500);
 			
 		};
 
@@ -417,7 +417,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 70);
+			), 500);
 			
 		};
 
@@ -456,7 +456,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 70);
+			), 500);
 			
 		};
 
@@ -524,7 +524,7 @@ AlbumButtons = class AlbumButtons {
 		gridCont.ovf.style.right = "0";
 		gridCont.ovf.style.setProperty("--height", "700px");
 	};
-}
+};
 
 window.ButtonBar = class MasterEditMode {
 	static specificEditModes = {
