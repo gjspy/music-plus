@@ -214,7 +214,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 500);
+			), 2000);
 		});
 	};
 
@@ -352,7 +352,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 500);
+			), 2000);
 		});
 	};
 
@@ -371,7 +371,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 500);
+			), 2000);
 			
 		};
 
@@ -417,7 +417,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 500);
+			), 2000);
 			
 		};
 
@@ -456,7 +456,7 @@ AlbumEditMode = class AlbumEditMode {
 					navType: "browse",
 					"id": id
 				})
-			), 500);
+			), 2000);
 			
 		};
 
