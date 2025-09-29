@@ -58,6 +58,11 @@ function down(key) {
 
 	downNow[key] = true;
 
+	if (key === "Backspace") {
+		dimAll();
+		return;
+	};
+
 	let thisLight = config.entities[key];
 	if (!thisLight) return;
 
@@ -113,11 +118,6 @@ function onAction(event) {
 			dropSoon = true;
 		};
 
-		return;
-	};
-
-	if (key === "Backspace") {
-		dimAll();
 		return;
 	};
 
