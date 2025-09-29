@@ -124,7 +124,8 @@ function NiceColours() {
 		UDispatchEventToEW({
 			func: "auto-lights",
 			action: "setImg",
-			"url": url
+			"url": url,
+			autoMusic: true
 		});
 
 		dataNow.playingThumbnail = url;
@@ -141,7 +142,8 @@ function NiceColours() {
 		UDispatchEventToEW({
 			func: "auto-lights",
 			action: "dim",
-			transition: dataNow.transition
+			transition: dataNow.transition,
+			autoMusic: true
 		});
 
 		dataNow.dimness = "dim";
@@ -154,7 +156,8 @@ function NiceColours() {
 		setTimeout(() => UDispatchEventToEW({
 			func: "auto-lights",
 			action: "undim",
-			transition: dataNow.transition
+			transition: dataNow.transition,
+			autoMusic: true
 		}), 100);
 
 		dataNow.dimness = "undim";

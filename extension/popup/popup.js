@@ -204,18 +204,35 @@ async function setLightApi() {
 	document.querySelector("#error").innerHTML = "done";
 };
 
+async function setEntitiesToKeys() {
+	let content = document.querySelector("#run-code-input").value;
+
+	let storage = await utils.UStorageGetLocal();
+	storage.lightApi.entitiesToKeys = JSON.parse(content);
+
+	await utils.UStorageSetLocal(storage);
+	document.querySelector("#error").innerHTML = "done";
+};
+
 async function dim() {
 	browser.runtime.sendMessage({
 		func: "auto-lights",
-		action: "dim"
+		action: "dim",
+		autoMusic: false
 	});
 };
 
 async function undim() {
 	browser.runtime.sendMessage({
 		func: "auto-lights",
-		action: "undim"
+		action: "undim",
+		autoMusic: false
 	});
+};
+
+function gotoLS() {
+	let url = browser.runtime.getURL("pages/lightshow/index.html");
+	browser.tabs.create({ url });
 };
 
 function activateButtons() {
@@ -235,6 +252,8 @@ function activateButtons() {
 	document.getElementById("set-uid").addEventListener("click", setUid);
 	document.getElementById("set-token").addEventListener("click", setTok);
 	document.getElementById("set-light-api").addEventListener("click", setLightApi);
+	document.getElementById("set-entities-api").addEventListener("click", setEntitiesToKeys);
+	document.getElementById("goto-ls").addEventListener("click", gotoLS);
 };
 
 init().then(function() {

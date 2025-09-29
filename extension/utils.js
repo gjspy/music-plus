@@ -15,7 +15,8 @@ class Utils {
 			cachedLastResponse: {},
 			lightApi: {
 				endpoint: "",
-				enabled: false
+				enabled: false,
+				entitiesToKeys: {}
 			}
 		},
 		
