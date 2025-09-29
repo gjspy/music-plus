@@ -68,13 +68,27 @@ function down(key) {
 		body: JSON.stringify({
 			room: "bedroom",
 			entity: thisLight,
-			brightness: 255,
+			brightness: brightness,
 			transition: 0
 		})
 	});
 
-	log.innerHTML += `${Math.round((Date.now() - time) / 100) / 10}: ON  ${thisLight}<br/>`;
+	log.innerHTML += `<span>${Math.round((Date.now() - time) / 100) / 10}: ON  ${thisLight}<span>`;
 	log.scrollIntoView({behavior: "instant", block: "end"});
+};
+
+function dimAll() {
+	fetch(config.endpoint + "/api/brightness?auto_music=false", {
+		method: "POST",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify({
+			brightness: 0,
+			transition: 2
+		})
+	});
+
+	downNow = {};
+
 };
 
 
@@ -100,6 +114,8 @@ function onAction(event) {
 
 		return;
 	};
+
+	if (key === "Backspace")
 
 	if (isNumpad) {
 		let n = Math.round(130 + ((Number(key) + 1) / 10) * 125);
