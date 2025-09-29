@@ -44,7 +44,7 @@ function up(key, forceDrop) {
 	});
 
 	downNow[key] = false;
-	log.innerHTML += `${Math.round((Date.now() - time) / 100) / 10}: OFF ${thisLight}<br/>`;
+	log.innerHTML += `<span>${Math.round((Date.now() - time) / 100) / 10}: OFF ${thisLight}<span>`;
 	log.scrollIntoView({behavior: "instant", block: "end"});
 };
 
