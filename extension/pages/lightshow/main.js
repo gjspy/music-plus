@@ -45,7 +45,7 @@ function up(key, forceDrop) {
 
 	downNow[key] = false;
 	log.innerHTML += `<span>${Math.round((Date.now() - time) / 100) / 10}: OFF ${thisLight}<span>`;
-	log.scrollIntoView({behavior: "instant", block: "end"});
+	document.body.scrollIntoView({behavior: "instant", block: "end"});
 };
 
 
@@ -73,7 +73,7 @@ function down(key) {
 	});
 
 	log.innerHTML += `<span>${Math.round((Date.now() - time) / 100) / 10}: ON  ${thisLight}<span>`;
-	log.scrollIntoView({behavior: "instant", block: "end"});
+	document.body.scrollIntoView({behavior: "instant", block: "end"});
 };
 
 function dimAll() {
@@ -85,6 +85,8 @@ function dimAll() {
 			transition: 2
 		})
 	});
+	log.innerHTML += `<span>${Math.round((Date.now() - time) / 100) / 10}: DIM ALL<span>`;
+	document.body.scrollIntoView({behavior: "instant", block: "end"});
 
 	downNow = {};
 
@@ -120,8 +122,9 @@ function onAction(event) {
 	};
 
 	if (isNumpad) {
-		let n = Math.round(130 + ((Number(key) + 1) / 10) * 125);
+		let n = Math.round(55 + ((Number(key) + 1) / 10) * 200);
 		if (n !== undefined) brightness = n;
+		return;
 	};
 
 	if (isDown) down(key);
