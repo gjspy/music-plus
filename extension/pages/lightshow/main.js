@@ -52,7 +52,6 @@ function up(key, forceDrop) {
 function down(key) {
 
 	if (downNow[key]) {
-		console.log("is down", key, dontDrop);
 		if (dontDrop) up(key, true);
 		return;
 	};
@@ -115,7 +114,10 @@ function onAction(event) {
 		return;
 	};
 
-	if (key === "Backspace")
+	if (key === "Backspace") {
+		dimAll();
+		return;
+	};
 
 	if (isNumpad) {
 		let n = Math.round(130 + ((Number(key) + 1) / 10) * 125);

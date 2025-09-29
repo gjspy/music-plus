@@ -1,9 +1,9 @@
 body {
-	color: black;
+	background: black;
 }
 
 h1 {
-	background: rgb(223, 0, 255);
+	color: rgb(223, 0, 255);
 }
 
 span {
