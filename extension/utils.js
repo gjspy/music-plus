@@ -777,6 +777,19 @@ class Utils {
 		delete UWaitingForRespFromEW.waiting[id];
 	};
 
+	static EWSendRefreshContSignalToMW(storage, tabId) {
+	// tabs, not runtime, bcs cant send to contentscripts with runtime
+	let response = {
+		func: utils.UEventFuncForSidebarUpdate,
+		time: -1,
+
+		storage: storage,
+		action: "refreshCont"
+	};
+
+	browser.tabs.sendMessage(tabId, response);
+};
+
 	static async UMWStorageGet(path, fetchNew) {
 		// path: string . separated, eg sidebar.folders.folders
 
@@ -2424,6 +2437,29 @@ class Utils {
 		};
 	};
 
+	static UCreateWriteNoteMenuItemRenderer() {
+		return {
+			"menuServiceItemRenderer": {
+				"text": {
+					"runs": [
+						{
+							"text": "Write Note"
+						}
+					]
+				},
+				"icon": {
+					"iconType": "loyalty",
+					"icon": "loyalty"
+				},
+				"serviceEndpoint": {
+					"customEndpoint": {
+						"action": "writeNote"
+					}
+				}
+			}
+		}
+	};
+
 
 	static UBuildTwoRowItemRendererFromData(data) {
 		return {				
@@ -2925,7 +2961,8 @@ class Utils {
 						id: realAlbum.artist
 					})
 				}
-			}
+			},
+			this.UCreateWriteNoteMenuItemRenderer()
 		];
 
 		let l = current.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer;
@@ -3459,7 +3496,8 @@ class Utils {
 										id: realAlbum.artist
 									})
 								}
-							}
+							},
+							this.UCreateWriteNoteMenuItemRenderer()
 						],
 						"topLevelButtons": [
 							{

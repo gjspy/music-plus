@@ -235,6 +235,10 @@ function gotoLS() {
 	browser.tabs.create({ url });
 };
 
+async function refSide() {
+	utils.EWSendRefreshContSignalToMW(undefined, tab.id);	
+};
+
 function activateButtons() {
 	document.getElementById("clr-strg").addEventListener("click", clearStorage);
 	//document.getElementById("cln-strg").addEventListener("click", cleanStorage);
@@ -254,6 +258,7 @@ function activateButtons() {
 	document.getElementById("set-light-api").addEventListener("click", setLightApi);
 	document.getElementById("set-entities-api").addEventListener("click", setEntitiesToKeys);
 	document.getElementById("goto-ls").addEventListener("click", gotoLS);
+	document.getElementById("ref-side").addEventListener("click", refSide);
 };
 
 init().then(function() {

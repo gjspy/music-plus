@@ -37,6 +37,9 @@ n3rds-inc.time
 onDeletePlaylist, still deleting the wrong one?
 update eventdriven & playerPageFeatures.
 
+EDIT AND DELETE BUTTON OF FOLDERS DON'T WORK (SIDEBAR)
+BUTTON TO UPDATE LIGHT COLOURS BASED ON PLAYING.
+need some sort of write lock for storage? eg: making a change, some cache event happens, overwrites and hides change.
 
 
 CLEAR QUEUE BUTTON DOESNT CLEAR SERVER QUEUE.

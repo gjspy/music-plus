@@ -6,6 +6,10 @@ h1 {
 	color: rgb(223, 0, 255);
 }
 
+h1 {
+	color: rgb(0, 255, 191);
+}
+
 span {
 	display: block;
 }
@@ -32,4 +36,11 @@ a :nth-child(5n) {
 
 a :nth-child(6n) {
 	color: rgb(255,0,255);
+}
+
+
+
+button.record {
+	position: fixed;
+	right: 3vw;
 }

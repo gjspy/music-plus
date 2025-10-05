@@ -488,7 +488,7 @@ async function EWOMOnNewPlaylist(request, sender) {
 	await utils.UStorageSetExternal(storage);
 
 	//EWOMOnPostCacheData(request, sender); // do this, so it sends new storage back.
-	EWSendRefreshContSignalToMW(storage, sender.tab.id);
+	utils.EWSendRefreshContSignalToMW(storage, sender.tab.id);
 };
 
 async function EWOMOnDeletePlaylist(request, sender) {
@@ -885,18 +885,7 @@ async function EWCacheData(data) {
 	return newStorage;
 };
 
-function EWSendRefreshContSignalToMW(storage, tabId) {
-	// tabs, not runtime, bcs cant send to contentscripts with runtime
-	let response = {
-		func: utils.UEventFuncForSidebarUpdate,
-		time: -1,
 
-		storage: storage,
-		action: "refreshCont"
-	};
-
-	browser.tabs.sendMessage(tabId, response);
-};
 
 async function EWOMOnPostCacheData(request, sender) {
 	let newStorage = await EWCacheData(request.data);
@@ -904,7 +893,7 @@ async function EWOMOnPostCacheData(request, sender) {
 	// this is not a response received by caching/middleware. this is a separate event
 	// fired for the sidebar.
 
-	EWSendRefreshContSignalToMW(newStorage, sender.tab.id);
+	utils.EWSendRefreshContSignalToMW(newStorage, sender.tab.id);
 };
 
 

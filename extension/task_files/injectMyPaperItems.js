@@ -696,7 +696,13 @@ export async function MWInjectMyPaperItems() {
 
 		_OnChangeSentByEW(eventData) {
 			if (!eventData.storage) {
-				console.error("event.storage IS undefined, not running onChange action");
+				if (eventData.action === "refreshCont") {
+					this.RefreshCont(true);
+					console.warn("ONLY RUNNING onChange AS ACTION = refreshCont. NO STORAGE PROVIDED.");
+				} else {
+					console.error("event.storage IS undefined, not running onChange action");
+				};
+				
 				return;
 			};
 			
@@ -744,6 +750,7 @@ export async function MWInjectMyPaperItems() {
 
 					this.RefreshCont(false);
 				});
+				return;
 			};
 
 			let currentOpenedFolders = Array.from(document.querySelectorAll(".c-paper-folder.open"))

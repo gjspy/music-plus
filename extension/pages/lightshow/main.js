@@ -15,6 +15,16 @@ let time = Date.now();
 
 let downNow = {};
 
+let recordingData = {};
+let isRecording = false;
+
+function logEvent(entity, brightness, transition) {
+	recordingData.sequence.push({
+		t: Date.now() - recordingData.startTime,
+		
+	})
+};
+
 function up(key, forceDrop) {
 
 	if (dontDrop && !forceDrop) {
@@ -94,7 +104,6 @@ function dimAll() {
 	document.body.scrollIntoView({behavior: "instant", block: "end"});
 
 	downNow = {};
-
 };
 
 
@@ -141,9 +150,40 @@ function onStorageGet(storage) {
 	};
 };
 
+async function onRecordButtonPress() {
+	if (isRecording) {
+
+		return;
+	};
+
+
+	let tab = await browser.tabs.query({
+		audible: true,
+		muted: false,
+		url: "*://music.youtube.com/*"
+	});
+
+	let result = await browser.tabs.executeScript(tab[0].id,`
+		data = polymerController.playerApi.getVideoData();
+		time = polymerController.playerApi.getCurrentTime();
+		[data.video_id, data.title, time];
+	`);
+
+	let videoId, title, time = result;
+	let startTime = Date.now() - (time * 1000);
+	recordingData = {
+		"videoId": videoId,
+		"title": title,
+		"startTime": startTime,
+		"sequence": []
+	};
+};
+
 Utils.UStorageGetLocal().then(onStorageGet);
 
 body.onkeydown = onAction;
 body.onkeyup = onAction;
 
 // TODO: avoid preflight OPTIONS.
+
+document.querySelector("button.record").onclick = onRecordButtonPress;
