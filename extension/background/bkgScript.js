@@ -8,7 +8,7 @@ import { MWEventDriven_PageChanges } from "../task_files/eventDriven.js";
 import { MWCaching } from "../task_files/caching.js";
 
 const EXTRAS_FILE_LOC = "../task_files/extras/";
-const EXTRAS = ["niceMiniGuide.js", "playerPageFeatures.js", "editMode.js"];
+const EXTRAS = ["niceMiniGuide.js", "playerPageFeatures.js", "editMode.js", "middlewareEditors.js", "customEndpointHandler.js"];
 const MIDDLEWARE = "../networkMiddleware.js";
 
 
@@ -174,12 +174,17 @@ async function EWSidebarEditFeatures(injectionTarget) {
 async function EWExtras(injectionTarget) {
 	for (let file of EXTRAS) {
 		let f = EXTRAS_FILE_LOC + file;
+		let resp;
 
-		let resp = await browser.scripting.executeScript({
-			"target": injectionTarget,
-			"files": [f],
-			"world": "MAIN"
-		});
+		try {
+			resp = await browser.scripting.executeScript({
+				"target": injectionTarget,
+				"files": [f],
+				"world": "MAIN"
+			});
+		} catch (err) {
+			console.error("DOING", f, resp, err);
+		};
 
 		console.log(f, "resp", JSON.stringify(resp));
 	};
@@ -483,7 +488,21 @@ async function EWOMGetStorage(request, sender, sendResponse) {
 async function EWOMOnNewPlaylist(request, sender) {
 	let storage = await utils.UStorageGetExternal(false);
 
-	storage.sidebar.paperItemOrder.unshift(request.data.id);
+	storage.sidebar.paperItemOrder.unshift(request.cacheData.id);
+
+	if (request.tagData && request.tagData.colour) {
+		storage.customisation.tags.tags[request.cacheData.id] = {
+			id: request.cacheData.id,
+			colour: request.tagData.colour,
+			text: request.tagData.text
+		};
+
+		let videoId = request.cacheData.items[0];
+		let existing = storage.customisation.tags.videos[videoId];
+
+		if (!existing) storage.customisation.tags.videos[videoId] = [];
+		storage.customisation.tags.videos[videoId].push(request.cacheData.id);
+	};
 
 	await utils.UStorageSetExternal(storage);
 
@@ -973,6 +992,23 @@ async function EWOMInsertSongToAlbum(request) {
 	await utils.UStorageSetExternal(storage);
 };
 
+async function EWOMAddNote(request) {
+	let storage = await utils.UStorageGetExternal(false);
+
+	storage.customisation.notes[request.videoId] = request.note;
+
+	await utils.UStorageSetExternal(storage);
+};
+
+async function EWOMAddVideoToTag(request) {
+	let storage = await utils.UStorageGetExternal(false);
+
+	if (!storage.customisation.tags.videos[request.videoId]) storage.customisation.tags.videos[request.videoId] = []
+	storage.customisation.tags.videos[request.videoId].push(request.tagId);
+
+	await utils.UStorageSetExternal(storage);
+};
+
 async function EWOMAutoLights(request) {
 	let storage = await utils.UStorageGetLocal();
 
@@ -1047,6 +1083,8 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "edit-metadata")				EWOMEditMetadata(request, sender);
 	else if (f === "insert-song")				EWOMInsertSongToAlbum(request);
 	else if (f === "auto-lights")				EWOMAutoLights(request);
+	else if (f === "add-note")					EWOMAddNote(request);
+	else if (f === "add-video-to-tag")			EWOMAddVideoToTag(request);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);

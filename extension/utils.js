@@ -45,7 +45,12 @@ class Utils {
 				hiddenSongs: {},
 				skippedSongs: {},
 				metadata: {},
-				extraSongs: {}
+				extraSongs: {},
+				notes: {},
+				tags: {
+					tags: {}, // id: {id: "", name: "", colour: "", playlist: ""}
+					videos: {} // videoId: [tagId]
+				} 
 			}
 		}
 	};
@@ -147,6 +152,10 @@ class Utils {
 	static UBrowseParamsByRequest = {};
 
 	static U_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	static U_TAG_PLAYLIST_DATA = {
+		titlePrefix: "Tag: ",
+		description: "Auto generated playlist for this tag! Here, you can see all the songs you've added. Don't delete this playlist! All songs would lose their tag."
+	};
 
 	static U_GUIDE_ICONS = {
 		active: {
@@ -159,6 +168,48 @@ class Utils {
 			FEmusic_explore: "m9.8 9.8-3.83 8.23 8.23-3.83 3.83-8.23L9.8 9.8zm3.28 2.97c-.21.29-.51.48-.86.54-.07.01-.15.02-.22.02-.28 0-.54-.08-.77-.25-.29-.21-.48-.51-.54-.86-.06-.35.02-.71.23-.99.21-.29.51-.48.86-.54.35-.06.7.02.99.23.29.21.48.51.54.86.06.35-.02.7-.23.99zM12 3c4.96 0 9 4.04 9 9s-4.04 9-9 9-9-4.04-9-9 4.04-9 9-9m0-1C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z",
 			FEmusic_library_landing: "M16 6v2h-2v5c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.37 0 .7.11 1 .28V6h3zm2 14H4V6H3v15h15v-1zm3-17H6v15h15V3zM7 4h13v13H7V4z"
 		}
+	};
+
+	static U_HELPFUL_QUERIES = {
+		listItemRenderersOfCurrentBrowseResponse: "ytmusic-browse-response #content-wrapper > #contents > ytmusic-two-column-browse-results-renderer > #secondary > ytmusic-section-list-renderer > #contents > :first-child > #contents > ytmusic-responsive-list-item-renderer"
+	};
+
+	static UDictGet = {
+		videoIdFromLIRData: ["playlistItemData", "videoId"],
+		videoIdFromLIRElem: ["controllerProxy", "__data", "data","playlistItemData", "videoId"],
+		dataFromElem: ["controllerProxy", "__data", "data"],
+		cDataFromElem: ["controllerProxy", "__data", "data", "cData"],
+		cIsDeletedFromLIRData: ["cData", "changedByDeletion", "isDeleted"],
+		lengthStrFromLIRData: ["fixedColumns", 0, "musicResponsiveListItemFixedColumnRenderer", "text", "runs", 0, "text"],
+		watchEndpointFromLIRDataPlayButton: ["overlay", "musicItemThumbnailOverlayRenderer", "content", "musicPlayButtonRenderer", "playNavigationEndpoint", "watchEndpoint"],
+		watchEndpointFromLIRDataTitle: ["flexColumns", 0, "musicResponsiveListItemFlexColumnRenderer", "text", "runs", 0, "navigationEndpoint", "watchEndpoint"],
+		playButtonFromLIRData: ["overlay", "musicItemThumbnailOverlayRenderer", "content", "musicPlayButtonRenderer"],
+		browseIdFromPolymerState: ["navigation", "mainContent", "endpoint","data", "browseId"],
+		cDidExtChangeResponse: ["navigation", "mainContent", "response", "cMusicFixerExtChangedResponse"],
+		playlistPanelFromNextResponse: ["contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer","watchNextTabbedResultsRenderer", "tabs", 0,"tabRenderer", "content", "musicQueueRenderer","content", "playlistPanelRenderer"],
+		overlayButtonsFromNextResponse: ["playerOverlays", "playerOverlayRenderer", "actions"],
+		pageTypeFromNavigationEndpoint: ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"],
+		browseIdFromNavigationEndpoint: ["browseEndpoint", "browseId"],
+		reloadContinuationDataFromNavigationEndpoint: ["browseSectionListReloadEndpoint", "continuation", "reloadContinuationData"],
+		watchEndpointFromVideoRenderer: ["navigationEndpoint", "watchEndpoint"],
+		menuItemsFromAnything: ["menu", "menuRenderer", "items"],
+		serviceEndpointFromMenuItem: ["menuServiceItemRenderer", "serviceEndpoint"],
+		serviceActionPlaylistEditEndpointFromMenuItem: ["menuServiceItemRenderer", "serviceEndpoint", "playlistEditEndpoint", "actions", 0, "action"],
+		backingPlaylistIdFromVideoRenderer: ["queueNavigationEndpoint", "queueAddEndpoint", "queueTarget", "backingQueuePlaylistId"],
+		albumListItemShelfRendererFromBrowseResponse: ["contents", "twoColumnBrowseResultsRenderer", "secondaryContents", "sectionListRenderer", "contents", 0, "musicShelfRenderer"],
+		albumHeaderRendererFromBrowseResponse: ["contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "musicResponsiveHeaderRenderer"],
+		sectionListRendererFromBrowseResponseForBasicGrid: ["contents", "singleColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer"],
+		listItemsFromBrowseResponseForListPage: ["contents", "twoColumnBrowseResultsRenderer", "secondaryContents", "sectionListRenderer", "contents", 0, "musicPlaylistShelfRenderer", "contents"],
+		sortOptionsFromSectionListRendererForBasicGrid: ["header", "musicSideAlignedItemRenderer", "endItems", 0, "musicSortFilterButtonRenderer", "menu", "musicMultiSelectMenuRenderer", "options"],
+		commandsFromMultiSelectItemRenderer: ["selectedCommand", "commandExecutorCommand", "commands"],
+		gridRendererFromContinuationResponse: ["continuationContents", "sectionListContinuation", "contents", 0, "gridRenderer"],
+		gridContinuationDataFromResponse: ["continuationContents", "gridContinuation"],
+		headerFromSectionListShelf: ["musicCarouselShelfRenderer", "header", "musicCarouselShelfBasicHeaderRenderer"],
+		titleTextFromAnything: ["title", "runs", 0, "text"],
+		titleTextFromLIR: ["flexColumns", 0, "musicResponsiveListItemFlexColumnRenderer", "text", "runs", 0, "text"],
+		PPVRThroughVideoWrapper: ["playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"],
+		PPVRFromGetQueueData: ["content", "playlistPanelVideoRenderer"],
+		PPVRFromGetQueueDataThroughVideoWrapper: ["content", "playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"]
 	};
 
 	static async _ULoadTemplateElements() {
@@ -193,7 +244,7 @@ class Utils {
 	static UHideElem(elem) { this.UAddToClass(elem, "c-hidden"); };
 	static UUnHideElem(elem) { this.URemoveFromClass(elem, "c-hidden"); };
 
-	static async UWaitForBySelector(selector, obj) {
+	static async UWaitForBySelector(selector, obj, mayWaitForever) {
 		function Waiter(resolve) {
 			let found = obj.querySelectorAll(selector);
 			if (found.length > 0) { resolve(found); };
@@ -218,6 +269,10 @@ class Utils {
 		};
 
 		if (!obj) obj = document.body;
+
+		if (mayWaitForever) {
+			return new Promise(Waiter);
+		};
 
 		return Promise.race([
 			new Promise(Waiter),
@@ -367,6 +422,12 @@ class Utils {
 		// if 2 took longer for whatever reason, cachedLastResponse would be 2 and not 3.
 		localStorage.cachedLastResponse = storageExt;
 
+		// DO THIS BEFORE. SO WHILE WAITING FOR RESP FROM
+		// SERVER, IF ANOTHER EDIT HAPPENS, IT IS ADDED TO THESE CHANGES.
+		// BEFORE, THAT CHANGE WOULD BE ADDED TO THE OLD STORAGE VER, AND
+		// THIS WOULD BE LOST.
+		this.UStorageSetLocal(localStorage);
+
 		let response = await fetch(this.U_STORAGE_ENDPOINT + `/storage/set?user_id=${username}&token=${token}`, {
 			method: "POST",
 			body: JSON.stringify(storageExt),
@@ -375,7 +436,7 @@ class Utils {
 
 		if (response.status !== 200) throw Error("External response was", response.status,"for POST.", response);
 
-		this.UStorageSetLocal(localStorage);
+		
 		browser.storage.session.set({ fetchedThisSession: true });
 	};
 
@@ -462,13 +523,18 @@ class Utils {
 		return btn;
 	};
 
-	static URemovePopup(popup) {
+	static URemovePopup(popup, fadeOut) {
+		if (!fadeOut) {
+			popup.remove();
+			return;
+		};
+
 		this.URemoveFromClass(popup, "active");
 
 		setTimeout(function() {
 			popup.remove();
 		}, 300);
-	}
+	};
 
 	// messy function, but it creates a popup :)
 	static UCreatePopup(layout) {
@@ -479,34 +545,33 @@ class Utils {
 			let isFocused = false;
 			inputElem.addEventListener("input", function(event) {
 				if (isFocused) {
-					if (inputElem.value === "") { this.URemoveFromClass(label, "floating"); isFocused = false; }
+					if (inputElem.value === "") { URemoveFromClass(label, "floating"); isFocused = false; }
 					return;
 				};
 
-				this.UAddToClass(label, "floating");
+				UAddToClass(label, "floating");
 				isFocused = true;
 			});
 
 			// show underline on click
 			inputElem.addEventListener("focus", function(event) {
-				this.UAddToClass(underline, "active");
+				UAddToClass(underline, "active");
 			});
 
 			// hide underline on focus loss
 			inputElem.addEventListener("blur", function(event) {
-				this.URemoveFromClass(underline, "active");
+				URemoveFromClass(underline, "active");
 			});
 		};
 
 
-		if (Object.keys(this.UTemplateElementsStrings).length === 0) {
+		if (Object.keys(UTemplateElementsStrings).length === 0) {
 			console.error("UTILS CreatePopup called but TemplateElementsStrings does not exist.");
 			return;
 		};
 
 		// create popup from template, by seting the (outer to maintain classnames)HTML of a new div.
-		const mainTemplate = this.UTemplateElementsStrings["c-popup-bkg"]; // with OPACITY 1
-		console.log(mainTemplate);
+		const mainTemplate = UTemplateElementsStrings["c-popup-bkg"]; // with OPACITY 1
 
 		let popup = document.createElement("div"); // temporary
 		document.body.append(popup);
@@ -522,7 +587,7 @@ class Utils {
 		const iconCont = popup.querySelector(".c-popup-icon");
 
 		if (layout.title.icon) {	 
-			const svg = this.UGetSVGFromRaw(layout.title.icon, false);
+			const svg = UGetSVGFromRaw(layout.title.icon, false);
 
 			iconCont.append(svg);
 		} else {
@@ -539,14 +604,20 @@ class Utils {
 			if (rowInfo.type === "gap") {
 				let curMarginBtm = Number(lastElem.style.marginBottom)
 				lastElem.style.marginBottom = curMarginBtm + rowInfo.gapSize;
-				return;
+				continue;
+			};
+
+			if (rowInfo.class === "c-popup-button") {
+				let btn = UCreateButton(...rowInfo.buttonConfig);
+				contentCont.append(btn);
+				continue;
 			};
 
 			let rowClass = rowInfo.class;
 			let rowElem = document.createElement("div");
 
 			contentCont.append(rowElem);
-			rowElem.outerHTML = this.UTemplateElementsStrings[rowClass];
+			rowElem.outerHTML = UTemplateElementsStrings[rowClass];
 
 			rowElem = contentCont.lastElementChild;  // redefine, elem changes with outerHTML change
 
@@ -583,26 +654,45 @@ class Utils {
 			};
 
 			if (rowInfo.id) rowElem.setAttribute("id", rowInfo.id);
+
+			if (rowInfo.class === "c-popup-scroll-rows") {
+				let template = UTemplateElementsStrings["c-popup-scroll-row"];
+				let cont = rowElem.querySelector(".cont");
+
+				for (let item of rowInfo.contents.items) {
+					let div = document.createElement("div");
+					cont.append(div);
+
+					div.outerHTML = template;
+					div = cont.lastElementChild;
+
+					rowInfo.contents.generator(div, item);
+				};
+			};
 		};
+
+		console.log("POPPUUU", popup);
 
 		const actionsCont = popup.querySelector(".c-popup-actions");
 
 		for (let actionInfo of layout.actions) {
-			const btn = this.UCreateButton(actionInfo.icon, actionInfo.text, actionInfo.style, actionInfo.id || actionInfo.text.toLowerCase().replaceAll(" ","-"));
+			const btn = UCreateButton(actionInfo.icon, actionInfo.text, actionInfo.style, actionInfo.id || actionInfo.text.toLowerCase().replaceAll(" ","-"));
 			actionsCont.append(btn);
 
 			const defaultAction = actionInfo.defaultAction;
 
 			if (defaultAction === "close") {
 				btn.addEventListener("click", function(e) {
-					this.URemovePopup(popup);
+					URemovePopup(popup, true);
 				});
 			};
 		};
 
 		setTimeout(function() {
-			this.UAddToClass(popup, "active");
+			UAddToClass(popup, "active");
 		}, 50);
+
+		console.log("RETURNING", popup)
 
 		return popup;
 	};
@@ -778,17 +868,17 @@ class Utils {
 	};
 
 	static EWSendRefreshContSignalToMW(storage, tabId) {
-	// tabs, not runtime, bcs cant send to contentscripts with runtime
-	let response = {
-		func: utils.UEventFuncForSidebarUpdate,
-		time: -1,
+		// tabs, not runtime, bcs cant send to contentscripts with runtime
+		let response = {
+			func: this.UEventFuncForSidebarUpdate,
+			time: -1,
 
-		storage: storage,
-		action: "refreshCont"
+			storage: storage,
+			action: "refreshCont"
+		};
+
+		browser.tabs.sendMessage(tabId, response);
 	};
-
-	browser.tabs.sendMessage(tabId, response);
-};
 
 	static async UMWStorageGet(path, fetchNew) {
 		// path: string . separated, eg sidebar.folders.folders
@@ -1185,9 +1275,9 @@ class Utils {
 		if (!obj) return {};
 
 		return obj.playlistPanelVideoRenderer
-			|| UDigDict(obj, ["playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"])
-			|| UDigDict(obj, ["content", "playlistPanelVideoRenderer"])
-			|| UDigDict(obj, ["content", "playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"]);
+			|| UDigDict(obj, this.UDictGet.PPVRThroughVideoWrapper)
+			|| UDigDict(obj, this.UDictGet.PPVRFromGetQueueData)
+			|| UDigDict(obj, this.UDictGet.PPVRFromGetQueueDataThroughVideoWrapper);
 	};
 
 	static UGetBrowsePageTypeFromBrowseId(browseId, excludeCTypes, resultisImportant, hasEditedResponse) {
@@ -1399,15 +1489,16 @@ class Utils {
 			if (navigationEndpointOuterDict.browseEndpoint) id = navigationEndpointOuterDict.browseEndpoint.browseId;
 			if (navigationEndpointOuterDict.watchEndpoint) id = navigationEndpointOuterDict.watchEndpoint.playlistId;
 			if (navigationEndpointOuterDict.queueAddEndpoint) id = navigationEndpointOuterDict.queueAddEndpoint.queueTarget.playlistId;
+			if (navigationEndpointOuterDict.createPlaylistServiceEndpoint) id = navigationEndpointOuterDict.createPlaylistServiceEndpoint.title;
 			
 			this.UBrowseParamsByRequest[id] = structuredClone(navigationEndpointOuterDict.cParams);
 			delete navigationEndpointOuterDict.cParams;
 		};
 
-		if (navigationEndpointOuterDict.queueAddEndpoint) {
+		if (navigationEndpointOuterDict.queueAddEndpoint || navigationEndpointOuterDict.createPlaylistServiceEndpoint) {
 			if (!window.menuServiceItemBehaviour) this.UGetMenuServiceItemBehaviour();
 
-			menuServiceItemBehaviour.handleCommand(navigationEndpointOuterDict);
+			menuServiceItemBehaviour.handleCommand(navigationEndpointOuterDict); // TODO see commandExecutorCommands?
 
 			return;
 		};
@@ -1652,13 +1743,19 @@ class Utils {
 				}
 			};
 		};
-	};
 
-	static UGetIsResponseEditedFromState(state) {
-		return this.UDigDict(state, [
-			"navigation", "mainContent", "response",
-			"cMusicFixerExtChangedResponse"
-		]);
+		if (opts.navType === "createPlaylist") {
+			return {
+				createPlaylistServiceEndpoint: {
+					title: opts.title,
+					privacyStatus: opts.privacyStatus,
+					videoIds: opts.videoIds,
+					sourcePlaylistId: opts.sourcePlaylistId,
+					description: opts.description
+				},
+				cParams: opts.cParams
+			};
+		};
 	};
 
 	static USoftClearQueue() {
@@ -2179,9 +2276,15 @@ class Utils {
 			let replacement = {video: item};
 			if (album) replacement.from = album;
 
-			let newItem = (createLIRs) ? UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum)
-				: (createPPRs) ? UBuildPlaylistPanelRendererFromData(replacement, cachedAlbum, pprData.artist, pprData.backingQueuePlaylistId)
-				: undefined;
+			let newItem;
+			if (createLIRs) {
+				newItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
+				UModifyListItemRendererGenericForAlbumPage(newItem);
+				UFillCDataOfListItem(storage, newItem, replacement.video.id);
+
+			} else if (createPPRs) {
+				newItem = UBuildPlaylistPanelRendererFromData(replacement, cachedAlbum, pprData.artist, pprData.backingQueuePlaylistId);
+			};
 
 			if (createQueueDatas) newItem = { content: newItem };
 			
@@ -2437,27 +2540,52 @@ class Utils {
 		};
 	};
 
-	static UCreateWriteNoteMenuItemRenderer() {
+	static UCreateWriteNoteMenuItemRenderer(videoId) {
+		console.log(videoId);
 		return {
 			"menuServiceItemRenderer": {
 				"text": {
 					"runs": [
 						{
-							"text": "Write Note"
+							"text": "Write note"
 						}
 					]
 				},
 				"icon": {
-					"iconType": "loyalty",
-					"icon": "loyalty"
+					"cSvg": "note"
 				},
 				"serviceEndpoint": {
 					"customEndpoint": {
-						"action": "writeNote"
+						"action": "writeNotePopup",
+						"videoId": videoId
 					}
 				}
 			}
-		}
+		};
+	};
+
+	static UCreateAddTagMenuItemRenderer(videoId) {
+		console.log(videoId);
+		return {
+			"menuServiceItemRenderer": {
+				"text": {
+					"runs": [
+						{
+							"text": "Add tag"
+						}
+					]
+				},
+				"icon": {
+					"cSvg": "tag"
+				},
+				"serviceEndpoint": {
+					"customEndpoint": {
+						"action": "addTagPopup",
+						"videoId": videoId
+					}
+				}
+			}
+		};
 	};
 
 
@@ -2777,10 +2905,7 @@ class Utils {
 		// eg, realAlbum = deluxe, replacement.from = original.
 
 		if (current.musicResponsiveListItemRenderer) current = current.musicResponsiveListItemRenderer;
-		let playButton = this.UDigDict(current, [
-			"overlay", "musicItemThumbnailOverlayRenderer",
-			"content", "musicPlayButtonRenderer"
-		]);
+		let playButton = this.UDigDict(current, this.UDictGet.playButtonFromLIRData);
 
 		let vId = replacement.video.id;
 		let setPlId = replacement.video.albumPlSetVideoId;
@@ -2961,8 +3086,7 @@ class Utils {
 						id: realAlbum.artist
 					})
 				}
-			},
-			this.UCreateWriteNoteMenuItemRenderer()
+			}
 		];
 
 		let l = current.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer;
@@ -2980,6 +3104,15 @@ class Utils {
 		current.cData = replacement;
 
 		return current;
+	};
+
+	static UModifyListItemRendererGenericForAlbumPage(lir) {
+		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
+		console.log("EDIT GENERIC", structuredClone(lir), lir.playlistItemData.videoId);
+
+		lir.menu.menuRenderer.items.push(this.UCreateWriteNoteMenuItemRenderer(lir.playlistItemData.videoId));
+		lir.menu.menuRenderer.items.push(this.UCreateAddTagMenuItemRenderer(lir.playlistItemData.videoId));
+		return lir;
 	};
 
 	static UModifyPlaylistPanelRendererFromData(current, replacement, realAlbum, artist) {
@@ -3496,8 +3629,7 @@ class Utils {
 										id: realAlbum.artist
 									})
 								}
-							},
-							this.UCreateWriteNoteMenuItemRenderer()
+							}
 						],
 						"topLevelButtons": [
 							{
@@ -3872,14 +4004,13 @@ class Utils {
 		let iconElem = this.UGetSVGFromRaw(icon, true, false);
 		this.UAddToClass(iconElem, "c-edit-btn");
 
-		for (let item of browsePage.querySelectorAll("#content-wrapper > #contents ytmusic-responsive-list-item-renderer")) {
+		for (let item of browsePage.querySelectorAll(U_HELPFUL_QUERIES.listItemRenderersOfCurrentBrowseResponse)) {
 			let newButton = iconElem.cloneNode(true);
 			
 			let fixedCols = item.querySelector("div.fixed-columns");
 			if (fixedCols) fixedCols.append(newButton);
 
-			let data = item.controllerProxy;
-			let videoId = this.UDigDict(data, ["__data", "data", "playlistItemData", "videoId"]);
+			let videoId = this.UDigDict(item, this.UDictGet.videoIdFromLIRElem);
 
 			if (videoId) newButton.onclick = () => onClick(item, videoId);
 		};
@@ -3900,6 +4031,68 @@ class Utils {
 		};
 	};
 
+	static UAddTitleIconToListItem(listItem, svgName, elemClass, thisData) {
+		let appendAt = listItem.querySelector(".flex-columns .title-column yt-formatted-string.title");
+		
+		let svg = this.UGetSVGFromRaw(svgName, false, false);
+		this.UAddToClass(svg, elemClass);
+
+		if (svgName === "tag") svg.style.fill = thisData.colour;
+		appendAt.append(svg);
+
+		svg.onmouseenter = function() {
+			for (let elem of listItem.querySelectorAll(".secondary-flex-columns yt-formatted-string")) {
+				UHideElem(elem);
+			};
+
+			let newText = document.createElement("a");
+			let cData = UDigDict(listItem, UDictGet.cDataFromElem);
+
+			newText.textContent = (svgName === "note") ? cData.customNote :
+				(svgName === "tag") ? thisData.text :
+				undefined;
+			
+			
+			
+			newText.setAttribute("class", "c-lir-subtitle");
+			listItem.querySelector(".secondary-flex-columns").append(newText);
+		};
+
+		svg.onmouseleave = function() {
+			for (let elem of listItem.querySelectorAll(".secondary-flex-columns yt-formatted-string")) {
+				UUnHideElem(elem);
+			};
+
+			listItem.querySelector(".c-lir-subtitle").remove();
+		};
+	};
+
+	static UAddTitleIconsToListItems(listItems) {
+		for (let item of listItems) {
+			let data = UDigDict(item, this.UDictGet.cDataFromElem);
+			if (!data) continue;
+
+			if (data.customNote && !item.querySelector(".c-lir-title-note")) {
+				this.UAddTitleIconToListItem(item, "note", "c-lir-title-note");
+			};
+			
+			for (let tag of (data.tags || [])) {
+				this.UAddTitleIconToListItem(item, "tag", "c-lir-title-tag", tag);
+			};
+		};
+	};
+
+
+	static UFillCDataOfListItem(storage, lir, data) {
+		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
+
+		if (!lir.cData) lir.cData = {};
+		
+		lir.cData.customNote = storage.customisation.notes[data.id];
+		lir.cData.tags = (storage.customisation.tags.videos[data.id] || []).map(v => storage.customisation.tags.tags[v]);
+
+	};
+
 	static UEndListItemPageEditMode(browsePage) {
 		browsePage.removeAttribute("c-editing");
 
@@ -3907,14 +4100,14 @@ class Utils {
 			item.remove();
 		};
 
-		let listItems = browsePage.querySelectorAll("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-list-item-renderer");
+		let listItems = browsePage.querySelectorAll(U_HELPFUL_QUERIES.listItemRenderersOfCurrentBrowseResponse);
 
 		let indexCount = 0;
 		for (let item of listItems) {
-			let data = this.UDigDict(item, ["controllerProxy", "__data", "data"]);
+			let data = this.UDigDict(item, this.UDictGet.dataFromElem);
 			if (!data) continue;			
 
-			let isDeleted = this.UDigDict(data, ["cData", "changedByDeletion", "isDeleted"]);
+			let isDeleted = this.UDigDict(data, this.UDictGet.cIsDeletedFromLIRData);
 			if (isDeleted) continue;
 			indexCount ++;
 
@@ -3967,6 +4160,15 @@ class Utils {
 	};
 
 
+
+	static UCreateTagSVG(text, col) {
+		let head = this.UGetSVGFromRaw("c-tag-head", false, false);
+		let body = this.UGetSVGFromRaw("c-")
+	};
+
+
+
+
 	static UPopups = {
 		DeleteFolderPopup: function(cont, folderName, folderId, folderElem) {
 			let popup = UCreatePopup({
@@ -4015,7 +4217,7 @@ class Utils {
 					folderId: folderId
 				});
 
-				URemovePopup(popup);
+				URemovePopup(popup, true);
 
 				// save new order in separate event..
 				setTimeout(function() {
@@ -4088,7 +4290,7 @@ class Utils {
 					plId: plId
 				});	
 
-				URemovePopup(popup);
+				URemovePopup(popup, true);
 				paperWrapper.querySelector(".c-paper-subtitle").textContent = "";
 			});
 
@@ -4104,7 +4306,7 @@ class Utils {
 					plId: plId
 				});
 
-				URemovePopup(popup);
+				URemovePopup(popup, true);
 				paperWrapper.querySelector(".c-paper-title").textContent = titleVal;
 				paperWrapper.querySelector(".c-paper-subtitle").textContent = subVal;
 			});		

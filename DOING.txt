@@ -40,7 +40,8 @@ update eventdriven & playerPageFeatures.
 EDIT AND DELETE BUTTON OF FOLDERS DON'T WORK (SIDEBAR)
 BUTTON TO UPDATE LIGHT COLOURS BASED ON PLAYING.
 need some sort of write lock for storage? eg: making a change, some cache event happens, overwrites and hides change.
-
+make CATEGORIES and RATINGS. RATINGS = 1-5 stars or smth, categories = too pop, nice pop, no texture, etc...
+gotta fix extraSongs, how does it cope with adding multiple  what happens to index :(
 
 CLEAR QUEUE BUTTON DOESNT CLEAR SERVER QUEUE.
 CLICK IT, THEN ADD SOMETHING ELSE TO THE QUEUE, THEN SHUFFLE IT.
@@ -83,3 +84,36 @@ DOES NOT work with private albums, no auth to get img in bkg script
 LIGHT ROTATING almost works, does 4 clicks then jumps one (cw), test acw
 
 //extra songs working, but check playlistSetVideoIds please, is looking odd. click first item in album (this is how tomorrow moves) and it stays hovered without a play button icon?
+
+SOUNDS LIKE LINKS!!
+todo: on cache, if tag playlist, update tags.
+tag playlist thumbnails!!
+playlist thimbnails!!
+MAKE IT ADD TO PLAYLIST WHEN CHOOSING UR NEW tag
+MAKE IT NOT ADD TAGS TWICE WHEN UPDATING
+CHECK VOERFLOW ON POPUP
+MAKE IT NOT DO QUOTES FOR TAGS, HOW CAN I MAKE TEXT FOR THAT BETTER?
+RATINGS NEXT.
+
+
+CAME FROM /next/ SMALL TASK:
+/*DONT DELETE THIS. ONGOING STRUGGLE, KEEP THE CODE!  let headerButtons = UDigDict(response, [
+				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
+				"watchNextTabbedResultsRenderer", "tabs", 0,
+				"tabRenderer", "content", "musicQueueRenderer",
+				"header", "musicQueueHeaderRenderer", "buttons"
+			]);
+
+			if (!headerButtons) return response; // has been changed in place.
+
+			headerButtons.push({
+				chipCloudChipRenderer: {
+					style: { styleType: "STYLE_DEFAULT" },
+					text: { runs: [ {text: "Clear Queue Actually" } ] },
+					navigationEndpoint: { dismissQueueCommand: {} },
+					icon: { iconType: "DISMISS_QUEUE" },
+					accessibilityData: { accessibilityData: { label: "Clear Queue" } },
+					isSelected: false,
+					uniqueId: "Clear"
+				}
+			});*/

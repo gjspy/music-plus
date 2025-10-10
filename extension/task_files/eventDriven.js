@@ -30,19 +30,23 @@ export async function MWEventDriven_PageChanges() {
 	};
 
 	async function _AlbumPage() {
-		let listItems = await UWaitForBySelector("ytmusic-browse-response ytmusic-responsive-list-item-renderer");
+		let listItems = await UWaitForBySelector(U_HELPFUL_QUERIES.listItemRenderersOfCurrentBrowseResponse);
 
 		for (let listItem of listItems) {
-			let thisCp = listItem.controllerProxy;
-			let data = UDigDict(thisCp, ["__data", "data", "cData"]);
+			let nameElem = listItem.querySelector(".title-column yt-formatted-string.title");
+			let nameText = nameElem.querySelector("a");
+
+			let title = nameElem.getAttribute("title");
+			nameText.setAttribute("title", title);
+			nameElem.removeAttribute("title");
+
+			let data = UDigDict(listItem, UDictGet.cDataFromElem);
+
 			if (!data) continue;
 
 			if (data.from) {
-				let nameElem = listItem.querySelector(".title-column yt-formatted-string.title");
-				if (!nameElem) continue;
-
-				let title = ((data.video) ? data.video.name : nameElem.getAttribute("title")) + " - " + data.from.name;
-				nameElem.setAttribute("title", title);
+				let thisTitle = ((data.video) ? data.video.name : title) + " - " + data.from.name;
+				nameText.setAttribute("title", thisTitle);
 			};
 
 			if (data.changedByDeletion) {
@@ -55,13 +59,11 @@ export async function MWEventDriven_PageChanges() {
 		};
 
 		UAddSkipIconsToListItems(listItems);
+		UAddTitleIconsToListItems(listItems);
 	};
 
 	function _UpdateMainSidebarButtons(state) {
-		let browseId = UDigDict(state, [
-			"navigation", "mainContent", "endpoint",
-			"data", "browseId"
-		]);
+		let browseId = UDigDict(state, UDictGet.browseIdFromPolymerState);
 		let browseHref = "browse/" + browseId;
 
 		let allWrappers = document.querySelectorAll(".c-paper-wrapper[is-primary]");
@@ -97,7 +99,7 @@ export async function MWEventDriven_PageChanges() {
 				break;
 		};
 
-		let edited = !!UDigDict(state, ["navigation", "mainContent", "response", "cMusicFixerExtChangedResponse"]);
+		let edited = !!UDigDict(state, UDictGet.cDidExtChangeResponse);
 		browsePage.setAttribute("c-edited", edited);
 
 		ButtonBar.UpdateButtons(state);
@@ -105,7 +107,7 @@ export async function MWEventDriven_PageChanges() {
 		_UpdateMainSidebarButtons(state);
 	};
 
-	async function _OnDOMChange(changes, browsePage) {
+	function _OnProgressBarValueChange(changes, browsePage) {
 		for (let change of changes) {
 			let attributeName = change.attributeName;
 			let target = change.target;
@@ -120,12 +122,71 @@ export async function MWEventDriven_PageChanges() {
 		};
 	};
 
+	function _OnPopupDropdownFocusedChange(changes) {
+		console.log("hello", changes[0]);
+		let change = changes[0];
+		let target = change.target;
+
+		if (target.getAttribute(change.attributeName)) return;
+
+		let lir = target.__data.positionTarget.closest("ytmusic-responsive-list-item-renderer");
+		if (!lir) return;
+
+		for (let menuItem of target.querySelectorAll(".ytmusic-menu-popup-renderer[role=\"menuitem\"]")) {
+			let data = menuItem.controllerProxy.__data.data;
+			console.log(data);
+
+			if (data.icon && data.icon.cSvg) {
+				let svg = UGetSVGFromRaw(data.icon.cSvg, false, false);
+				let current = menuItem.querySelector("svg");
+				
+				if (current) current.outerHTML = svg.outerHTML;
+				else menuItem.querySelector("yt-icon").append(svg);
+			};
+
+			if (data.serviceEndpoint) {
+				console.log(data.serviceEndpoint, data.serviceEndpoint.customEndpoint);
+				let custom = data.serviceEndpoint.customEndpoint;
+				
+				if (custom) {
+					menuItem.onclick = () => {
+						new CustomEndpointHandler(custom, lir);
+					};
+				};
+			};
+		};
+	};
+
+	async function _PopupDropdownFeatures() {
+		let popupCont = ( await UWaitForBySelector("ytmusic-popup-container") )[0];
+		let ironDropdown = ( await UWaitForBySelector("tp-yt-iron-dropdown", popupCont, true) )[0];
+
+		let observer2 = new MutationObserver((changes) => {
+			_OnPopupDropdownFocusedChange(changes);
+		});
+
+		observer2.observe(ironDropdown, {
+			childList: false,
+			subtree: false,
+			attributes: true,
+			attributeFilter: ["aria-hidden"],
+			attributeOldValue: false
+		});
+
+		// INIT
+		_OnPopupDropdownFocusedChange([{
+			target: ironDropdown,
+			attributeName: "aria-hidden"
+		}]);
+	};
+
 	async function _AsyncStartProcesses() {
 		let browsePage = ( await UWaitForBySelector("ytmusic-browse-response") )[0];
 		let navigationProgressBar = ( await UWaitForBySelector("yt-page-navigation-progress") )[0];
+		
 
 		let observer = new MutationObserver((changes) => {
-			_OnDOMChange(changes, browsePage);
+			_OnProgressBarValueChange(changes, browsePage);
 		});
 
 		observer.observe(navigationProgressBar, {
@@ -133,8 +194,10 @@ export async function MWEventDriven_PageChanges() {
 			subtree: false,
 			attributes: true,
 			attributeFilter: ["aria-valuenow"],
-			attributeOldValue: true
+			attributeOldValue: false
 		});
+
+		_PopupDropdownFeatures(); // DON'T AWAIT. WOULD BLOCK INIT.
 
 		// init
 		let state = polymerController.store.getState();

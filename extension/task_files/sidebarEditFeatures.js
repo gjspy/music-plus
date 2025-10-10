@@ -411,7 +411,7 @@ export async function MWSidebarEditFeatures() {
 				subtitle: subVal
 			});
 
-			URemovePopup(popup);
+			URemovePopup(popup, true);
 
 			// EXTENSION WORLD CALLS MAIN WORLD ONCE FOLDER DECLARED THERE.
 		});
@@ -460,7 +460,7 @@ export async function MWSidebarEditFeatures() {
 				title: titleVal
 			});
 
-			URemovePopup(popup);
+			URemovePopup(popup, true);
 		});
 	};
 

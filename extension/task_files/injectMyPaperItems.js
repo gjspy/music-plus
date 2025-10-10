@@ -758,10 +758,14 @@ export async function MWInjectMyPaperItems() {
 
 			this._foldersToOpen = currentOpenedFolders;
 
-			for (let elem of document.querySelectorAll("#guide .c-paper-wrapper:not([is-primary]), #guide .c-carousel, #guide .c-sidebar-sep")) elem.remove();
+			this.RemoveAllCGuideEntries();
 			this.thisInstanceAddedElementsIds = [];
 
 			this.InsertAllPaperItemsInOrder();			
+		};
+
+		RemoveAllCGuideEntries() {
+			for (let elem of document.querySelectorAll("#guide .c-paper-wrapper:not([is-primary]), #guide .c-carousel, #guide .c-sidebar-sep")) elem.remove();
 		};
 
 		Close() {
@@ -786,8 +790,7 @@ export async function MWInjectMyPaperItems() {
 			let ytLoadedPlaylists = this.EditYTDefaultPaperItems();
 			for (let item of ytLoadedPlaylists) this.ytLoadedPlaylists[item.id] = item;
 
-			for (let elem of document.querySelectorAll("#guide .c-paper-wrapper:not([is-primary]), #guide .c-carousel, #guide .c-sidebar-sep")) elem.remove();
-
+			this.RemoveAllCGuideEntries();
 			this.InsertAllPaperItemsInOrder(ytLoadedPlaylists);
 
 			this.RespondToPlayerBar();

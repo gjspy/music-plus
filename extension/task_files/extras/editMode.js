@@ -90,7 +90,7 @@ AlbumEditMode = class AlbumEditMode {
 
 		browsePage.setAttribute("c-editing", "hideSongs");
 
-		let listItems = document.querySelectorAll("ytmusic-browse-response #contents > ytmusic-two-column-browse-results-renderer ytmusic-section-list-renderer > #contents :first-child ytmusic-responsive-list-item-renderer");
+		let listItems = document.querySelectorAll(U_HELPFUL_QUERIES.listItemRenderersOfCurrentBrowseResponse);
 
 		let icon = UGetSVGFromRaw((buttonType === "hide") ? "delete" : "no-circle", true, false)
 		UAddToClass(icon, "c-edit-btn");
@@ -101,7 +101,7 @@ AlbumEditMode = class AlbumEditMode {
 
 		for (let listItem of listItems) {
 			let thisCp = listItem.controllerProxy;
-			let data = UDigDict(thisCp, ["__data", "data"]);
+			let data = UDigDict(listItem, UDictGet.dataFromElem);
 			if (!data) continue;
 
 			let changedByDeletionData = (data.cData) ? data.cData.changedByDeletion : undefined;
@@ -207,7 +207,7 @@ AlbumEditMode = class AlbumEditMode {
 				"id": id
 			});
 
-			URemovePopup(popup);
+			URemovePopup(popup, true);
 
 			setTimeout(() => UNavigate(
 				UBuildEndpoint({
@@ -345,7 +345,7 @@ AlbumEditMode = class AlbumEditMode {
 				"id": id
 			});
 
-			URemovePopup(popup);
+			URemovePopup(popup, true);
 
 			setTimeout(() => UNavigate(
 				UBuildEndpoint({
