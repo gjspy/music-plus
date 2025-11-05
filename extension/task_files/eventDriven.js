@@ -93,7 +93,7 @@ export async function MWEventDriven_PageChanges() {
 				_PlaylistPage(browsePage);
 				break;
 
-			case "MUSIC_PAGE_TYPE_ALBUM":
+			case "MUSIC_PAGE_TYPE_ALBUM" || "C_PAGE_TYPE_PRIVATE_ALBUM":
 				_AlbumAndPlaylistPage(browsePage);
 				_AlbumPage();
 				break;

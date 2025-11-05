@@ -217,7 +217,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		console.log("originalPlaylistPanelcontents", structuredClone(playlistPanel.contents));
 		console.log(request.cParams, (request.cParams || {}), (request.cParams || {}).buildQueueFrom);
 
-		let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(
+		let [newContents, currentVideoWE] = MiddlewareEditors._EditQueueContentsFromResponse(
 			storage,
 			playlistPanel.contents,
 			(request.cParams || {}).buildQueueFrom,
@@ -260,7 +260,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		if (!queueDatas) return;
 		let buildFrom = request.cParams ? request.cParams.buildQueueFrom : undefined;
 
-		let [newContents, currentVideoWE] = this._EditQueueContentsFromResponse(storage, queueDatas, buildFrom, request.body.playlistId, undefined, false, true, request.body.videoIds);
+		let [newContents, currentVideoWE] = MiddlewareEditors._EditQueueContentsFromResponse(storage, queueDatas, buildFrom, request.body.playlistId, undefined, false, true, request.body.videoIds);
 
 		if (newContents) response.queueDatas = newContents;
 		return response; // was changed in-place.
@@ -874,10 +874,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		// caching stuff
 		// need to edit album subtitleTwo total minutes based on contents.
 
-		//let type = UGetBrowsePageTypeFromBrowseId(id);
-
 		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id) || {};
-
 		console.log("replacements", structuredClone(idsToReplace));
 
 		let musicShelfRenderer = UDigDict(response, UDictGet.albumListItemShelfRendererFromBrowseResponse);
@@ -888,7 +885,6 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		let skippedSongs = storage.customisation.skippedSongs[id] || [];
 
 		UBrowseParamsByRequest.pageSpecific[cachedAlbum.mfId] = { buildQueueFrom: cachedAlbum.id };
-
 		console.log("listitems before", structuredClone(musicShelfRenderer.contents));
 
 		// iter thru each existing item, modify if necessary
@@ -969,6 +965,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		let indexCount = 0;
 		let totalSeconds = 0;
 		let songCount = 0;
+		let skippedTime = 0;
 
 		console.log("listItems now", musicShelfRenderer.contents);
 
@@ -984,10 +981,13 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			let hideThis = hiddenSongs.includes(lirId);
 			let thisIndex = Number(lir.index.runs[0].text);
 
+			let thisLenStr = UDigDict(lir, UDictGet.lengthStrFromLIRData);
+
 			let skipThis = skippedSongs.includes(lirId);
 			if (skipThis) {
 				if (!lir.cData) lir.cData = {};
 				lir.cData.skip = true;
+				skippedTime += ULengthStrToSeconds(thisLenStr);
 			};
 
 			if (hideThis && (!lir.cData || !lir.cData.changedByDeletion)) {
@@ -1002,7 +1002,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			// continue if is deleted dont want to increment.
 			if (UDigDict(lir, UDictGet.cIsDeletedFromLIRData)) continue;
 
-			let thisLenStr = UDigDict(lir, UDictGet.lengthStrFromLIRData);
+			
 
 			indexCount ++;
 			totalSeconds += ULengthStrToSeconds(thisLenStr);
@@ -1039,7 +1039,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				{ text: customMetadata.description }
 			];
 		};
-		
+
 		if (customMetadata.thumb) {
 			let thumbnails = [
 				{ url: customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
@@ -1055,8 +1055,43 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		if (albumType) headerRenderer.subtitle.runs[0].text = albumType;
 		if (customMetadata.year) headerRenderer.subtitle.runs[2].text = customMetadata.year;
 
+		if (customMetadata.artist) {
+			let cacheOfNewArtist = storage.cache[customMetadata.artist];
+
+			if (cacheOfNewArtist) {
+				headerRenderer.straplineTextOne = {
+					runs: [{
+						text: cacheOfNewArtist.name,
+						navigationEndpoint: UBuildEndpoint({
+							navType: "browse",
+							browseId: customMetadata.id
+						})
+					}]
+				};
+			};
+			
+			headerRenderer.straplineThumbnail = {
+				musicThumbnailRenderer: {
+					thumbnail: {
+						thumbnailCrop: "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+						thumbnailScale: "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED",
+						thumbnails: [{
+							url: cacheOfNewArtist.thumb,
+							width: UIMG_HEIGHT,
+							height: UIMG_HEIGHT
+						}]
+					}
+				}
+			};
+		};
+
 		headerRenderer.secondSubtitle.runs[0].text = `${songCount} songs`;
 		headerRenderer.secondSubtitle.runs[2].text = USecondsToLengthStr(totalSeconds, true, false);
+
+		headerRenderer.secondSubtitle.runs.push({text: U_YT_DOT});
+		headerRenderer.secondSubtitle.runs.push({
+			text: `${USecondsToLengthStr(totalSeconds - skippedTime, true, false)} unskipped`
+		});
 
 		let playButton = UGetButtonFromButtons(headerRenderer.buttons, "musicPlayButtonRenderer");
 		let firstLIR = musicShelfRenderer.contents[0].musicResponsiveListItemRenderer;

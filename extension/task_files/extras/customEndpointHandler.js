@@ -184,16 +184,37 @@ window.CustomEndpointHandler = class CustomEndpointHandler {
 		});
 
 		for (let row of popup.querySelectorAll(".c-popup-scroll-row")) {
+			let alreadyHasThese = storage.customisation.tags.videos[ctx.endpoint.videoId];
+			let alreadyHasThis = alreadyHasThese && alreadyHasThese.indexOf(row.cData.id) !== -1;
+
+			if (alreadyHasThis) row.style.background =  "#004400";
+
 			row.addEventListener("click", function() {
 				UDispatchEventToEW({
-					func: "add-video-to-tag",
+					func: (alreadyHasThis) ? "remove-video-from-tag" : "add-video-to-tag",
 					videoId: ctx.endpoint.videoId,
 					tagId: row.cData.id
 				});
 
-				UNavigate(UBuildEndpoint({
-					navType: ""
-				}))
+				
+				UNavigate((alreadyHasThis) ? {
+					playlistEditEndpoint: {
+						actions: [{
+							action: "ACTION_REMOVE_VIDEO",
+							removedVideoId: ctx.endpoint.videoId
+						}],
+						playlistId: row.cData.id.replace(/^VL/,"")
+					}
+				} : {
+					playlistEditEndpoint: {
+						actions: [{
+							action: "ACTION_ADD_VIDEO",
+							addedVideoId: ctx.endpoint.videoId,
+							dedupeOption: "DEDUPE_OPTION_CHECK"
+						}],
+						playlistId: row.cData.id.replace(/^VL/,"")
+					}
+				});
 
 				let lirs = document.querySelectorAll(`ytmusic-responsive-list-item-renderer:has([href*="${ctx.endpoint.videoId}"])`)
 				for (let lir of lirs) {
@@ -203,6 +224,9 @@ window.CustomEndpointHandler = class CustomEndpointHandler {
 					if (!cd.tags) cd.tags = [];
 					cd.tags.push(row.cData);
 				};
+
+				URemovePopup(popup);
+				UAddTitleIconsToListItems(document.querySelectorAll(U_HELPFUL_QUERIES.listItemRenderersOfCurrentBrowseResponse))
 			});
 		};
 	};

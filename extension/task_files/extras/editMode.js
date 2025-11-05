@@ -294,6 +294,20 @@ AlbumEditMode = class AlbumEditMode {
 					config: [
 						["label", "textContent", "Reset to default"]
 					]
+				},
+				{
+					class: "c-text-input",
+					id: "artist",
+					config: [
+						["label", "textContent", "Artist ID (UC..)"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_artist",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
 				}
 			],
 			actions: [

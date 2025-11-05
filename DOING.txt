@@ -89,12 +89,19 @@ SOUNDS LIKE LINKS!!
 todo: on cache, if tag playlist, update tags.
 tag playlist thumbnails!!
 playlist thimbnails!!
-MAKE IT ADD TO PLAYLIST WHEN CHOOSING UR NEW tag
+#MAKE IT ADD TO PLAYLIST WHEN CHOOSING UR NEW tag
 MAKE IT NOT ADD TAGS TWICE WHEN UPDATING
 CHECK VOERFLOW ON POPUP
 MAKE IT NOT DO QUOTES FOR TAGS, HOW CAN I MAKE TEXT FOR THAT BETTER?
 RATINGS NEXT.
+#make it let u remove tags from items
 
+#CAN'T MAKE SKIPS / CUSTOMISATION ON PRIV ONLY ALBUMS
+#subtitle runs for album show unskipped time
+#edit album artist
+
+want "recently most played" to give a queue full of ur top songs, nto a radio of that song
+for when we track plays.
 
 CAME FROM /next/ SMALL TASK:
 /*DONT DELETE THIS. ONGOING STRUGGLE, KEEP THE CODE!  let headerButtons = UDigDict(response, [

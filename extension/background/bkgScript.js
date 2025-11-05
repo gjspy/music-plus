@@ -1009,6 +1009,17 @@ async function EWOMAddVideoToTag(request) {
 	await utils.UStorageSetExternal(storage);
 };
 
+async function EWOMRemoveVideoFromTag(request) {
+	let storage = await utils.UStorageGetExternal(false);
+
+	let current = storage.customisation.tags.videos[request.videoId]
+
+	if (!current) return;
+	storage.customisation.tags.videos[request.videoId] = current.filter(v => v !== request.tagId);
+
+	await utils.UStorageSetExternal(storage);
+};
+
 async function EWOMAutoLights(request) {
 	let storage = await utils.UStorageGetLocal();
 
@@ -1085,6 +1096,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "auto-lights")				EWOMAutoLights(request);
 	else if (f === "add-note")					EWOMAddNote(request);
 	else if (f === "add-video-to-tag")			EWOMAddVideoToTag(request);
+	else if (f === "remove-video-from-tag")		EWOMRemoveVideoFromTag(request);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);
