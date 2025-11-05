@@ -1004,13 +1004,13 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			
 
-			indexCount ++;
+			
 			totalSeconds += ULengthStrToSeconds(thisLenStr);
 			songCount ++;
 
 			// EDIT INDEXES IF INCORRECT.
 			if ((thisIndex !== 0 && thisIndex !== indexCount) || isNaN(thisIndex)) {
-				lir.index.runs[0].text = String(indexCount);
+				lir.index.runs[0].text = String(indexCount+1);
 
 				if (!lir.cData) lir.cData = { changedByDeletion: {} };
 				if (!lir.cData.changedByDeletion) lir.cData.changedByDeletion = {};
@@ -1024,6 +1024,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				let titleEndpoint = UDigDict(lir, UDictGet.watchEndpointFromLIRDataTitle);
 				if (titleEndpoint) titleEndpoint.index = indexCount;
 			};
+
+			indexCount ++; // do after, as if playing priv album (tloas deluxe), yt starts at 0
 
 		};
 
@@ -1088,10 +1090,10 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		headerRenderer.secondSubtitle.runs[0].text = `${songCount} songs`;
 		headerRenderer.secondSubtitle.runs[2].text = USecondsToLengthStr(totalSeconds, true, false);
 
-		headerRenderer.secondSubtitle.runs.push({text: U_YT_DOT});
-		headerRenderer.secondSubtitle.runs.push({
-			text: `${USecondsToLengthStr(totalSeconds - skippedTime, true, false)} unskipped`
-		});
+		if (skippedTime !== 0) headerRenderer.secondSubtitle.runs.push(
+			{text: U_YT_DOT},
+			{text: `${USecondsToLengthStr(totalSeconds - skippedTime, true, false)} unskipped`}
+		);
 
 		let playButton = UGetButtonFromButtons(headerRenderer.buttons, "musicPlayButtonRenderer");
 		let firstLIR = musicShelfRenderer.contents[0].musicResponsiveListItemRenderer;

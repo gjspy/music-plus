@@ -29,7 +29,7 @@ hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 
 next, please do naming stuff to make ti consistent, artists and //albums.
 does album editing work with two being queued?
-shuffling with two?
+#shuffling with two?
 
 LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD, LIKE EDITMODE. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
 n3rds-inc.time
@@ -102,6 +102,8 @@ RATINGS NEXT.
 
 want "recently most played" to give a queue full of ur top songs, nto a radio of that song
 for when we track plays.
+
+#tloas deluxe doesnt have playlistSetVideoIds? //NOT THIS, INDEX issue.
 
 CAME FROM /next/ SMALL TASK:
 /*DONT DELETE THIS. ONGOING STRUGGLE, KEEP THE CODE!  let headerButtons = UDigDict(response, [
