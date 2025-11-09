@@ -104,6 +104,23 @@ want "recently most played" to give a queue full of ur top songs, nto a radio of
 for when we track plays.
 
 #tloas deluxe doesnt have playlistSetVideoIds? //NOT THIS, INDEX issue.
+albumify playlist.
+folder icons
+
+WORKS! LOOK AT WHETHER YT STATS THINK I DONT LIKE THE SONG:
+
+polymerController.playerUiService.playerApi.addEventListener("onVideoProgress", (e) => {
+	if (e >=180 ) polymerController.playerApi.seekTo(201)
+})
+polymerController.store.getState().queue.responsiveSignals.videoInteraction
+
+use deletePlaylistEndpoint (from dismiss queue, look at dropdown), to make a new clear queue. can we edit the queue playlist as given in this endpoint to remove removedVideoIds?
+
+song metadata editing - name, explicit, LYRICS, PLAY SECTION! SEE ABOVE! DO NOW!
+
+
+*** NEW BACKUPS SYSTEM: ***
+make it so it saves not literally EVERY time, but one every hour for the past 24 hours, then 1 a day for the past week/month?
 
 CAME FROM /next/ SMALL TASK:
 /*DONT DELETE THIS. ONGOING STRUGGLE, KEEP THE CODE!  let headerButtons = UDigDict(response, [

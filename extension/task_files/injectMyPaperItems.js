@@ -81,6 +81,23 @@ export async function MWInjectMyPaperItems() {
 				if (year && year !== -1) subtitle.push({text: year});
 			};
 
+			if (cachedInfo.type === "ARTIST") {
+				let songCount = 0;
+
+				for (let album of cachedInfo.discography) {
+					if (!album.startsWith("MPREb")) continue;
+
+					let albumInfo = this.storage.cache[album];
+					songCount += albumInfo.items.length;
+				};
+
+				subtitle.push(
+					{ text: "Artist" },
+					{ text: U_YT_DOT },
+					{ text: `${songCount} song${(songCount === 1) ? "" : "s"}`}
+				);
+			};
+
 			return subtitle;
 		};
 

@@ -1036,9 +1036,9 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		let headerRenderer = UDigDict(response, UDictGet.albumHeaderRendererFromBrowseResponse);
 
 		if (customMetadata.title) headerRenderer.title.runs = [ { text: customMetadata.title } ];
-		if (customMetadata.description) {
+		if (customMetadata.desc) {
 			headerRenderer.description.musicDescriptionShelfRenderer.description.runs = [
-				{ text: customMetadata.description }
+				{ text: customMetadata.desc }
 			];
 		};
 
@@ -1259,7 +1259,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		return this.MUSIC_PAGE_TYPE_ARTIST.apply(this, arguments);
 	};
 
-	static MUSIC_PAGE_TYPE_PLAYLIST(response, id) {
+	static MUSIC_PAGE_TYPE_PLAYLIST(response, id, storage) {
 		let listItems = UDigDict(response, UDictGet.listItemsFromBrowseResponseForListPage) || [];
 
 		for (let lir of listItems) {
@@ -1306,6 +1306,26 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			});
 
 			menuItems.splice(indexToAddNew, 1, toAdd);
+		};
+
+		let customMetadata = storage.customisation.metadata[id] || {};
+
+		let userOwnedHeaderRenderer = UDigDict(response, UDictGet.playlistHeaderRendererFromBrowseResponseUserOwned);
+		let otherHeaderRenderer = UDigDict(response, UDictGet.playlistHeaderRendererFromBrowseResponse);
+		let headerRenderer = userOwnedHeaderRenderer || otherHeaderRenderer;
+
+		if (customMetadata.thumb) {
+			let thumbnails = [
+				{ url: customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
+			];
+
+			headerRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
+			response.background.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
+		};
+
+		if (customMetadata.year) {
+			if (userOwnedHeaderRenderer) headerRenderer.subtitle.runs[4].text = customMetadata.year;
+			if (otherHeaderRenderer) headerRenderer.subtitle.runs[2].text = customMetadata.year;
 		};
 
 		return response; // changed in place, still return so acknowledges change

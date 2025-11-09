@@ -348,6 +348,13 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-icon-cont > .
 }
 
 
+a.c-paper-wrapper[plId^="UC"] .c-paper-icon-cont img,
+a.c-ovf-elem[plId^="UC"] .c-paper-icon-cont img,
+a.c-paper-wrapper[plId^="FEmusic_library_privately_owned_artist"] .c-paper-icon-cont img,
+a.c-ovf-elem[plId^="FEmusic_library_privately_owned_artist"] .c-paper-icon-cont img{
+	border-radius: 50% !important;
+}
+
 
 div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-icon-cont > .c-paper-icon {
 	width: 100%;
@@ -641,13 +648,6 @@ body:has([c-dragging="oob"]) {
 
 .c-ovf-elem .c-paper-subtitle > * {
 	flex-shrink: 0;
-}
-
-a.c-paper-wrapper[plId^="UC"] .c-paper-icon-cont img,
-a.c-ovf-elem[plId^="UC"] .c-paper-icon-cont img,
-a.c-paper-wrapper[plId^="FEmusic_library_privately_owned_artist"] .c-paper-icon-cont img,
-a.c-ovf-elem[plId^="FEmusic_library_privately_owned_artist"] .c-paper-icon-cont img{
-	border-radius: 50%;
 }
 
 .c-sidebar-sep {

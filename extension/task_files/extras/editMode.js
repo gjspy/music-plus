@@ -540,9 +540,117 @@ AlbumButtons = class AlbumButtons {
 	};
 };
 
+PlaylistEditMode = class AlbumEditMode {
+	static buttons = [
+		{ // change name, cover, single/ep/album!!, exact release date!!
+			type: "details",
+			icon: "pencil",
+			text: "Edit Album Metadata",
+			onclick: this.EditMetadata
+		}
+	];
+
+	static async EditMetadata(state, browsePage, id) {
+		let popup = UCreatePopup({
+			title: {
+				text: "Edit Album Metadata",
+				icon: "album"
+			},
+			content: [
+				{
+					class: "c-text-input",
+					id: "thumb",
+					config: [
+						["label", "textContent", "Thumbnail URL"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_thumb",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				},
+				{
+					class: "c-text-input",
+					id: "year",
+					config: [
+						["label", "textContent", "Year"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_year",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				}
+			],
+			actions: [
+				{
+					icon: null,
+					text: "Cancel",
+					id: "cancel",
+					style: "text-only",
+					defaultAction: "close"
+				},
+				{
+					icon: null,
+					text: "Submit",
+					id: "submit",
+					style: "light"
+				}
+			]
+		});
+
+		for (let check of popup.querySelectorAll(".c-check-input")) {
+			let id = check.getAttribute("id").replace("def_", "");
+			let textInput = popup.querySelector(`#${id}`);
+
+			check.addEventListener("change", function(e) {
+				if (e.target.checked) UAddToClass(textInput, "c-uninteractable");
+				else URemoveFromClass(textInput, "c-uninteractable");
+			});
+		};
+
+		popup.querySelector("#submit").addEventListener("click", function(e) {
+			let data = {};
+
+			for (let text of popup.querySelectorAll(".c-text-input")) {
+				let id = text.getAttribute("id");
+				let reset = popup.querySelector(`.c-check-input#def_${id} input`).checked;
+
+				if (reset) {
+					data["reset_" + id] = true;
+					continue;
+				};
+
+				let value = text.querySelector("input").value;
+				if (value !== "") data[id] = value;
+			};
+
+			UDispatchEventToEW({
+				func: "edit-metadata",
+				"data": data,
+				"id": id
+			});
+
+			URemovePopup(popup, true);
+
+			setTimeout(() => UNavigate(
+				UBuildEndpoint({
+					navType: "browse",
+					"id": id
+				})
+			), 2000);
+		});
+	};
+};
+
 window.ButtonBar = class MasterEditMode {
 	static specificEditModes = {
-		"MUSIC_PAGE_TYPE_ALBUM": AlbumEditMode
+		"MUSIC_PAGE_TYPE_ALBUM": AlbumEditMode,
+		"MUSIC_PAGE_TYPE_PLAYLIST": PlaylistEditMode
 	};
 
 	static specificButtons = {
