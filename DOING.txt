@@ -15,7 +15,7 @@ ARTISTS:
 
 RATINGS:
 	- custom ratings (star count?)
-	- tags to label songs with
+//	- tags to label songs with
 
 SONGS:
 	- add lyrics to private
@@ -39,9 +39,9 @@ update eventdriven & playerPageFeatures.
 
 EDIT AND DELETE BUTTON OF FOLDERS DON'T WORK (SIDEBAR)
 BUTTON TO UPDATE LIGHT COLOURS BASED ON PLAYING.
-need some sort of write lock for storage? eg: making a change, some cache event happens, overwrites and hides change.
+/Xneed some sort of write lock for storage? eg: making a change, some cache event happens, overwrites and hides change.
 make CATEGORIES and RATINGS. RATINGS = 1-5 stars or smth, categories = too pop, nice pop, no texture, etc...
-gotta fix extraSongs, how does it cope with adding multiple  what happens to index :(
+//gotta fix extraSongs, how does it cope with adding multiple  what happens to index :(
 
 CLEAR QUEUE BUTTON DOESNT CLEAR SERVER QUEUE.
 CLICK IT, THEN ADD SOMETHING ELSE TO THE QUEUE, THEN SHUFFLE IT.
@@ -69,13 +69,15 @@ CUSTOM VIEW COUNTS PLEASE!!! QUICKLY!!
 CAN GET FROM YT, WHEN queueImpress COMES THRU, MIGHT BE IN /next API REQUEST?
 
 
-MAKE ADDING EXTRA SONGS, JUST POPUP WITH videoId and index
+//MAKE ADDING EXTRA SONGS, JUST POPUP WITH videoId and index
 	- "remove" page, do squre popups, with cached information if its available, otherwise just videoId, index and whatever. do rows instead of square?
 give ability to hide releases: Dawn FM alternate worlds, let me delete the others
 
 custom automix!! or custom radio, based on selected albums (exclude skips!!)
 
 what is makeAUtomixInteractable in playerPgaeFeatures?
+
+"export human data" = give json response of playlist info, what songs (including name, album and id, for manual reading)
 
 DOING NOW:
 extraSongs nearly work, need to go back to
@@ -84,6 +86,41 @@ DOES NOT work with private albums, no auth to get img in bkg script
 LIGHT ROTATING almost works, does 4 clicks then jumps one (cw), test acw
 
 //extra songs working, but check playlistSetVideoIds please, is looking odd. click first item in album (this is how tomorrow moves) and it stays hovered without a play button icon?
+
+//REMOVE "DELETE SONG" FROM PPR
+
+CLEAN POPUP: HAVE DROPDOWN FOR "Queue", "Playlist", "Other": Report, Share, ..
+
+WORKING:
+//- won't delete "delete song" button
+//- WORKS playing live from paris when on page
+-// DOESNT WORK playing done beat saber from sidebar while live from paris open. - buildFrom issue
+//(think its actually just cus we dont select a videoRenderer, RDAMPL errors.)
+//- check upscaling thumbnails works (ONLY UPSCALE ICONS FOR NEWLY CREATED ELEMS.)
+
+STAGE CACHE UPDATE, ONLY PUBLISH TO SERVER EVERY MINUTE
+EG, ON UPDATE FOR WHATEVER, ADD TO QUEUE, TIMEOUT 60 SECONDS, GET MOST RECENT FROM LOCAL STORAGE AND GO?
+
+
+WHEN DO LYRIC EDITING, STORE THEM AS TXT FILES, NOT IN JSON.
+MOVE CACHE TO SEPARATE TXT FILE, SHOULD RLLY HAVE CACHE FOLDER WITH A FILE PER ID.
+YES DO THIS SUPER GOOD. EXPORT BUTTON TO RECEIVE A ZIP OF THEM!
+
+
+LYRIC EDTING! PRIVATE SONGS ALL HAVE A UNIQUE LYRIC ENDPOINT!!
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 SOUNDS LIKE LINKS!!
 todo: on cache, if tag playlist, update tags.

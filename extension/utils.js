@@ -106,7 +106,8 @@ class Utils {
 			badges: [],
 			type: "",
 			views: 0,
-			albumPlSetVideoId: ""
+			albumPlSetVideoId: "",
+			lyricEndpoint: ""
 		},
 		USER_CHANNEL: {
 			name: "",
@@ -187,6 +188,7 @@ class Utils {
 		browseIdFromPolymerState: ["navigation", "mainContent", "endpoint","data", "browseId"],
 		cDidExtChangeResponse: ["navigation", "mainContent", "response", "cMusicFixerExtChangedResponse"],
 		playlistPanelFromNextResponse: ["contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer","watchNextTabbedResultsRenderer", "tabs", 0,"tabRenderer", "content", "musicQueueRenderer","content", "playlistPanelRenderer"],
+		lyricPanelFromNextResponse: ["contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer","watchNextTabbedResultsRenderer", "tabs", 1,"tabRenderer"],
 		overlayButtonsFromNextResponse: ["playerOverlays", "playerOverlayRenderer", "actions"],
 		pageTypeFromNavigationEndpoint: ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"],
 		browseIdFromNavigationEndpoint: ["browseEndpoint", "browseId"],
@@ -195,6 +197,7 @@ class Utils {
 		menuItemsFromAnything: ["menu", "menuRenderer", "items"],
 		serviceEndpointFromMenuItem: ["menuServiceItemRenderer", "serviceEndpoint"],
 		serviceActionPlaylistEditEndpointFromMenuItem: ["menuServiceItemRenderer", "serviceEndpoint", "playlistEditEndpoint", "actions", 0, "action"],
+		endpointOnConfirmDialogFromNavigationMenuItem: ["menuNavigationItemRenderer", "navigationEndpoint", "confirmDialogEndpoint", "content", "confirmDialogRenderer", "confirmButton", "buttonRenderer", "command"],
 		backingPlaylistIdFromVideoRenderer: ["queueNavigationEndpoint", "queueAddEndpoint", "queueTarget", "backingQueuePlaylistId"],
 		albumListItemShelfRendererFromBrowseResponse: ["contents", "twoColumnBrowseResultsRenderer", "secondaryContents", "sectionListRenderer", "contents", 0, "musicShelfRenderer"],
 		albumHeaderRendererFromBrowseResponse: ["contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "musicResponsiveHeaderRenderer"],
@@ -1320,6 +1323,7 @@ class Utils {
 		if (browseId.match(/^MPADUC/)) return "MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY";
 		//if (browseId.match("^VLOL")) return "artist \"songs\" playlist"; //returns "MUSIC_PAGE_TYPE_PLAYLIST, doesnt work as a playlist page.";, can be album behind the scenes?
 		// VLRD = radio, does not work in browse
+		if (browseId.match(/^MPLYt/)) return "MUSIC_PAGE_TYPE_TRACK_LYRICS";
 
 		if (resultisImportant) {
 			if (browseId.match(/privately_owned_release_detail/)) return "MUSIC_PAGE_TYPE_ALBUM"; // NEED c_type because yt does not distinguish PRIVATE_ALBUM from ALBUM.
@@ -2138,14 +2142,17 @@ class Utils {
 		let indexToVideoIdOfThis = {}; // list of indexes to videoIds in REAL ALBUM (loadedFrom) only.
 
 		if (!buildingFromAlbum || !loadedFromAlbum) return;
-		if (buildingFromAlbum.private) return;
+		//TESTING WITHOUT THIS. WORKS OK! if (buildingFromAlbum.private) return;
 
 		// MAP INDEX TO VIDEO OF ALBUM WE HAVE LOADED.
 		// DO ALL BASED ON CACHE NOW, SO SHUFFLING DOESNT MATTER.
+		console.log("LOADEDFROMALBUM", {loadedFromAlbum});
+		console.log()
 		for (let video of (loadedFromAlbum.items || [])) {
 			video = cache[video] || {};
 			indexToVideoIdOfThis[video.index] = video.id;
 		};
+		console.log(structuredClone({indexToVideoIdOfThis}), "FIRST TIME");
 
 		let albumsToUse = [];
 		let primaryVersions = this.UGetPrimaryVersions(storage, buildQueueFrom) || [];
@@ -2208,8 +2215,8 @@ class Utils {
 		};
 		
 		// add extra songs that overwrite, easy for now
-		for (let song of extraSongs) {
-			if (!song.overwrite) continue;
+		/*for (let song of extraSongs) {NOW DO WITHOUT OVERWRITE HERE TOO
+			//if (!song.overwrite) continue;
 
 			let item = cache[song.videoId];
 			if (!item) continue;
@@ -2219,9 +2226,11 @@ class Utils {
 
 			changesByIndex[song.index] = {
 				video: item,
-				from: fromAlbum
+				from: fromAlbum//,
+				//extraSong: true,
+				//overwrite: song.overwrite
 			};
-		};
+		};*/
 
 		// if loading from smaller album, need extras from deluxe adding.
 		/*for (let item of buildingFromAlbum.items || []) {
@@ -2237,7 +2246,7 @@ class Utils {
 			};
 		};*/
 
-		let changesByOriginalId = {extraByIndex: {}};
+		let changesByOriginalId = {extraByIndex: {}, "indexToVideoIdOfThis": indexToVideoIdOfThis};
 
 		console.log("indexToVideoIdOfThis", indexToVideoIdOfThis);
 		console.log("changesByIndex", structuredClone(changesByIndex));
@@ -2247,6 +2256,27 @@ class Utils {
 
 			if (originalId) changesByOriginalId[originalId] = v;
 			else changesByOriginalId.extraByIndex[k] = v;
+		};
+
+		// ADD EXTRA SONGS
+		for (let song of extraSongs) {
+			let item = cache[song.videoId];
+			if (!item) continue;
+
+			let fromAlbum = cache[item.album];
+			if (!fromAlbum) continue;
+
+			// WON'T HAVE AN originalId AS IS NEW TO ALBUM
+			//let existingHere = changesByOriginalId[song.index];
+			//if (existingHere && song.overwrite) {
+			//	changesByOriginalId[song.index]
+			//}
+			changesByOriginalId.extraByIndex[song.index] = {
+				video: item,
+				from: fromAlbum,
+				manualExtra: true,
+				overwrite: song.overwrite
+			};
 		};
 
 		return changesByOriginalId;
@@ -2305,21 +2335,25 @@ class Utils {
 			extraSongsByIndex[song.index] = song;
 		};
 		let extraSongsIndexes = Object.keys(extraSongsByIndex);
+		console.log(structuredClone(extraSongsIndexes), structuredClone(extraSongsByIndex))
 
 		// SLOT IN ANY SONGS
-		let ii = -1;
+		//let ii = -1;
 		for (let item of structuredClone(cont)) {
 			if (createLIRs) item = item.musicResponsiveListItemRenderer;
 			if (createPPRs) item = this.UGetPlaylistPanelVideoRenderer(item);
-
-			ii ++;
 			
 			let thisIndex = (createLIRs) ? Number(item.index.runs[0].text) : item.navigationEndpoint.watchEndpoint.index;
 			let smaller = extraSongsIndexes.filter(v => Number(v) <= thisIndex).sort();
 
+			console.log("SMALLER", smaller, thisIndex, extraSongsIndexes, structuredClone(extraSongsByIndex), structuredClone(extraSongs));
+
 			for (let index of smaller) {
+				//ii ++;
+
 				let newItem = _CreateItemFromIndex(index);
-				cont.splice(ii, 0, newItem);
+				console.log(index)
+				cont.splice(Number(index)-1, 0, newItem);
 				extraSongsIndexes.splice(extraSongsIndexes.indexOf(index), 1);
 			};
 		};
@@ -3110,7 +3144,6 @@ class Utils {
 
 	static UModifyListItemRendererGenericForAlbumPage(lir) {
 		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
-		console.log("EDIT GENERIC", structuredClone(lir), lir.playlistItemData.videoId);
 
 		lir.menu.menuRenderer.items.push(this.UCreateWriteNoteMenuItemRenderer(lir.playlistItemData.videoId));
 		lir.menu.menuRenderer.items.push(this.UCreateAddTagMenuItemRenderer(lir.playlistItemData.videoId));
@@ -3712,7 +3745,7 @@ class Utils {
 				"thumbnail": {
 					"thumbnails": [
 						{
-							"url": replacement.from.thumb,
+							"url": this.UUpscaleThumbQualityStr(replacement.from.thumb),
 							"width": this.UIMG_HEIGHT,
 							"height": this.UIMG_HEIGHT
 						}

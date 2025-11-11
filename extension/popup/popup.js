@@ -214,6 +214,16 @@ async function setEntitiesToKeys() {
 	document.querySelector("#error").innerHTML = "done";
 };
 
+async function delEntry() {
+	let content = document.querySelector("#run-code-input").value;
+
+	let storage = await utils.UStorageGetExternal();
+	delete storage.cache[content];
+
+	await utils.UStorageSetExternal(storage);
+	document.querySelector("#error").innerHTML = "done";
+};
+
 async function dim() {
 	browser.runtime.sendMessage({
 		func: "auto-lights",
@@ -259,6 +269,7 @@ function activateButtons() {
 	document.getElementById("set-entities-api").addEventListener("click", setEntitiesToKeys);
 	document.getElementById("goto-ls").addEventListener("click", gotoLS);
 	document.getElementById("ref-side").addEventListener("click", refSide);
+	document.getElementById("del-cache-entry").addEventListener("click", delEntry);
 };
 
 init().then(function() {
