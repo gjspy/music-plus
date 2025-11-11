@@ -28,7 +28,8 @@ AlbumEditMode = class AlbumEditMode {
 		{
 			type: "remove-inserted",
 			icon: "delete",
-			text: "Remove Extra Songs"
+			text: "Remove Extra Songs",
+			onclick: this.RemoveInsertedSongs
 		},
 		{ // change name, cover, single/ep/album!!, exact release date!!
 			type: "details",
@@ -208,14 +209,79 @@ AlbumEditMode = class AlbumEditMode {
 			});
 
 			URemovePopup(popup, true);
-
-			setTimeout(() => UNavigate(
-				UBuildEndpoint({
-					navType: "browse",
-					"id": id
-				})
-			), 2000);
 		});
+	};
+
+	static async RemoveInsertedSongs(state, browsePage, id) {
+		let storage = await UMWStorageGet();
+		let currentExtraSongs = storage.customisation.extraSongs[id] || {};
+
+		let popup = UCreatePopup({
+			title: {
+				text: "Remove Song",
+				icon: "tag"
+			},
+			content: [
+				{
+					class: "c-popup-scroll-rows",
+					id: "removeInsertedSong",
+					config: [
+						["label", "textContent", "Inserted Songs"]
+					],
+					contents: {
+						items: currentExtraSongs.map((data) => {
+							let id_ = data.videoId;
+							let albumId = storage.cache[id_]?.album;
+							let album = (albumId) ? storage.cache[albumId] : undefined;
+
+							return {
+								videoId: id_,
+								videoName: storage.cache[id_]?.name,
+								albumData: (album) ? album.name : albumId,
+								thumb: (album) ? album.thumb : undefined,
+								index: data.index
+							};
+						}).sort((a,b) => Number(a.index) - Number(b.index)),
+						generator: function(scrollRow, item) {
+							console.log(scrollRow, item);
+							let img = document.createElement("img");
+							img.setAttribute("src", item.thumb);
+
+							scrollRow.querySelector(".left-item").append(img);
+							scrollRow.querySelector(".title-row").textContent = item.videoId + " : " + item.videoName;
+							scrollRow.querySelector(".subtitle-row").textContent = item.albumData;
+							scrollRow.cData = item;
+						}
+					}
+				}
+			],
+			actions: [
+				{
+					icon: null,
+					text: "Cancel",
+					id: "cancel",
+					style: "text-only",
+					defaultAction: "close"
+				}
+			]
+		});
+
+		for (let row of popup.querySelectorAll(".c-popup-scroll-row")) {
+
+			let handleClick =  function() {
+				UDispatchEventToEW({
+					func: "remove-inserted-song",
+					data: {videoId: row.cData.videoId},
+					"id": id
+				});
+
+				row.removeEventListener("click", handleClick);
+				row.style.cursor = "default";
+				row.style.opacity = 0.5;
+			};
+
+			row.addEventListener("click", handleClick);			
+		};
 	};
 
 	static async EditMetadata(state, browsePage, id) {

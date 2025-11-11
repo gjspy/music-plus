@@ -473,17 +473,20 @@ export async function MWInjectMyPaperItems() {
 			};
 
 
-			// title hierarchy: overwrite, ytLoaded, cached.
+			// title hierarchy: overwrite, cached, ytLoaded.
+			// used to be ytLoaded before cache, but was a problem:
+			// if you update pl name, yt entry doesnt change until refresh.
 
 			let title;
 			if (overwriteInfo && overwriteInfo.title) {
 				title = overwriteInfo.title;
 
-			} else if (ytLoadedInfo && ytLoadedInfo.title) {
-				title = ytLoadedInfo.title;
-
 			} else if (cachedInfo && cachedInfo.name) {
 				title = cachedInfo.name;
+
+			} else if (ytLoadedInfo && ytLoadedInfo.title) {
+				title = ytLoadedInfo.title;
+			
 			} else {
 				title = "?";
 			};

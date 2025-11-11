@@ -192,7 +192,32 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		});
 
 		return;
-	}
+	};
+
+
+	static CacheFromNextItems(request, response, lyricPanel) {
+		let lyricEndpoint = lyricPanel?.endpoint?.browseEndpoint?.browseId;
+
+		console.log("LYRIC", {lyricPanel, lyricEndpoint});
+
+		if (!lyricEndpoint) return;
+
+		let playingVideoId = response.currentVideoEndpoint?.watchEndpoint?.videoId;
+		console.log("LYRIC", {playingVideoId});
+		if (!playingVideoId) return;
+
+		let gathered = {
+			id: playingVideoId,
+			"lyricEndpoint": lyricEndpoint,
+			type: "SONG"
+		};
+		console.log("GATHERED", gathered);
+
+		UDispatchEventToEW({
+			func: "cache-data",
+			data: gathered
+		});
+	};
 
 
 	static TidyQueueNextItems(request, response, storage) {
@@ -210,6 +235,10 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		};
 
 		let playlistPanel = UDigDict(response, UDictGet.playlistPanelFromNextResponse);
+		let lyricPanel = UDigDict(response, UDictGet.lyricPanelFromNextResponse);
+
+		try {this.CacheFromNextItems(request, response, lyricPanel); }
+		catch (err) { console.trace(err); };
 
 		if (!playlistPanel || !playlistPanel.contents) return;
 		let isShuffle = request.body.watchNextType === "WATCH_NEXT_TYPE_MUSIC_SHUFFLE";
@@ -234,6 +263,24 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 
 		let currentVideoCache = storage.cache[currentVideoWE.videoId];
 		if (!currentVideoCache) return response; // changed in place
+
+		// LYRIC EDITING
+		// TODO!
+		console.log({currentVideoCache}, request.body.videoId, currentVideoWE.videoId)
+		if (request.body.videoId !== currentVideoWE.videoId) {
+			let lyricsBID = currentVideoCache.lyricEndpoint;
+			console.log({lyricsBID, lyricPanel});
+
+			if (lyricsBID && lyricPanel) {
+				lyricPanel.endpoint = UBuildEndpoint({
+					navType: "browse",
+					id: lyricsBID
+				});
+			};
+		};
+
+		lyricPanel && (lyricPanel.unselectable = false);
+
 
 		let overlayButtons = UDigDict(response, UDictGet.overlayButtonsFromNextResponse);
 		if (!overlayButtons) return response; // changed in place
@@ -699,10 +746,18 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			i ++;
 
 			let serviceAction = UDigDict(b, UDictGet.serviceActionPlaylistEditEndpointFromMenuItem);
-			if (!serviceAction) continue;
-			if (serviceAction !== "ACTION_REMOVE_VIDEO") continue
+			if (serviceAction === "ACTION_REMOVE_VIDEO" ) {
+				buttons.splice(i, 1);
+				i--;
+				continue;
+			};
 
-			buttons.splice(i, 1);
+			let navigateActionOnConfirm = UDigDict(b, UDictGet.endpointOnConfirmDialogFromNavigationMenuItem);
+			if (navigateActionOnConfirm && navigateActionOnConfirm.musicDeletePrivatelyOwnedEntityCommand) {
+				buttons.splice(i, 1)
+				i--;
+				continue;
+			};
 		};
 	};
 
@@ -715,6 +770,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		console.log("replacements", idsToReplace);
 		console.log("queueContentsBefore", structuredClone(queueContents));
 
+		let indexToVideoIdOfThis = idsToReplace.indexToVideoIdOfThis;
+
 		let cachedArtist = (buildFromAlbum.artist) ? storage.cache[buildFromAlbum.artist] : undefined;
 		let hiddenSongs = storage.customisation.hiddenSongs[buildQueueFromBId] || [];
 		let skippedSongs = storage.customisation.skippedSongs[buildQueueFromBId] || [];
@@ -722,9 +779,100 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		//hiddenSongs.push(...skippedSongs);
 
 		let backingPlaylistId; // for use later. get it in this loop from anything we can!
+		let videoRenderersData = queueContents.map((v) => {
+			let vr = UGetPlaylistPanelVideoRenderer(v);
+
+			if (!backingPlaylistId) backingPlaylistId = UDigDict(vr, UDictGet.backingPlaylistIdFromVideoRenderer);
+
+			return (vr) ? [vr.videoId, [v,vr]] : [undefined, undefined]
+		});
+		let videoRenderersByVideoId = Object.fromEntries(videoRenderersData);
+
+
+		// ITER 1: NORMAL STUFF
+		for (let [videoId, data] of videoRenderersData) {
+			if (!data) continue;
+			let [item, vr] = data;
+
+			let replacement = idsToReplace[videoId];
+
+			console.log(structuredClone({videoId, data, item, vr, replacement}));
+
+			if (replacement) UModifyPlaylistPanelRendererFromData(vr, replacement, buildFromAlbum, cachedArtist);
+			else if (vr) {
+				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage, vr, buildFromAlbum);
+				vr.cData = { video: cachedVideo, from: buildFromAlbum };// why did we set cData here? dont think it worked?
+
+				this._DeleteRemoveFromPlaylistButtonFromPPVR(vr);
+			};
+
+			if (videoIdToSelect) vr.selected = vr.videoId === videoIdToSelect;
+		};
+
+
+		// USER HAS CLICKED TO LOAD FROM A PLAYLIST, OR
+		// AN ALBUM ENDPOINT WITHOUT buildFrom CPARAM.
+		// ONLY WANTED TO DO FIRST ITERATION, TO EDIT LONGBYLINE + BUTTONS.
+		if (!buildQueueFromBId || buildFromAlbum?.type !== "ALBUM") {
+			console.log("leaving early!");
+			return [undefined, undefined];
+		};
+
+
+		let lastItem; // REMOVE AUTOMIX ITEM, ADD BACK LATER.
+		if (queueContents[queueContents.length - 1].automixPreviewVideoRenderer) {
+			lastItem = queueContents.pop();
+		};
+
+		let byIndex = idsToReplace.extraByIndex || {};
+		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
+		let maxIndex = Math.max(...Object.keys(indexToVideoIdOfThis).map(v => Number(v)));
+
+		let gappy = [];
+		for (let i = 0; i <= maxIndex + orderedExtraIndexes.length; i++) {
+			gappy[i] = videoRenderersByVideoId[indexToVideoIdOfThis[String(i)]] || [undefined, undefined];
+		};
+
+		let shuffleItemsToAdd = [];
+
+		console.log(structuredClone({videoRenderersByVideoId, byIndex, gappy}));
+
+		// ITER 2: CREATE NEW AND ADD IN PLACE, USING GAPS.
+		let i_ = -1;
+		for (let [item, vr] of gappy) { // NOT STRUCUTREDCLONE, IF IS THEN NO EDIT!
+			i_ ++;
+
+			console.log("ITER 1", structuredClone(item), structuredClone(vr));
+			let createNew = byIndex[String(i_)];
+
+			if (createNew) {
+				let newItem = UBuildPlaylistPanelRendererFromData(createNew, buildFromAlbum, cachedArtist, backingPlaylistId);
+				if (areQueueDatas) newItem = { content: newItem };
+
+				// INSERT IN RANDOM POSITION FOR SHUFFLE!
+				if (isShuffle) {
+					shuffleItemsToAdd.push(newItem);
+					continue;
+				};
+
+				vr = UGetPlaylistPanelVideoRenderer(newItem);
+				gappy[i_] = [newItem, vr];
+			};
+
+			if (videoIdToSelect && vr) vr.selected = vr.videoId === videoIdToSelect;
+		};
+
+		console.log("GAPPY AFTER", structuredClone(gappy));
+		queueContents = gappy.filter((v) => v[0] !== undefined && v[1] !== undefined).map((v) => v[0]);
+
+		for (let v of shuffleItemsToAdd) {
+			queueContents.splice(URandInt(1, queueContents.length), 0, v);
+		};
+
+
 
 		// FIRST ITERATION. REPLACE WHATEVER, IF NOT REPLACED EDIT LONG BYLINE.
-		for (let item of queueContents) {
+		/*for (let item of queueContents) {
 			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
 			if (!videoRenderer) continue;
 
@@ -756,15 +904,12 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		// next: only runs on first click, else just does hack: true
 		// get_queue: only returns the new section.
 
-		let lastItem; // REMOVE AUTOMIX ITEM, ADD BACK LATER.
-		if (queueContents[queueContents.length - 1].automixPreviewVideoRenderer) {
-			lastItem = queueContents.pop();
-		};
+		
 
 		// ADD EXTRA TO START/END
-		let byIndex = idsToReplace.extraByIndex || {};
-		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
 		
+
+
 		for (let index of orderedExtraIndexes) {
 			let replacement = byIndex[index];
 
@@ -780,14 +925,18 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			if (index === "0") queueContents.unshift(newVideoItem);
 			else queueContents.push(newVideoItem);
-		};
+		};*/
+
+		//if (isShuffle) {
+			// SHUFFLE. SO WE CAN JUST DO NORMAL INSERTION BEFORE, EASIER.
+		//};
 
 		// EXTRA SONGS
-		UAddNonOverwriteExtraSongsTo(
+		/*UAddNonOverwriteExtraSongsTo(
 			queueContents, buildQueueFromBId, buildFromAlbum, storage,
 			(areQueueDatas) ? "queueData" : "playlistPanelRenderer", 
 			{ artist: cachedArtist, backingQueuePlaylistId: backingPlaylistId }
-		);
+		);*/
 
 		if (lastItem) queueContents.push(lastItem);
 
@@ -811,6 +960,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		for (let item of queueContents) {
 			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
 
+			console.log(structuredClone(item), structuredClone(videoRenderer), "START OF EDIT ITERTAION(3)");
+
 			if (!videoRenderer) {
 				newContents.push(item);
 				continue;
@@ -818,7 +969,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			let we = UDigDict(videoRenderer, UDictGet.watchEndpointFromVideoRenderer);
 
-			console.log(
+			/*console.log(
 				item,
 				videoRenderer,
 				videoIdToSelect,
@@ -827,7 +978,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				"deleting",
 				hiddenSongs.includes(we.videoId),
 				(!videoRenderer.cData) || (videoRenderer.cData && videoRenderer.cData.from.id === loadedFromAlbum.id)
-			);
+			);*/
 
 			if (
 				hiddenSongs.includes(we.videoId) &&
@@ -889,16 +1040,18 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 		// iter thru each existing item, modify if necessary
 		let newContents = [];
+		let maxIndex = 0; // Number
+		let lirsByIndex = {} // Number: object
 
-		let i = -1;
 		for (let item of structuredClone(musicShelfRenderer.contents)) { // structuredClone, so wont edit ref of original!
-			i ++;
-
 			let data = UGetSongInfoFromListItemRenderer(item);
 			let replacement = idsToReplace[data.id];
 
 			let listItemRenderer = item.musicResponsiveListItemRenderer;
-			console.log(i, data.id, replacement, listItemRenderer);
+			let thisIndex = Number(listItemRenderer?.index?.runs[0].text);
+			if (thisIndex > maxIndex) maxIndex = thisIndex;
+			lirsByIndex[thisIndex] = item;
+			console.log(data.id, replacement, listItemRenderer);
 
 			// should remove base version of song.
 			// (use this to force building listitem instead of modify)
@@ -943,24 +1096,33 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 		// ADD EXTRA ITEMS TO START/END
 		let byIndex = idsToReplace.extraByIndex || {};
-
 		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
-		for (let index of orderedExtraIndexes) {
-			let replacement = byIndex[index];
+
+		// NEED TO MAKE IT WITH GAPS THEN REMOVE AT THE END
+		let gappy = [];
+		for (let i = 0; i <= maxIndex + orderedExtraIndexes.length; i++) gappy[i] = lirsByIndex[i] || undefined;
+
+		// GAPPY WORKS PERFECTLY! CREATES AN ARR WITH GAPS, LENGTH UP TO MAX FOUND INDEX + ALL EXTRA INDEXES
+		// FILL IN WITH GAPS, THEN REMOVE GAPS, AND UPDAT EINDEX TEXTS.
+		let i_ = -1;
+		for (let v of structuredClone(gappy)) {
+			i_ ++;
+
+			let replacement = byIndex[String(i_)];
+			if (!replacement) continue;
 
 			// use cachedAlbum from before, to keep public playlistIds etc.
 			let newListItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
 			UModifyListItemRendererGenericForAlbumPage(newListItem);
 			UFillCDataOfListItem(storage, newListItem, replacement.video);
+			newListItem.musicResponsiveListItemRenderer.index.runs[0].text = String(i_)
 
-			if (index === "0") musicShelfRenderer.contents.unshift(newListItem);
-			else musicShelfRenderer.contents.push(newListItem);
+			gappy[i_] = newListItem;
 		};
 
-		// NOW DO extraSongs CUSTOMISATION
-		// ADDS MORE SONGS HERE********
-		UAddNonOverwriteExtraSongsTo(musicShelfRenderer.contents, id, cachedAlbum, storage, "listItem");
+		musicShelfRenderer.contents = gappy.filter((v) => v !== undefined);
 
+	
 		// ALL REPLACEMENT NOW DONE, NOW UPDATE DELETION ATTRIBUTES AND FILL GAPS OF INDEXES.
 		let indexCount = 0;
 		let totalSeconds = 0;
@@ -970,7 +1132,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		console.log("listItems now", musicShelfRenderer.contents);
 
 		for (let lir of musicShelfRenderer.contents) {
-			lir = lir.musicResponsiveListItemRenderer;
+			let subLir = lir.musicResponsiveListItemRenderer;
+			if (subLir) lir = subLir;
 			let lirId = lir.playlistItemData.videoId;
 
 			// add per video id. used to do "all", but if clicked play from sidebar, would replace

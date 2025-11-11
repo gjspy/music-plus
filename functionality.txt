@@ -227,6 +227,7 @@ done:
 		edit metadata (title, subtitle, thumbnail URL, year, type (Album/EP/Single))
 		auto-detects release type for private uploads (single if only 1 song, identical to release name)
 		you can create notes and tags to add to album items
+		add new songs to an album which can fill a gap, append to the end or overwrite.
 	
 	playlist page
 		"remove from playlist" button on a song item's dropdown presents a popup confirmation dialog before removing.

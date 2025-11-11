@@ -992,6 +992,15 @@ async function EWOMInsertSongToAlbum(request) {
 	await utils.UStorageSetExternal(storage);
 };
 
+async function EWOMRemoveInsertedSong(request) {
+	let storage = await utils.UStorageGetExternal(false);
+	let extraSongs = storage.customisation.extraSongs[request.id] || [];
+	storage.customisation.extraSongs[request.id] = extraSongs.filter((v) => v.videoId !== request.data.videoId);
+	console.log("old", extraSongs, "new", storage.customisation.extraSongs[request.id])
+
+	await utils.UStorageSetExternal(storage);
+};
+
 async function EWOMAddNote(request) {
 	let storage = await utils.UStorageGetExternal(false);
 
@@ -1093,6 +1102,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "setSkip")					EWOMHideSongFromAlbum(request, sender);
 	else if (f === "edit-metadata")				EWOMEditMetadata(request, sender);
 	else if (f === "insert-song")				EWOMInsertSongToAlbum(request);
+	else if (f === "remove-inserted-song")		EWOMRemoveInsertedSong(request);
 	else if (f === "auto-lights")				EWOMAutoLights(request);
 	else if (f === "add-note")					EWOMAddNote(request);
 	else if (f === "add-video-to-tag")			EWOMAddVideoToTag(request);
