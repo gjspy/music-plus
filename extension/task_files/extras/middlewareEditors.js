@@ -582,7 +582,22 @@ window.MiddlewareEditors = class MiddlewareEditors {
 												},
 												straplineTextOne: straplineTextOne,
 												straplineThumbnail: straplineThumbnail,
-												//description: not doing, is not possible with private releases. add with cache later.
+												description: {
+													musicDescriptionShelfRenderer: {
+														description: { runs: [ ] },
+														shelfStyle: "MUSIC_SHELF_STYLE_OPEN_DIALOG_ON_CLICK",
+														moreButton: {
+															toggleButtonRenderer: {
+																isDisabled: false,
+																isToggled: false,
+																defaultIcon: { iconType: "EXPAND" },
+																defaultText: { runs: [{ text: "More" }] },
+																toggledIcon: { iconType: "COLLAPSE" },
+																toggledText: { runs: [{ text: "Less" }] }
+															}
+														}
+													}	
+												},
 												secondSubtitle: response.header.musicDetailHeaderRenderer.secondSubtitle
 											}
 										}
