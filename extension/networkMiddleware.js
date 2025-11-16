@@ -200,10 +200,12 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	return oldResp;
 };
 
-
+// EDIT DATA PREFLIGHT.
 function FetchModifyRequest(requestData, resource, body_) {
 	if (requestData.method !== "POST") return;
 	if (requestData.url.indexOf("youtubei/v1/playlist/create") !== -1) {
+		if (!body_.title.startsWith(U_TAG_PLAYLIST_DATA.titlePrefix)) return;
+		
 		body_.description = U_TAG_PLAYLIST_DATA.description;
 
 		const {

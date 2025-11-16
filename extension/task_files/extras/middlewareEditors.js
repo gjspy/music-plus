@@ -777,7 +777,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 	};
 
 	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas, queueDataRequestIds) {
-		let buildFromAlbum = storage.cache[buildQueueFromBId] || {};
+		let buildFromAlbum = (buildQueueFromBId) ? storage.cache[buildQueueFromBId] || {} : {};
 		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFromMfId) || {};
 		console.log(buildQueueFromBId, loadedQueueFromMfId, buildFromAlbum, loadedFromAlbum);
 

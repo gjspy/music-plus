@@ -2165,9 +2165,9 @@ class Utils {
 		if (primaryVersions) albumsToUse.push(...primaryVersions);
 		if (linkedAlbums) {
 			linkedAlbums = linkedAlbums
-				.map( v => cache[v] ) // docs: "a and b will never be undefined", so no placeholder.
-				.sort( (a, b) =>  (a.private && !b.private) ? 1 : (!a.private && b.private) ? -1 : b.items.length - a.items.length )
-				.map( v => v.id );
+				.map( v => { return { obj: cache[typeof(v) === "string" ? v : v.linkedId], off: v.offsetIndex }} ) // docs: "a and b will never be undefined", so no placeholder.
+				.sort( (a, b) => (a.obj.private && !b.obj.private) ? 1 : (!a.obj.private && b.obj.private) ? -1 : b.obj.items.length - a.obj.items.length )
+				.map( v => {return { id: v.obj.id, off: v.off }} );
 
 			// sort: (a,b): negative = a before b, positive = a after b, 0 or NaN = equal
 			// a is private and b is not: put a after always
@@ -2188,7 +2188,11 @@ class Utils {
 
 		let changesByIndex = {};
 
-		for (let album of albumsToUse) {
+		for (let data of albumsToUse) {
+			let dataDatatype = typeof(data);
+			let album = (dataDatatype === "string") ? data : data.id;
+			let offsetIndex = (dataDatatype === "string") ? undefined : data.off;
+
 			album = cache[album];
 			if (!album || album.items.length === 0) continue;
 
@@ -2196,7 +2200,9 @@ class Utils {
 				item = cache[item];
 				if (!item) continue;
 
-				let alreadyChanging = changesByIndex[item.index];
+				let index = (offsetIndex) ? String(Number(item.index) + Number(offsetIndex)) : item.index;
+
+				let alreadyChanging = changesByIndex[index];
 				if (alreadyChanging) {
 					if (alreadyChanging.from.private === true) continue;
 					// removed this. instead, made priority of albumsToUse correct. most important last.
@@ -2207,7 +2213,7 @@ class Utils {
 				// because midnights. queue built from original, replaced by 3am. 
 				// need to bring back to original.
 
-				changesByIndex[item.index] = {
+				changesByIndex[index] = {
 					video: item,
 					from: album
 				};

@@ -484,6 +484,20 @@ async function EWOMGetStorage(request, sender, sendResponse) {
 	console.log("after send message");
 };
 
+async function EWAddTagToStorage(request, storage) {
+	storage.customisation.tags.tags[request.cacheData.id] = {
+		id: request.cacheData.id,
+		colour: request.tagData.colour,
+		text: request.tagData.text
+	};
+
+	for (let videoId of request.cacheData.items) {
+		let existing = storage.customisation.tags.videos[videoId];
+		if (!existing) storage.customisation.tags.videos[videoId] = [];
+		storage.customisation.tags.videos[videoId].push(request.cacheData.id);
+	};
+};
+
 
 async function EWOMOnNewPlaylist(request, sender) {
 	let storage = await utils.UStorageGetExternal(false);
@@ -491,23 +505,20 @@ async function EWOMOnNewPlaylist(request, sender) {
 	storage.sidebar.paperItemOrder.unshift(request.cacheData.id);
 
 	if (request.tagData && request.tagData.colour) {
-		storage.customisation.tags.tags[request.cacheData.id] = {
-			id: request.cacheData.id,
-			colour: request.tagData.colour,
-			text: request.tagData.text
-		};
-
-		let videoId = request.cacheData.items[0];
-		let existing = storage.customisation.tags.videos[videoId];
-
-		if (!existing) storage.customisation.tags.videos[videoId] = [];
-		storage.customisation.tags.videos[videoId].push(request.cacheData.id);
+		EWAddTagToStorage(storage);
 	};
 
 	await utils.UStorageSetExternal(storage);
 
 	//EWOMOnPostCacheData(request, sender); // do this, so it sends new storage back.
 	utils.EWSendRefreshContSignalToMW(storage, sender.tab.id);
+};
+
+async function EWOMCreateTag(request, sender) {
+	let storage = await utils.UStorageGetExternal(false);
+
+	EWAddTagToStorage(request, storage);
+	await utils.UStorageSetExternal(storage);
 };
 
 async function EWOMOnDeletePlaylist(request, sender) {
@@ -600,6 +611,18 @@ async function EWCacheUpdateWithData(storable) {
 
 	for (let toStore of storable) {
 		console.log(JSON.stringify(toStore));
+
+		// ADD VIDEOS TO TAGS IF THEY EXIST
+		if (toStore.type === "PLAYLIST" && storage.customisation.tags.tags[toStore.id]) {
+			for (let videoId of toStore.items) {
+				let currentTagsOfVideo = storage.customisation.tags.videos[videoId] || [];
+				if (currentTagsOfVideo.length === 0) storage.customisation.tags.videos[videoId] = [];
+
+				if (currentTagsOfVideo.indexOf(videoId) === -1) {
+					storage.customisation.tags.videos[videoId].push(toStore.id)
+				};
+			};
+		};
 
 		let defaultData = utils.U_CACHE_FORMATS[toStore.type.match("VIDEO_TYPE") ? "SONG" : toStore.type];
 		let currentData = cache[toStore.id];
@@ -926,7 +949,10 @@ async function EWOMDefineLink(request) {
 		storage.customisation.albumLinks[request.baseItem] = [];
 	};
 
-	storage.customisation.albumLinks[request.baseItem].push(request.linkedItem);
+	storage.customisation.albumLinks[request.baseItem].push({
+		linkedId: request.linkedItem,
+		offsetIndex: request.offsetIndex
+	});
 
 	await utils.UStorageSetExternal(storage);
 };
@@ -1107,6 +1133,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "add-note")					EWOMAddNote(request);
 	else if (f === "add-video-to-tag")			EWOMAddVideoToTag(request);
 	else if (f === "remove-video-from-tag")		EWOMRemoveVideoFromTag(request);
+	else if (f === "create-tag")				EWOMCreateTag(request);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);

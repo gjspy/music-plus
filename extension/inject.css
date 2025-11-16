@@ -2211,7 +2211,7 @@ ytmusic-responsive-list-item-renderer:has(#stacked-layout-badges svg) .c-lir-sub
 	padding-left: 5px;
 }
 
-.c-lir-subtitle {
+ytmusic-responsive-list-item-renderer:has(svg.c-lir-title-note) .c-lir-subtitle {
 	font-size: 14px;
 	padding-left: 0px;
 
@@ -2219,12 +2219,21 @@ ytmusic-responsive-list-item-renderer:has(#stacked-layout-badges svg) .c-lir-sub
 	font-weight: 450;
 }
 
-.c-lir-subtitle::before {
+ytmusic-responsive-list-item-renderer:has(svg.c-lir-title-note) .c-lir-subtitle::before {
 	content: "“";
 }
 
-.c-lir-subtitle::after {
+ytmusic-responsive-list-item-renderer:has(svg.c-lir-title-note) .c-lir-subtitle::after {
 	content: "”";
+}
+
+ytmusic-responsive-list-item-renderer:has(svg.c-lir-title-tag) .c-lir-subtitle {
+	font-size: 14px;
+	padding-left: 5px;
+
+	color: #eeeeee;
+	font-weight: 500;
+	font-style: italic;
 }
 
 .c-colour-input {

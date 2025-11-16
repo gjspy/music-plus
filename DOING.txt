@@ -70,7 +70,7 @@ CAN GET FROM YT, WHEN queueImpress COMES THRU, MIGHT BE IN /next API REQUEST?
 
 
 //MAKE ADDING EXTRA SONGS, JUST POPUP WITH videoId and index
-	- "remove" page, do squre popups, with cached information if its available, otherwise just videoId, index and whatever. do rows instead of square?
+//	- "remove" page, do squre popups, with cached information if its available, otherwise just videoId, index and whatever. do rows instead of square?
 give ability to hide releases: Dawn FM alternate worlds, let me delete the others
 
 custom automix!! or custom radio, based on selected albums (exclude skips!!)
@@ -80,7 +80,7 @@ what is makeAUtomixInteractable in playerPgaeFeatures?
 "export human data" = give json response of playlist info, what songs (including name, album and id, for manual reading)
 
 DOING NOW:
-extraSongs nearly work, need to go back to
+//extraSongs nearly work, need to go back to
 //light control works okay, undimming is a bit slow
 DOES NOT work with private albums, no auth to get img in bkg script
 LIGHT ROTATING almost works, does 4 clicks then jumps one (cw), test acw
@@ -110,7 +110,7 @@ YES DO THIS SUPER GOOD. EXPORT BUTTON TO RECEIVE A ZIP OF THEM!
 LYRIC EDTING! PRIVATE SONGS ALL HAVE A UNIQUE LYRIC ENDPOINT!!
 
 
-
+//playing from playlist but loongbyline is edited, so cant click on the album of playing song, goes to playlist.
 
 
 
@@ -123,13 +123,13 @@ LYRIC EDTING! PRIVATE SONGS ALL HAVE A UNIQUE LYRIC ENDPOINT!!
 
 
 SOUNDS LIKE LINKS!!
-todo: on cache, if tag playlist, update tags.
+//todo: on cache, if tag playlist, update tags.
 tag playlist thumbnails!!
-playlist thimbnails!!
+//playlist thimbnails!!
 #MAKE IT ADD TO PLAYLIST WHEN CHOOSING UR NEW tag
 MAKE IT NOT ADD TAGS TWICE WHEN UPDATING
 CHECK VOERFLOW ON POPUP
-MAKE IT NOT DO QUOTES FOR TAGS, HOW CAN I MAKE TEXT FOR THAT BETTER?
+//MAKE IT NOT DO QUOTES FOR TAGS, HOW CAN I MAKE TEXT FOR THAT BETTER?
 RATINGS NEXT.
 #make it let u remove tags from items
 

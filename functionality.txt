@@ -221,7 +221,7 @@ done:
 		converts old album page (used for custom uploads) to updated style
 		shows cached view count for private songs
 		define the primary version, to overwrite the non-deluxe songs in the deluxe album
-		link other albums to overwrite songs
+		link other albums to overwrite songs (and can define index where overwriting starts)
 		hide songs
 		auto-skip songs but keep them visible
 		edit metadata (title, subtitle, thumbnail URL, year, type (Album/EP/Single))

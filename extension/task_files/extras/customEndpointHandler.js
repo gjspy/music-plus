@@ -66,7 +66,7 @@ window.CustomEndpointHandler = class CustomEndpointHandler {
 		});
 	};
 
-	CreateTag() {
+	CreateTag(playlistId) {
 		let popup = UCreatePopup({
 			title: {
 				text: "Create Tag",
@@ -111,13 +111,29 @@ window.CustomEndpointHandler = class CustomEndpointHandler {
 			let title = popup.querySelector(".c-text-input input").value;
 			let col = popup.querySelector(".c-colour-input input").value;
 
+			let tagData = { colour: col, text: title };
+
+			if (playlistId) {
+				UMWStorageGet().then((storage) => {
+					UDispatchEventToEW({
+						func: "create-tag",
+						cacheData: storage.cache[playlistId],
+						"tagData": tagData
+					});
+
+					URemovePopup(popup, true);
+				});
+
+				return;
+			};
+
 			UNavigate(UBuildEndpoint({
 				navType: "createPlaylist",
 				"title": U_TAG_PLAYLIST_DATA.titlePrefix + title,
 				privacyStatus: "Private",
-				description: U_TAG_PLAYLIST_DATA.description,
+				description: U_TAG_PLAYLIST_DATA.description, // donmt think this works, added preflight.
 				videoIds: [ctx.endpoint.videoId],
-				cParams: { colour: col, text: title }
+				cParams: tagData
 			}));
 
 			URemovePopup(popup, true);

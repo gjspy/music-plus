@@ -210,6 +210,8 @@ AlbumEditMode = class AlbumEditMode {
 
 			URemovePopup(popup, true);
 		});
+
+		popup.querySelector("#cancel").addEventListener("click", () => ButtonBar.CancelAll());
 	};
 
 	static async RemoveInsertedSongs(state, browsePage, id) {
@@ -438,20 +440,67 @@ AlbumEditMode = class AlbumEditMode {
 
 	static async LinkMode(state, browsePage, id) {
 		function OnClickItem(chosenId) {
-			UDispatchEventToEW({
-				func: "defineLink",
-				baseItem: id,
-				linkedItem: chosenId
+			ButtonBar.RemoveOVF();
+
+			let popup = UCreatePopup({
+				title: {
+					text: "Start Index",
+					icon: "album"
+				},
+				content: [
+					{
+						class: "c-popup-text-line",
+						config: [
+							["label", "innerHTML", "Are the indexes of these albums offset? If not, leave this blank. Else, what index of the larger album should be overitten by the first item of the smaller album?"]
+						]
+					},
+					{
+						class: "c-text-input",
+						id: "offset",
+						config: [
+							["label", "textContent", "Offset Index"]
+						]
+					}
+				],
+				actions: [
+					{
+						icon: null,
+						text: "Cancel",
+						id: "cancel",
+						style: "text-only",
+						defaultAction: "close"
+					},
+					{
+						icon: null,
+						text: "Submit",
+						id: "submit",
+						style: "light"
+					}
+				]
 			});
 
-			ButtonBar.CancelAll();
+			popup.querySelector("#submit").addEventListener("click", function() {
+				UDispatchEventToEW({
+					func: "defineLink",
+					baseItem: id,
+					linkedItem: chosenId,
+					offsetIndex: popup.querySelector("#offset input").value
+				});
 
-			setTimeout(() => UNavigate(
-				UBuildEndpoint({
-					navType: "browse",
-					"id": id
-				})
-			), 2000);
+				ButtonBar.CancelAll();
+				URemovePopup(popup);
+
+				setTimeout(() => UNavigate(
+					UBuildEndpoint({
+						navType: "browse",
+						"id": id
+					})
+				), 2000);
+			});
+
+			popup.querySelector("#cancel").addEventListener("click", () => ButtonBar.CancelAll());
+
+			
 			
 		};
 
@@ -609,10 +658,16 @@ AlbumButtons = class AlbumButtons {
 PlaylistEditMode = class AlbumEditMode {
 	static buttons = [
 		{ // change name, cover, single/ep/album!!, exact release date!!
-			type: "details",
+			type: "details", // "type" IS THE ID!
 			icon: "pencil",
 			text: "Edit Album Metadata",
 			onclick: this.EditMetadata
+		},
+		{
+			type: "tag",
+			icon: "tag",
+			text: "Create Tag from playlist",
+			onclick: this.CreateTagFrom
 		}
 	];
 
@@ -711,6 +766,11 @@ PlaylistEditMode = class AlbumEditMode {
 			), 2000);
 		});
 	};
+
+	static async CreateTagFrom(state, browsePage, id) {
+		let handler = new CustomEndpointHandler({}, undefined);
+		handler.CreateTag(id);
+	};
 };
 
 window.ButtonBar = class MasterEditMode {
@@ -784,14 +844,18 @@ window.ButtonBar = class MasterEditMode {
 		this.buttonCont.__data.buttons[type].onclick = undefined;
 	};
 
+	static RemoveOVF() {
+		let ovfCont = document.querySelector(".c-popup-elem-overflow");
+		if (ovfCont) ovfCont.remove();
+	};
+
 	static CancelAll() {
 		let buttonCont = document.querySelector("ytmusic-nav-bar #right-content .c-master-buttons");
 
 		UHideElem(buttonCont.__data.buttons.CANCEL);
 		UUnHideElem(buttonCont.__data.buttons.EDIT);
 
-		let ovfCont = document.querySelector(".c-popup-elem-overflow");
-		if (ovfCont) ovfCont.remove();
+		this.RemoveOVF();
 
 		let browsePage = document.querySelector("ytmusic-browse-response");
 		if (browsePage) {
