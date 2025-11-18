@@ -10,6 +10,8 @@ export async function MWEventDriven_PageChanges() {
 		let editBtn = (await UWaitForBySelector("#primary #contents div.thumbnail-edit-button-wrapper", browsePage))[0];
 
 		thumbRenderer.append(editBtn);
+
+		let listItems = await UWaitForBySelector(U_HELPFUL_QUERIES.listItemRenderersOfCurrentBrowseResponse);
 		UAddTitleIconsToListItems(listItems);
 	};
 

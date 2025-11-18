@@ -976,7 +976,7 @@ class Utils {
 				e.preventDefault();
 				e.stopImmediatePropagation();
 
-				UPopups.RenamePopup(elem);
+				UPopupRename(elem);
 			});
 
 			let thisDeleteButton = deleteIcon.cloneNode(true);
@@ -988,7 +988,7 @@ class Utils {
 				e.stopImmediatePropagation();
 				
 				let name = elem.querySelector(".c-paper-text-cont .c-paper-title").textContent;
-				UPopups.DeleteFolderPopup(elem.parentElement, name, elem.getAttribute("plId"), elem);
+				UPopupDeleteFolder(elem.parentElement, name, elem.getAttribute("plId"), elem);
 			});
 
 			let expandButton = expandIcon.cloneNode(true);
@@ -2147,7 +2147,7 @@ class Utils {
 		// MAP INDEX TO VIDEO OF ALBUM WE HAVE LOADED.
 		// DO ALL BASED ON CACHE NOW, SO SHUFFLING DOESNT MATTER.
 		console.log("LOADEDFROMALBUM", {loadedFromAlbum});
-		console.log()
+
 		for (let video of (loadedFromAlbum.items || [])) {
 			video = cache[video] || {};
 			indexToVideoIdOfThis[video.index] = video.id;
@@ -2219,38 +2219,6 @@ class Utils {
 				};
 			};
 		};
-		
-		// add extra songs that overwrite, easy for now
-		/*for (let song of extraSongs) {NOW DO WITHOUT OVERWRITE HERE TOO
-			//if (!song.overwrite) continue;
-
-			let item = cache[song.videoId];
-			if (!item) continue;
-
-			let fromAlbum = cache[item.album];
-			if (!fromAlbum) continue;
-
-			changesByIndex[song.index] = {
-				video: item,
-				from: fromAlbum//,
-				//extraSong: true,
-				//overwrite: song.overwrite
-			};
-		};*/
-
-		// if loading from smaller album, need extras from deluxe adding.
-		/*for (let item of buildingFromAlbum.items || []) {
-			item = cache[item];
-			if (!item || indexToVideoIdOfThis[item.index] !== undefined) continue;
-			
-			let alreadyChanging = changesByIndex[item.index];
-			if (alreadyChanging) continue; // low priority.
-
-			changesByIndex[item.index] = {
-				video: item,
-				from: buildingFromAlbum
-			};
-		};*/
 
 		let changesByOriginalId = {extraByIndex: {}, "indexToVideoIdOfThis": indexToVideoIdOfThis};
 
@@ -2299,76 +2267,6 @@ class Utils {
 		if (!id) return undefined;
 
 		return cache[id];
-	};
-
-	static UAddNonOverwriteExtraSongsTo(cont, albumId, cachedAlbum, storage, itemType, pprData) {
-		function _CreateItemFromIndex(index) {
-			let song = extraSongsByIndex[index];
-
-			let item = storage.cache[song.videoId];
-			if (!item) return;
-
-			item.index = index;
-
-			let album = storage.cache[item.album];
-			let replacement = {video: item};
-			if (album) replacement.from = album;
-
-			let newItem;
-			if (createLIRs) {
-				newItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
-				UModifyListItemRendererGenericForAlbumPage(newItem);
-				UFillCDataOfListItem(storage, newItem, replacement.video.id);
-
-			} else if (createPPRs) {
-				newItem = UBuildPlaylistPanelRendererFromData(replacement, cachedAlbum, pprData.artist, pprData.backingQueuePlaylistId);
-			};
-
-			if (createQueueDatas) newItem = { content: newItem };
-			
-			return newItem;
-		};
-
-		let createLIRs = itemType === "listItem";
-		let createPPRs = itemType === "playlistPanelRenderer" || itemType === "queueData";
-		let createQueueDatas = itemType === "queueData";
-
-		let extraSongs = storage.customisation.extraSongs[albumId] || [];
-		let extraSongsByIndex = {};
-		for (let song of extraSongs) {
-			if (song.overwrite) continue; // DONE EARLIER, IN UGetIdsToReplaceFromRealAlbum.
-
-			extraSongsByIndex[song.index] = song;
-		};
-		let extraSongsIndexes = Object.keys(extraSongsByIndex);
-		console.log(structuredClone(extraSongsIndexes), structuredClone(extraSongsByIndex))
-
-		// SLOT IN ANY SONGS
-		//let ii = -1;
-		for (let item of structuredClone(cont)) {
-			if (createLIRs) item = item.musicResponsiveListItemRenderer;
-			if (createPPRs) item = this.UGetPlaylistPanelVideoRenderer(item);
-			
-			let thisIndex = (createLIRs) ? Number(item.index.runs[0].text) : item.navigationEndpoint.watchEndpoint.index;
-			let smaller = extraSongsIndexes.filter(v => Number(v) <= thisIndex).sort();
-
-			console.log("SMALLER", smaller, thisIndex, extraSongsIndexes, structuredClone(extraSongsByIndex), structuredClone(extraSongs));
-
-			for (let index of smaller) {
-				//ii ++;
-
-				let newItem = _CreateItemFromIndex(index);
-				console.log(index)
-				cont.splice(Number(index)-1, 0, newItem);
-				extraSongsIndexes.splice(extraSongsIndexes.indexOf(index), 1);
-			};
-		};
-
-		// APPEND ANY SONGS LEFT
-		for (let index of extraSongsIndexes) {
-			let newItem = _CreateItemFromIndex(index);
-			cont.push(newItem);
-		};
 	};
 
 
@@ -2583,7 +2481,6 @@ class Utils {
 	};
 
 	static UCreateWriteNoteMenuItemRenderer(videoId) {
-		console.log(videoId);
 		return {
 			"menuServiceItemRenderer": {
 				"text": {
@@ -3148,11 +3045,53 @@ class Utils {
 		return current;
 	};
 
-	static UModifyListItemRendererGenericForAlbumPage(lir) {
+	static UModifyListItemRendererForAnyPage(storage, browsePageType, lir) {
 		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
 
 		lir.menu.menuRenderer.items.push(this.UCreateWriteNoteMenuItemRenderer(lir.playlistItemData.videoId));
 		lir.menu.menuRenderer.items.push(this.UCreateAddTagMenuItemRenderer(lir.playlistItemData.videoId));
+
+		if (browsePageType === "MUSIC_PAGE_TYPE_PLAYLIST") {
+			let id = lir.playlistItemData?.videoId;
+			if (!id) return lir;
+
+			let cacheThis = storage.cache[id];
+			if (!cacheThis.album || (cacheThis.artists || []).length === 0) return lir;
+
+			let customisationAlbum = storage.customisation.metadata[cacheThis.album] || {};
+			let artistId = customisationAlbum.artist || (cacheThis.type === "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK") ? (storage.cache[cacheThis.artists[0]].privateCounterparts[0]) : cacheThis.artists[0];
+			let customisationArtist = storage.customisation.metadata[artistId] || {};
+
+			let artistCache = storage.cache[artistId];
+
+			if (customisationAlbum.thumb) {
+				lir.thumbnail.musicThumbnailRenderer = {
+					"thumbnail": {
+						"thumbnails": [
+							{
+								"url": customisationAlbum.thumb,
+								"width": this.UIMG_HEIGHT,
+								"height": this.UIMG_HEIGHT
+							}
+						]
+					},
+					"thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+					"thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+				};
+			};
+
+			if (customisationAlbum.title) lir.flexColumns[2].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = customisationAlbum.title;
+
+			lir.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs = [{
+				text: customisationArtist.name || artistCache.name,
+				navigationEndpoint: this.UBuildEndpoint({navType: "browse", id: artistId})
+			}];
+
+			// TODO: CHECK THESE WORK WHEN ADDING ARTIST CUSTOMISATIOn
+			// TODO: ADD DEFINING EXPLICIT SONGS
+			// TODO customisationSong FOR SONG NAME ETCs
+		};
+
 		return lir;
 	};
 
@@ -3178,7 +3117,6 @@ class Utils {
 		we.videoId = vId;
 		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (realAlbum.private === true) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
 		if (plSetId) we.playlistSetVideoId = plSetId;
-		// war
 
 		current.videoId = vId;
 		current.queueNavigationEndpoint.queueAddEndpoint.videoId = vId;
@@ -3408,6 +3346,52 @@ class Utils {
 		return current;
 	};
 
+	static UModifyPlaylistPanelRendererNotReplacement(storage, videoId, ppr) {
+		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
+
+		lir.menu.menuRenderer.items.push(this.UCreateWriteNoteMenuItemRenderer(lir.playlistItemData.videoId));
+		lir.menu.menuRenderer.items.push(this.UCreateAddTagMenuItemRenderer(lir.playlistItemData.videoId));
+
+		let id = lir.playlistItemData?.videoId;
+		if (!id) return;
+
+		let cacheThis = storage.cache[id];
+		if (!cacheThis.album || (cacheThis.artists || []).length === 0) return;
+
+		let customisationAlbum = storage.customisation.metadata[cacheThis.album] || {};
+		let artistId = customisationAlbum.artist || (cacheThis.type === "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK") ? (storage.cache[cacheThis.artists[0]].privateCounterparts[0]) : cacheThis.artists[0];
+		let customisationArtist = storage.customisation.metadata[artistId] || {};
+
+		let artistCache = storage.cache[artistId];
+
+		if (customisationAlbum.thumb) {
+			lir.thumbnail.musicThumbnailRenderer = {
+				"thumbnail": {
+					"thumbnails": [
+						{
+							"url": customisationAlbum.thumb,
+							"width": this.UIMG_HEIGHT,
+							"height": this.UIMG_HEIGHT
+						}
+					]
+				},
+				"thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+				"thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+			};
+		};
+
+		if (customisationAlbum.title) lir.flexColumns[2].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = customisationAlbum.title;
+
+		lir.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs = [{
+			text: customisationArtist.name || artistCache.name,
+			navigationEndpoint: this.UBuildEndpoint({navType: "browse", id: artistId})
+		}];
+
+		// TODO: CHECK THESE WORK WHEN ADDING ARTIST CUSTOMISATIOn
+		// TODO: ADD DEFINING EXPLICIT SONGS
+		// TODO customisationSong FOR SONG NAME ETCs
+	};
+
 	static UBuildListItemRendererFromDataForAlbumPage(replacement, realAlbum) {
 		let video = replacement.video;
 
@@ -3418,7 +3402,7 @@ class Utils {
 			navType: "watch",
 			playlistId: realAlbum.mfId,
 			firstVideo: video,
-			index: index, // zero base index.
+			index: index, // zero base index. TODO IS THIS THE ISSUE
 			playlistSetVideoId: video.albumPlSetVideoId
 		});
 
@@ -4208,21 +4192,105 @@ class Utils {
 	};
 
 
-
-
-	static UPopups = {
-		DeleteFolderPopup: function(cont, folderName, folderId, folderElem) {
-			let popup = UCreatePopup({
-				title: {
-					text: "Delete Folder",
-					icon: "folder"
+	static UPopupDeleteFolder(cont, folderName, folderId, folderElem) {
+		let popup = UCreatePopup({
+			title: {
+				text: "Delete Folder",
+				icon: "folder"
+			},
+			content: [{
+				class: "c-popup-text-line",
+				config: [
+					["label", "innerHTML", `Are you sure you want to delete your folder "${folderName}"?<br/>Your playlists will not be deleted.`]
+				]
+			}],
+			actions: [
+				{
+					icon: null,
+					text: "Cancel",
+					style: "text-only",
+					defaultAction: "close"
 				},
-				content: [{
-					class: "c-popup-text-line",
-					config: [
-						["label", "innerHTML", `Are you sure you want to delete your folder "${folderName}"?<br/>Your playlists will not be deleted.`]
-					]
-				}],
+				{
+					icon: null,
+					text: "Confirm",
+					style: "light"
+				}
+			]
+		});
+
+		popup.querySelector("#confirm").addEventListener("click", function(e) {
+			// here, is easy to keep edit mode.
+			// move all elems out of folder. insert above where folder was.
+			let subElems = folderElem.querySelectorAll(".c-paper-folder-cont > *");
+
+			for (let elem of subElems) {
+				folderElem.parentElement.insertBefore(elem, folderElem);
+				// will go in order, bcs folderElem keeps moving down.
+				// no need to reverse. just remove folder after.
+			};
+
+			folderElem.remove();
+			
+			// send event to delete folder from storage
+			// dispatch custom event, received by isolated contentscript, messaged to bkg
+			UDispatchEventToEW({
+				func: "sidebar-delete-folder",
+				folderId: folderId
+			});
+
+			URemovePopup(popup, true);
+
+			// save new order in separate event..
+			setTimeout(function() {
+				USaveNewOrder(cont);
+			}, 500); // delay this, to ensure previous event happens first.
+		});
+	};
+
+	static UPopupRename(paperWrapper) {
+		function __RenameFolder() {
+			return UCreatePopup({
+				title: {
+					text: "Edit Folder",
+					icon: "pencil"
+				},
+				content: [
+					{
+						class: "c-text-input",
+						config: [
+							["label", "textContent", "Name"]
+						]
+					},
+					{
+						class: "c-text-input",
+						id: "subtitle",
+						config: [
+							["label", "textContent", "Subtitle"]
+						]
+					},
+					{
+						class: "c-check-input",
+						id: "def_subtitle",
+						config: [
+							["label", "textContent", "Reset to default"]
+						]
+					},
+					{
+						class: "c-text-input",
+						id: "thumb",
+						config: [
+							["label", "textContent", "Icon"]
+						]
+					},
+					{
+						class: "c-check-input",
+						id: "def_thumb",
+						config: [
+							["label", "textContent", "Reset to default"]
+						]
+					},
+				],
 				actions: [
 					{
 						icon: null,
@@ -4232,126 +4300,54 @@ class Utils {
 					},
 					{
 						icon: null,
-						text: "Confirm",
+						text: "Submit",
 						style: "light"
 					}
 				]
 			});
+		};
 
-			popup.querySelector("#confirm").addEventListener("click", function(e) {
-				// here, is easy to keep edit mode.
-				// move all elems out of folder. insert above where folder was.
-				let subElems = folderElem.querySelectorAll(".c-paper-folder-cont > *");
 
-				for (let elem of subElems) {
-					folderElem.parentElement.insertBefore(elem, folderElem);
-					// will go in order, bcs folderElem keeps moving down.
-					// no need to reverse. just remove folder after.
+		const plId = paperWrapper.getAttribute("plId");
+		let popup = __RenameFolder();
+
+		for (let check of popup.querySelectorAll(".c-check-input")) {
+			let id = check.getAttribute("id").replace("def_", "");
+			let textInput = popup.querySelector(`#${id}`);
+
+			check.addEventListener("change", function(e) {
+				if (e.target.checked) UAddToClass(textInput, "c-uninteractable");
+				else URemoveFromClass(textInput, "c-uninteractable");
+			});
+		};
+		
+		popup.querySelector("#submit").addEventListener("click", function(e) {
+			let data = {};
+
+			for (let text of popup.querySelectorAll(".c-text-input")) {
+				let id = text.getAttribute("id");
+				let reset = popup.querySelector(`.c-check-input#def_${id} input`).checked;
+
+				if (reset) {
+					data["reset_" + id] = true;
+					continue;
 				};
 
-				folderElem.remove();
-				
-				// send event to delete folder from storage
-				// dispatch custom event, received by isolated contentscript, messaged to bkg
-				UDispatchEventToEW({
-					func: "sidebar-delete-folder",
-					folderId: folderId
-				});
-
-				URemovePopup(popup, true);
-
-				// save new order in separate event..
-				setTimeout(function() {
-					USaveNewOrder(cont);
-				}, 500); // delay this, to ensure previous event happens first.
-			});
-		},
-		RenamePopup: function(paperWrapper) {
-			function __RenameFolder() {
-				return UCreatePopup({
-					title: {
-						text: "Edit Folder",
-						icon: "pencil"
-					},
-					content: [
-						{
-							class: "c-popup-text-line",
-							config: [
-								["label", "textContent", "Leaving the subtitle blank here will clear it, your original value will not be saved."]
-							],
-							style: [
-								["label", "font-size: 12px;"],
-								["", "margin-bottom: 7px;"]
-							]
-						},
-						{
-							class: "c-text-input",
-							config: [
-								["label", "textContent", "Name"]
-							]
-						},
-						{
-							class: "c-text-input",
-							config: [
-								["label", "textContent", "Subtitle"]
-							]
-						}
-					],
-					actions: [
-						{
-							icon: null,
-							text: "Cancel",
-							style: "text-only",
-							defaultAction: "close"
-						},
-						{
-							icon: null,
-							text: "Reset",
-							style: "dark"
-						},
-						{
-							icon: null,
-							text: "Submit",
-							style: "light"
-						}
-					]
-				});
+				let value = text.querySelector("input").value;
+				if (value !== "") data[id] = value;
 			};
 
-
-			const plId = paperWrapper.getAttribute("plId");
-
-			let popup = __RenameFolder();
-
-			
-			popup.querySelector("#reset").addEventListener("click", function(e) {
-				UDispatchEventToEW({
-					func: "sidebar-rename-folder",
-					editInfo: {title:"", subtitle:""},
-					plId: plId
-				});	
-
-				URemovePopup(popup, true);
-				paperWrapper.querySelector(".c-paper-subtitle").textContent = "";
+			UDispatchEventToEW({
+				func: "sidebar-rename-folder",
+				editInfo: data,
+				plId: plId
 			});
 
-
+			URemovePopup(popup, true);
+			paperWrapper.querySelector(".c-paper-title").textContent = titleVal;
+			paperWrapper.querySelector(".c-paper-subtitle").textContent = subVal;
 			
-			popup.querySelector("#submit").addEventListener("click", function(e) {
-				let titleVal = popup.querySelector("input[_group=\"1\"]").value;
-				let subVal = popup.querySelector("input[_group=\"2\"]").value;
-
-				UDispatchEventToEW({
-					func: "sidebar-rename-folder",
-					editInfo: {title: titleVal, subtitle: subVal},
-					plId: plId
-				});
-
-				URemovePopup(popup, true);
-				paperWrapper.querySelector(".c-paper-title").textContent = titleVal;
-				paperWrapper.querySelector(".c-paper-subtitle").textContent = subVal;
-			});		
-		}
+		});	
 	};
 
 	static FunctionToString(f, property) {
@@ -4405,77 +4401,6 @@ class Utils {
 
 		return stringAble;
 	};
-}
-//(?:(?:^.)\ ?)(?:.*\(\) *{)
-//(?: |.+?)(?=.*\(\) *{)
+};
+
 export { Utils };
-/*function timeout(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-async function a() {
-  for (let o of document.querySelectorAll("svg >*")) {
-      o.style.visibility = "hidden";
-    };
-  
-    for (let o of document.querySelectorAll("svg >*")) {
-      o.style.visibility = "visible";
-      await timeout(3000);
-      o.style.visibility = "hidden";
-    };
-}
-
-let raw = {
-			play: `<svg viewBox="0 0 24 24"><path d="M6,4l12,8L6,20V4z"/></svg>`,
-			playing: `<svg viewBox="0 0 24 24"><path d="M17.5,12c0,2.14-1.5,3.92-3.5,4.38v-1.04c1.44-0.43,2.5-1.76,2.5-3.34c0-1.58-1.06-2.9-2.5-3.34V7.62 C16,8.08,17.5,9.86,17.5,12z M12,4.07v15.86L6.16,15H3V9h3.16L12,4.07z M11,6.22L6.52,10H4v4h2.52L11,17.78V6.22z M21,12 c0,4.08-3.05,7.44-7,7.93v-1.01c3.39-0.49,6-3.4,6-6.92s-2.61-6.43-6-6.92V4.07C17.95,4.56,21,7.92,21,12z"/></svg>`,
-			paused: `<svg viewBox="0 0 24 24"><path d="M9,19H7V5H9ZM17,5H15V19h2Z"/></svg>`, // preserveAspectRatio="xMidYMid meet" focusable="false"<g>
-			shuffle: `<svg viewBox="0 0 24 24"><path d="M18.15,13.65l3.85,3.85l-3.85,3.85l-0.71-0.71L20.09,18H19c-2.84,0-5.53-1.23-7.39-3.38l0.76-0.65 C14.03,15.89,16.45,17,19,17h1.09l-2.65-2.65L18.15,13.65z M19,7h1.09l-2.65,2.65l0.71,0.71l3.85-3.85l-3.85-3.85l-0.71,0.71 L20.09,6H19c-3.58,0-6.86,1.95-8.57,5.09l-0.73,1.34C8.16,15.25,5.21,17,2,17v1c3.58,0,6.86-1.95,8.57-5.09l0.73-1.34 C12.84,8.75,15.79,7,19,7z M8.59,9.98l0.75-0.66C7.49,7.21,4.81,6,2,6v1C4.52,7,6.92,8.09,8.59,9.98z"/></svg>`,
-			//customEdit: `<svg viewBox="0 0 24 24"><path d="M17.0671 2.27157C17.5 2.09228 17.9639 2 18.4324 2C18.9009 2 19.3648 2.09228 19.7977 2.27157C20.2305 2.45086 20.6238 2.71365 20.9551 3.04493C21.2864 3.37621 21.5492 3.7695 21.7285 4.20235C21.9077 4.63519 22 5.09911 22 5.56761C22 6.03611 21.9077 6.50003 21.7285 6.93288C21.5492 7.36572 21.2864 7.75901 20.9551 8.09029L20.4369 8.60845L15.3916 3.56308L15.9097 3.04493C16.241 2.71365 16.6343 2.45086 17.0671 2.27157Z"/><path d="M13.9774 4.9773L3.6546 15.3001C3.53154 15.4231 3.44273 15.5762 3.39694 15.7441L2.03526 20.7369C1.94084 21.0831 2.03917 21.4534 2.29292 21.7071C2.54667 21.9609 2.91693 22.0592 3.26314 21.9648L8.25597 20.6031C8.42387 20.5573 8.57691 20.4685 8.69996 20.3454L19.0227 10.0227L13.9774 4.9773Z"/></svg>`,
-			pencil: `<svg viewBox="0 0 24 24"><path d="M14.06,7.6l2.34,2.34L6.34,20H4v-2.34L14.06,7.6 M14.06,6.19L3,17.25V21h3.75L17.81,9.94L14.06,6.19L14.06,6.19z M17.61,4.05l2.37,2.37l-1.14,1.14l-2.37-2.37L17.61,4.05 M17.61,2.63l-2.55,2.55l3.79,3.79l2.55-2.55L17.61,2.63L17.61,2.63z"/></svg>`,
-			folder: `<svg viewBox="0 0 24 24"><path d="M21 9V7C21 6.44772 20.5523 6 20 6H10L9 4H4L3.21115 5.57771C3.07229 5.85542 3 6.16165 3 6.47214V9"/><path d="M3.91321 20H20.0868C20.604 20 21.0359 19.6056 21.0827 19.0905L21.9009 10.0905C21.9541 9.50492 21.493 9 20.905 9H3.09503C2.507 9 2.0459 9.50492 2.09914 10.0905L2.91732 19.0905C2.96415 19.6056 3.39601 20 3.91321 20Z"/></svg>`,// custom, stroke-linecap="round" stroke-linejoin="round",
-			visible: `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`,
-			invisible: `<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>`,
-			check: `<svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>`,
-			add: `<svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`,
-			move: `<svg viewBox="0 0 24 24"><path d="M12.0001 2.89331L8.81809 6.07529L9.87875 7.13595L11.2501 5.76463V11.2499H5.7649L7.13619 9.8786L6.07553 8.81794L2.89355 11.9999L6.07553 15.1819L7.13619 14.1212L5.76485 12.7499H11.2501V18.2352L9.87875 16.8639L8.81809 17.9245L12.0001 21.1065L15.182 17.9245L14.1214 16.8639L12.7501 18.2352V12.7499H18.2353L16.8639 14.1213L17.9246 15.1819L21.1066 11.9999L17.9246 8.81796L16.8639 9.87862L18.2352 11.2499H12.7501V5.76463L14.1214 7.13595L15.182 6.07529L12.0001 2.89331Z"/></svg>`,
-			delete: `<svg viewBox="0 0 24 24"><path d="M11,17H9V8h2V17z M15,8h-2v9h2V8z M19,4v1h-1v16H6V5H5V4h4V3h6v1H19z M17,5H7v15h10V5z"/></svg>`
-		};
-
-static UStripSVGFromElem(elem, copy, className) {
-		let svg = elem.querySelector("svg");
-
-		className = className || "";
-		if (copy) svg = svg.cloneNode(true);
-
-		svg.style = {};
-		svg.setAttribute("class",className);
-
-		let parent = svg;
-
-		while (parent.firstElementChild) {
-			let child = parent.firstElementChild;
-			child.setAttribute("class", "");
-			parent = child;
-		};
-
-		return svg;
-	};
-
-	static UGetSVGFromRaw(_type, returnDiv, returnHTML) {
-		
-
-		if (raw[_type]) {
-			if (returnHTML) {
-				return raw[_type];
-			};
-
-			let div = document.createElement("div");
-			div.innerHTML = raw[_type];
-
-			if (returnDiv) return div; // simple :)
-			return this.UStripSVGFromElem(div, false, `c-${_type}`);
-		} else {
-			return undefined;
-		}
-	}
-
-a();*/

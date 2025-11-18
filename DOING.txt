@@ -140,9 +140,20 @@ RATINGS NEXT.
 want "recently most played" to give a queue full of ur top songs, nto a radio of that song
 for when we track plays.
 
-#tloas deluxe doesnt have playlistSetVideoIds? //NOT THIS, INDEX issue.
+tloas deluxe doesnt have playlistSetVideoIds? //NOT THIS, INDEX issue. (NOW PROBLEM WITH BREACH)
 albumify playlist.
 folder icons
+
+
+
+NEED PUBLIC COUNTERPARTS FOR PUBLIC ARTISTS.
+each artist has tons of different topic channels. twent yone pilots channel generated with capitals for The Line, ending in Gw, normal ends with Cw?
+
+SHOW CUSTOMISATION IN MORE PLACES. ALLOW USER TO EDIT ARTIST NAME, AND ENSURE ITS SHOWN EVERYWHERE. _EditLongBylineOfPlaylistPanelVideoRenderer HAS CUSTOMISATION BUT UCreateLongBylineForPlaylistPanel DOES NOT.
+CHECK TODOS NEXT TO PARTICULARLY LISTITEMRENDERER CUSTOMISING.
+EDIT THUMBNAILS IN PPVR, CAREFUL THAT IT DOESNT OVERWRITE WRONG THING (BUILDFROM, WANT EARLIER VERSION SAME JST EDIT DELUXE.)
+
+playing in playlist changes palying version as if was from album
 
 WORKS! LOOK AT WHETHER YT STATS THINK I DONT LIKE THE SONG:
 

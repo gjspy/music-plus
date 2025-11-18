@@ -207,6 +207,7 @@ done:
 		user authenticates, stored in local storage.
 		data is cached for quick reuse.
 		uses session storage to ensure cache is recent
+		can get useful cache extract from id, gives all information you could need, instead of just ids.
 
 	private counterparts
 		upload an album with the same name as a public album to overwrite or add songs

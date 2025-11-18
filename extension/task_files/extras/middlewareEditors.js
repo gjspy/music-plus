@@ -677,8 +677,6 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			);
 		};
 
-		// used to only edit priv, not anymore.if (!(albumCacheData && albumCacheData.private === true) && !(artistCacheData && artistCacheData.private === true)) return;
-
 		let albumMetadata = storage.customisation.metadata[realAlbum.id] || {};
 
 		let newRuns = [];
@@ -720,8 +718,9 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				};
 
 				if (!counterpartData) continue;
+				let counterpartCustomisation = storage.customisation.metadata[counterpartData.id];
 
-				run.text = (counterpartData) ? counterpartData.name : run.text;
+				run.text = counterpartCustomisation.name || counterpartData.name;
 				run.navigationEndpoint = UBuildEndpoint({
 					navType: "browse",
 					id: counterpartData.id
@@ -777,11 +776,11 @@ window.MiddlewareEditors = class MiddlewareEditors {
 	};
 
 	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas, queueDataRequestIds) {
-		let buildFromAlbum = (buildQueueFromBId) ? storage.cache[buildQueueFromBId] || {} : {};
+		let buildFromAlbum = (buildQueueFromBId) ? storage.cache[buildQueueFromBId] || {} : {}; // cache[undefined] may exist. do ternary.
 		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFromMfId) || {};
 		console.log(buildQueueFromBId, loadedQueueFromMfId, buildFromAlbum, loadedFromAlbum);
 
-		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, buildFromAlbum.id, loadedFromAlbum.id) || {};
+		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, buildQueueFromBId, loadedFromAlbum.id) || {};
 		console.log("replacements", idsToReplace);
 		console.log("queueContentsBefore", structuredClone(queueContents));
 
@@ -817,7 +816,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			else if (vr) {
 				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage, vr, buildFromAlbum);
 				vr.cData = { video: cachedVideo, from: buildFromAlbum };// why did we set cData here? dont think it worked?
-
+				console.log("ADD NotReplacemtn")
 				this._DeleteRemoveFromPlaylistButtonFromPPVR(vr);
 			};
 
@@ -884,75 +883,6 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			queueContents.splice(URandInt(1, queueContents.length), 0, v);
 		};
 
-
-
-		// FIRST ITERATION. REPLACE WHATEVER, IF NOT REPLACED EDIT LONG BYLINE.
-		/*for (let item of queueContents) {
-			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
-			if (!videoRenderer) continue;
-
-			let replacement = idsToReplace[videoRenderer.videoId];
-
-			console.log(item, replacement);
-
-			if (replacement) UModifyPlaylistPanelRendererFromData(videoRenderer, replacement, buildFromAlbum, cachedArtist);
-			else {
-				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage, videoRenderer, buildFromAlbum);
-				videoRenderer.cData = { video: cachedVideo, from: buildFromAlbum };// why did we set cData here? dont think it worked?
-
-				this._DeleteRemoveFromPlaylistButtonFromPPVR(videoRenderer);
-			};
-
-			if (!backingPlaylistId) backingPlaylistId = UDigDict(videoRenderer, UDictGet.backingPlaylistIdFromVideoRenderer);
-
-			if (videoIdToSelect) videoRenderer.selected = videoRenderer.videoId === videoIdToSelect;
-		};
-
-		if (!buildQueueFromBId) {
-			// USER HAS CLICKED TO LOAD FROM ORIGINAL, OR OTHER.
-			// ONLY WANTED TO DO FIRST ITERATION, TO EDIT LONGBYLINE.
-			console.log("leaving early!");
-			return [undefined, undefined];
-		};
-
-		// dont need to worry about other items in queue. any response only ever gives the new bit.
-		// next: only runs on first click, else just does hack: true
-		// get_queue: only returns the new section.
-
-		
-
-		// ADD EXTRA TO START/END
-		
-
-
-		for (let index of orderedExtraIndexes) {
-			let replacement = byIndex[index];
-
-			let newVideoItem = UBuildPlaylistPanelRendererFromData(replacement, buildFromAlbum, cachedArtist, backingPlaylistId);
-
-			if (areQueueDatas) newVideoItem = { content: newVideoItem };
-
-			// INSERT IN RANDOM POSITION FOR SHUFFLE!
-			if (isShuffle) {
-				queueContents = UArrayInsert(queueContents, newVideoItem, URandInt(1, queueContents.length));
-				continue;
-			};
-
-			if (index === "0") queueContents.unshift(newVideoItem);
-			else queueContents.push(newVideoItem);
-		};*/
-
-		//if (isShuffle) {
-			// SHUFFLE. SO WE CAN JUST DO NORMAL INSERTION BEFORE, EASIER.
-		//};
-
-		// EXTRA SONGS
-		/*UAddNonOverwriteExtraSongsTo(
-			queueContents, buildQueueFromBId, buildFromAlbum, storage,
-			(areQueueDatas) ? "queueData" : "playlistPanelRenderer", 
-			{ artist: cachedArtist, backingQueuePlaylistId: backingPlaylistId }
-		);*/
-
 		if (lastItem) queueContents.push(lastItem);
 
 		console.log("queueContents now", structuredClone(queueContents));
@@ -1008,8 +938,6 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				!(queueDataRequestIds || []).includes(we.videoId) // USER HASNT SPECIFICALLY ADDED TO QUEUE
 			) continue;
 
-			indexCount ++;
-
 			if (we.index !== 0) we.index = indexCount;
 			newContents.push(item);
 
@@ -1019,9 +947,9 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			if (videoIdToSelect) videoRenderer.selected = videoRenderer.videoId === videoIdToSelect;
 			if (we.videoId === videoIdToSelect) currentVideoWE = we;
-		};
 
-		
+			indexCount ++; // do after, to match yt queue starting at 0
+		};
 
 		console.log("newContents", newContents, hiddenSongs);
 
@@ -1076,7 +1004,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				
 
 				if (!replacement) { // can delete base video, but have replacement. do this for custom view count.
-					UModifyListItemRendererGenericForAlbumPage(item);
+					UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
 					UFillCDataOfListItem(storage, item, data);
 					listItemRenderer.cData.changedByDeletion = { isDeleted: true };
 					
@@ -1085,7 +1013,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				};
 
 				let newListItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
-				UModifyListItemRendererGenericForAlbumPage(newListItem);
+				UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
 				UFillCDataOfListItem(storage, newListItem, replacement.video);
 
 				newContents.push(newListItem); // as if overwritten
@@ -1093,7 +1021,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			};
 
 			if (!replacement) {
-				UModifyListItemRendererGenericForAlbumPage(item);
+				UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
 				UFillCDataOfListItem(storage, item, data);
 
 				newContents.push(item);
@@ -1101,7 +1029,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			};
 
 			UModifyListItemRendererFromDataForAlbumPage(replacement, cachedAlbum, item);
-			UModifyListItemRendererGenericForAlbumPage(item);
+			UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
 			UFillCDataOfListItem(storage, item, replacement.video);
 
 			newContents.push(item);
@@ -1128,7 +1056,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			// use cachedAlbum from before, to keep public playlistIds etc.
 			let newListItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
-			UModifyListItemRendererGenericForAlbumPage(newListItem);
+			UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
 			UFillCDataOfListItem(storage, newListItem, replacement.video);
 			newListItem.musicResponsiveListItemRenderer.index.runs[0].text = String(i_)
 
@@ -1443,6 +1371,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		for (let lir of listItems) {
 			lir = lir.musicResponsiveListItemRenderer;
 			if (!lir) continue;
+
+			UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_PLAYLIST", lir);
 
 			let indexToAddNew = -1;
 			let removingServiceEndpoint;

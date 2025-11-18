@@ -217,11 +217,80 @@ async function setEntitiesToKeys() {
 async function delEntry() {
 	let content = document.querySelector("#run-code-input").value;
 
-	let storage = await utils.UStorageGetExternal();
+	let storage = await utils.UStorageGetExternal(true);
 	delete storage.cache[content];
 
 	await utils.UStorageSetExternal(storage);
 	document.querySelector("#error").innerHTML = "done";
+};
+
+async function showHuman() {
+	function getHumanOf(value, depth) {
+		let itemType = value.type;
+		let human = structuredClone(value);
+
+		for (let [k,v] of Object.entries(value)) {
+			console.log(k,v)
+			if (itemType === "ALBUM") {
+				if (k === "items" || k === "features" || k === "privateCounterparts") {
+					human[k] = v.map(x => storage.cache[x]);
+					continue;
+				};
+
+				if (k === "artist" && depth === 0) {
+					human[k] = storage.cache[v];
+					continue;
+				};
+
+				if (k === "alternate" && depth === 0) {
+					human[k] = v.map(x => getHumanOf(storage.cache[x]), depth + 1);
+					continue;
+				};
+			};
+
+			if (itemType === "PLAYLIST") {
+				if (k === "items") {
+					human[k] = v.map(x => getHumanOf(storage.cache[x], depth + 1));
+					continue;
+				};
+			};
+
+			if (itemType === "ARTIST") {
+				if (k === "discography" && depth === 0) {
+					human[k] = v.map(x => getHumanOf(storage.cache[x], depth + 1));
+					continue;
+				};
+			};
+
+			if (itemType === "SONG") {
+				if (k === "album") {
+					human[k] = v.map(x => getHumanOf(storage.cache[x], depth + 1));
+					continue;
+				};
+
+				if (k === "artists" && depth === 0) {
+					human[k] = v.map(x => getHumanOf(storage.cache[x], depth + 1));	
+					continue;
+				};
+			};
+
+			human[k] = v;
+		};
+
+		return human;
+	}
+	let content = document.querySelector("#run-code-input").value;
+
+	let storage = await utils.UStorageGetExternal(false);
+	let value = storage.cache[content];
+
+	if (!value) {
+		browser.tabs.create({url:URL.createObjectURL(new Blob([JSON.stringify(value)], {type:"application/json"}))});
+		return;
+	};
+
+	let human = getHumanOf(structuredClone(value), 0);
+	browser.tabs.create({url:URL.createObjectURL(new Blob([JSON.stringify(human)], {type:"application/json"}))});
 };
 
 async function dim() {
@@ -270,6 +339,7 @@ function activateButtons() {
 	document.getElementById("goto-ls").addEventListener("click", gotoLS);
 	document.getElementById("ref-side").addEventListener("click", refSide);
 	document.getElementById("del-cache-entry").addEventListener("click", delEntry);
+	document.getElementById("get-human").addEventListener("click", showHuman);
 };
 
 init().then(function() {
