@@ -718,7 +718,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				};
 
 				if (!counterpartData) continue;
-				let counterpartCustomisation = storage.customisation.metadata[counterpartData.id];
+				let counterpartCustomisation = storage.customisation.metadata[counterpartData.id] || {};
 
 				run.text = counterpartCustomisation.name || counterpartData.name;
 				run.navigationEndpoint = UBuildEndpoint({
