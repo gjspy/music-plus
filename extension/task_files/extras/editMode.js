@@ -337,6 +337,20 @@ AlbumEditMode = class AlbumEditMode {
 				},
 				{
 					class: "c-text-input",
+					id: "bkg",
+					config: [
+						["label", "textContent", "Custom Page Background URL"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_bkg",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				},
+				{
+					class: "c-text-input",
 					id: "type",
 					config: [
 						["label", "textContent", "Release Type (Album, Single, EP)"]
@@ -688,6 +702,20 @@ PlaylistEditMode = class AlbumEditMode {
 				{
 					class: "c-check-input",
 					id: "def_thumb",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				},
+				{
+					class: "c-text-input",
+					id: "bkg",
+					config: [
+						["label", "textContent", "Custom Page Background URL"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_bkg",
 					config: [
 						["label", "textContent", "Reset to default"]
 					]
