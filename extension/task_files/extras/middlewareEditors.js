@@ -1148,13 +1148,17 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			];
 		};
 
-		if (customMetadata.thumb) {
+		let coolBkg = customMetadata.bkg;
+
+		if (coolBkg || customMetadata.thumb) {
 			let thumbnails = [
-				{ url: customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
+				{ url: coolBkg || customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
 			];
 
 			headerRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
 			response.background.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
+
+			if (coolBkg) response.cMusicFixerExtCoolBkg = true;
 		};
 
 		let albumType = customMetadata.type;
@@ -1422,13 +1426,17 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		let otherHeaderRenderer = UDigDict(response, UDictGet.playlistHeaderRendererFromBrowseResponse);
 		let headerRenderer = userOwnedHeaderRenderer || otherHeaderRenderer;
 
-		if (customMetadata.thumb) {
+		let coolBkg = customMetadata.bkg;
+
+		if (coolBkg || customMetadata.thumb) {
 			let thumbnails = [
-				{ url: customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
+				{ url: coolBkg || customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
 			];
 
 			headerRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
 			response.background.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
+
+			if (coolBkg) response.cMusicFixerExtCoolBkg = true;
 		};
 
 		if (customMetadata.year) {

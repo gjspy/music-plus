@@ -187,6 +187,7 @@ class Utils {
 		playButtonFromLIRData: ["overlay", "musicItemThumbnailOverlayRenderer", "content", "musicPlayButtonRenderer"],
 		browseIdFromPolymerState: ["navigation", "mainContent", "endpoint","data", "browseId"],
 		cDidExtChangeResponse: ["navigation", "mainContent", "response", "cMusicFixerExtChangedResponse"],
+		cExtCoolBkg: ["navigation", "mainContent", "response", "cMusicFixerExtCoolBkg"],
 		playlistPanelFromNextResponse: ["contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer","watchNextTabbedResultsRenderer", "tabs", 0,"tabRenderer", "content", "musicQueueRenderer","content", "playlistPanelRenderer"],
 		lyricPanelFromNextResponse: ["contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer","watchNextTabbedResultsRenderer", "tabs", 1,"tabRenderer"],
 		overlayButtonsFromNextResponse: ["playerOverlays", "playerOverlayRenderer", "actions"],

@@ -674,7 +674,7 @@ PlaylistEditMode = class AlbumEditMode {
 		{ // change name, cover, single/ep/album!!, exact release date!!
 			type: "details", // "type" IS THE ID!
 			icon: "pencil",
-			text: "Edit Album Metadata",
+			text: "Edit Playlist Metadata",
 			onclick: this.EditMetadata
 		},
 		{

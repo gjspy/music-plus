@@ -15,7 +15,7 @@ export async function MWEventDriven_PageChanges() {
 		UAddTitleIconsToListItems(listItems);
 	};
 
-	async function _AlbumAndPlaylistPage() {
+	async function _AlbumAndPlaylistPage(browsePage, state) {
 		let titleElem = (await UWaitForBySelector("ytmusic-browse-response #contents #primary #contents yt-formatted-string.title"))[0];
 		let computedStyleOf = getComputedStyle(titleElem);
 		let bounds = titleElem.getBoundingClientRect();
@@ -29,6 +29,10 @@ export async function MWEventDriven_PageChanges() {
 
 			titleElem.style.lineHeight = String(maxHeightPerLineToFit) + "px";
 			titleElem.style.fontSize = String(maxHeightPerLineToFit * 0.75) + "px";
+		};
+
+		if (UDigDict(state, UDictGet.cExtCoolBkg)) {
+			browsePage.setAttribute("c-fancy-page", "list");
 		};
 	};
 
@@ -89,15 +93,16 @@ export async function MWEventDriven_PageChanges() {
 
 	function _EvaluateNewValue(browsePage, state, newValue) {
 		browsePage.setAttribute("c-page-type", newValue);
+		browsePage.removeAttribute("c-fancy-page");
 
 		switch (newValue) {
 			case "MUSIC_PAGE_TYPE_PLAYLIST":
-				_AlbumAndPlaylistPage(browsePage);
+				_AlbumAndPlaylistPage(browsePage, state);
 				_PlaylistPage(browsePage);
 				break;
 
 			case "MUSIC_PAGE_TYPE_ALBUM" || "C_PAGE_TYPE_PRIVATE_ALBUM":
-				_AlbumAndPlaylistPage(browsePage);
+				_AlbumAndPlaylistPage(browsePage, state);
 				_AlbumPage();
 				break;
 		};
