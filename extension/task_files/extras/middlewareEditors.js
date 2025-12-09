@@ -1,3 +1,24 @@
+window.MiddlewareGetTasks = class MiddlewareGetTasks {
+	static endpointToTask = {
+		"/api/stats/watchtime": WatchtimeStore
+	};
+
+	static WatchtimeStore(request, response) {
+		let isFinal = request.urlObj.searchParams.get("final");
+		// final = video has ended, full play.
+
+		if (!isFinal) return;
+
+		UDispatchEventToEW({
+			func: "video-watched",
+			videoId: request.urlObj.searchParams.get("docid"),
+			playingFrom: request.urlObj.searchParams.get("list")
+		});
+	}; // TODO, WHAT ABOUT SKIPS?
+};
+
+
+
 window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 
 	static PlaylistCreateCommand(request, response) {

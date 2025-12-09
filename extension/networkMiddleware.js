@@ -65,7 +65,6 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		(!xhr && !(oldResp.headers.get("Content-Type") || "").includes("application/json")) ||
 		!request ||
 		!request.body ||
-		request.method !== "POST" ||
 		NETWORK_EDITING_ENABLED === false
 	) {
 		return oldResp;
@@ -74,12 +73,25 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	let urlObj;
 	try { urlObj = new URL(request.url); }
 	catch {};
+	
+	request.urlObj = urlObj;
+	let pathname = urlObj.pathname;
+
+	if (request.method !== "POST") {
+		let task = MiddlwareGetTasks.endpointToTask[pathname];
+		if (!task) return oldResp;
+
+		let change = task(request, oldResp);
+		if (change) return change
+
+		return oldResp;
+	};
 
 	if (!urlObj || MiddlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
 		return oldResp;
 	};
 
-	console.log(request.url);
+	console.log(request.url);	
 
 	let changed = false;
 	let clonedResp = (!xhr) ? oldResp.clone() : undefined;
@@ -90,7 +102,6 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 
 	let browseId = request.body.browseId ||
 		UGetBrowseIdFromResponseContext(toCacheOriginal.responseContext);
-	let pathname = urlObj.pathname;
 
 	let responseIsContinuation = !!(
 		request.body.continuation ||

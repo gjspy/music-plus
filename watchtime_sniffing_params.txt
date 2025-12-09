@@ -1,0 +1,6 @@
+cmt: played so far?
+
+
+state: playing/paused
+len: total song length
+et: same as cmt
