@@ -1098,6 +1098,23 @@ async function EWOMAutoLights(request) {
 	};
 };
 
+async function EWOMWatchtimeStore(request) {
+	let now = String(Date.now());
+
+	let storage = await utils.UStorageGetExternal(false);
+
+	let current = storage.stats.watchtime[request.videoId];
+	if (!current) storage.stats.watchtime[request.videoId] = {};
+	
+	storage.stats.watchtime[request.videoId][now] = {
+		pf: request.playingFrom,
+		t: now,
+		cw: request.completeWatch // IF WAS NOTSKIPPED OR WATCHED >80%.
+	};
+
+	await utils.UStorageSetExternal(storage);
+};
+
 
 function OnMessage(request, sender, sendResponse) {
 	console.log("received in EW", JSON.stringify(request), sender, sendResponse);
@@ -1110,7 +1127,6 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "sidebar-new-folder")        EWOMSidebarNewFolder(request, sender);
 	else if (f === "sidebar-delete-folder")     EWOMSidebarDeleteFolder(request);
 	else if (f === "sidebar-rename-folder")     EWOMSidebarRenameFolder(request);
-	//else if (f === "sidebar-mask-pl-name")      EWOMMaskPLName(request);
 	else if (f === "sidebar-visibility-change") EWOMSidebarVisibilityChange(request);
 	else if (f === "sidebar-new-sep")           EWOMSidebarNewSep(request, sender);
 	else if (f === "sidebar-delete-sep")        EWOMSidebarDeleteSep(request);
@@ -1134,6 +1150,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "add-video-to-tag")			EWOMAddVideoToTag(request);
 	else if (f === "remove-video-from-tag")		EWOMRemoveVideoFromTag(request);
 	else if (f === "create-tag")				EWOMCreateTag(request);
+	else if (f === "video-watched")				EWOMWatchtimeStore(request);
 };
 
 browser.runtime.onMessage.addListener(OnMessage);

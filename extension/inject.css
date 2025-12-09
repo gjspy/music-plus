@@ -1190,7 +1190,7 @@ ytmusic-two-column-browse-results-renderer #secondary #contents ytmusic-carousel
 
 
 .ytmusic-two-column-browse-results-renderer:is(#primary, #secondary) ytmusic-section-list-renderer{
-	margin-top: var(--secondary-top-margin);
+	/*margin-top: var(--secondary-top-margin);*/
 
 	& .strapline {
 		margin-top: 10px;
@@ -2559,4 +2559,26 @@ ytmusic-browse-response[c-page-type="C_PAGE_TYPE_HOME"] ytmusic-section-list-ren
 
 ytmusic-browse-response[c-page-type="C_PAGE_TYPE_HOME"] ytmusic-section-list-renderer #header ytmusic-chip-cloud-renderer ytmusic-chip-cloud-chip-renderer {
 	padding: 0 0 16px;
+}
+
+
+
+.c-pl-bar-right-btn {
+	width: 36px;
+	height: 36px;
+	margin: 4px 8px 4px 4px;
+	box-sizing: border-box;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.c-pl-bar-right-btn svg {
+	width: 30px;
+	height: 30px;
+}
+
+svg.speed {
+	margin-top: 4px;
 }

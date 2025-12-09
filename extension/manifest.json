@@ -36,10 +36,6 @@
 		"*://music.youtube.com/*"
 	],
 
-	"options_ui": {
-		"page": "popup/index.html"
-	},
-
 	"permissions": [
 		"tabs",
 		"storage",

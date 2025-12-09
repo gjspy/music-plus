@@ -61,10 +61,9 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	};
 
 	if (
-		(!xhr && oldResp.status !== 200) ||
+		(!xhr && !String(oldResp.status).startsWith("2")) ||
 		(!xhr && !(oldResp.headers.get("Content-Type") || "").includes("application/json")) ||
 		!request ||
-		!request.body ||
 		NETWORK_EDITING_ENABLED === false
 	) {
 		return oldResp;
@@ -73,12 +72,14 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	let urlObj;
 	try { urlObj = new URL(request.url); }
 	catch {};
+
+	if (!urlObj) return oldResp;
 	
 	request.urlObj = urlObj;
 	let pathname = urlObj.pathname;
 
 	if (request.method !== "POST") {
-		let task = MiddlwareGetTasks.endpointToTask[pathname];
+		let task = MiddlewareGetTasks.endpointToTask[pathname];
 		if (!task) return oldResp;
 
 		let change = task(request, oldResp);
@@ -87,7 +88,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		return oldResp;
 	};
 
-	if (!urlObj || MiddlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
+	if (!request.body || MiddlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
 		return oldResp;
 	};
 
@@ -110,7 +111,6 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	);
 
 	let [cParams, cParamsRef] = _GetCParams(request, browseId);
-	console.log("CPARAMS", cParams, cParamsRef);
 
 	if (cParams) {
 		cParams = structuredClone(cParams);
@@ -277,7 +277,7 @@ async function newFetch(resource, options) {
 				let newR;
 
 				try { newR = FetchModifyRequest(request, resource, body) }
-				catch (err) { console.error("TRIED TO MODIFY REQ", request, body, resource, err) };
+				catch (err) { console.error("couldnt modify fetch request", request, body, resource, err) };
 
 				if (newR) resource = newR;
 				request.body = body;
@@ -335,8 +335,12 @@ XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
 	this._url = url;
 	this._method = method;
 
-	if (url.startsWith("/")) {
+	if (url.match(/^\/[^\/]/)) {
 		this._url = "https://music.youtube.com" + url;
+	};
+
+	if (url.match(/^\/\//)) {
+		this._url = "https:" + url;
 	};
 
 	return originalXHROpen.apply(this, arguments);
@@ -348,12 +352,12 @@ XMLHttpRequest.prototype.send = function(body) { // used for player/next/atr/qoe
 	const originalOnReadyStateEvent = xhr.onreadystatechange;
 
 	xhr.onreadystatechange = async function() {
-		if (xhr.readyState === 4 && xhr.status === 200) {
+		if (xhr.readyState === 4 && String(xhr.status).startsWith("2")) {
 			try {
 				await FetchModifyResponse({
 					url: xhr._url,
 					method: xhr._method,
-					body: JSON.parse(body)
+					body: JSON.parse(body || "{}")
 				}, xhr, true);
 			} catch {};
 		};

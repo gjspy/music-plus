@@ -51,6 +51,10 @@ class Utils {
 					tags: {}, // id: {id: "", name: "", colour: "", playlist: ""}
 					videos: {} // videoId: [tagId]
 				} 
+			},
+
+			stats: {
+				watchtime: {}
 			}
 		}
 	};
@@ -4058,6 +4062,7 @@ class Utils {
 	};
 
 	static UAddTitleIconToListItem(listItem, svgName, elemClass, thisData) {
+		console.log("TITLEICON LISTITEM", listItem);
 		let appendAt = listItem.querySelector(".flex-columns .title-column yt-formatted-string.title");
 		
 		let svg = this.UGetSVGFromRaw(svgName, false, false);
@@ -4094,6 +4099,7 @@ class Utils {
 	};
 
 	static UAddTitleIconsToListItems(listItems) {
+		console.log("TITLEICON LISTITEMS", listItems);
 		for (let item of listItems) {
 			let data = UDigDict(item, this.UDictGet.cDataFromElem);
 			if (!data) continue;

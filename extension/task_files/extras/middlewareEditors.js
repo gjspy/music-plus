@@ -1,20 +1,33 @@
 window.MiddlewareGetTasks = class MiddlewareGetTasks {
-	static endpointToTask = {
-		"/api/stats/watchtime": WatchtimeStore
-	};
-
 	static WatchtimeStore(request, response) {
-		let isFinal = request.urlObj.searchParams.get("final");
 		// final = video has ended, full play.
-
+		let isFinal = request.urlObj.searchParams.get("final");
 		if (!isFinal) return;
+
+		// pe = playbackEnding. 1 = autoplay, 0 (or omitted) = skip
+		let pe = Number(request.urlObj.searchParams.get("pe"));
+		// cmt = current media time
+		let cmt = Number(request.urlObj.searchParams.get("cmt"));
+		// len = total media length
+		let len = Number(request.urlObj.searchParams.get("len"));
+
+		// ALLOW IF CONFIRMED AUTOPLAY (NOT SKIP), OR PLAYED 80%+
+		let validWatch = (pe === 1) || (cmt >= (len * 0.8));
+		console.log("WATCHTIME STATS", validWatch, "pe", pe === 1, "cmt", cmt >= (len * 0.8));
+
+		//if (!validWatch) return; want to cache when was skipped! don't return :)
 
 		UDispatchEventToEW({
 			func: "video-watched",
 			videoId: request.urlObj.searchParams.get("docid"),
-			playingFrom: request.urlObj.searchParams.get("list")
+			playingFrom: request.urlObj.searchParams.get("list"),
+			completeWatch: validWatch
 		});
-	}; // TODO, WHAT ABOUT SKIPS?
+	};
+
+	static endpointToTask = {
+		"/api/stats/watchtime": this.WatchtimeStore
+	};
 };
 
 
@@ -1014,7 +1027,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			let listItemRenderer = item.musicResponsiveListItemRenderer;
 			let thisIndex = Number(listItemRenderer?.index?.runs[0].text);
 			if (thisIndex > maxIndex) maxIndex = thisIndex;
-			lirsByIndex[thisIndex] = item;
+			
 			console.log(data.id, replacement, listItemRenderer);
 
 			// should remove base version of song.
@@ -1028,6 +1041,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 					UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
 					UFillCDataOfListItem(storage, item, data);
 					listItemRenderer.cData.changedByDeletion = { isDeleted: true };
+					lirsByIndex[thisIndex] = item;
 					
 					newContents.push(item);
 					continue;
@@ -1036,6 +1050,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				let newListItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
 				UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
 				UFillCDataOfListItem(storage, newListItem, replacement.video);
+				lirsByIndex[thisIndex] = newListItem; // !! NEWlistItem
 
 				newContents.push(newListItem); // as if overwritten
 				continue;
@@ -1044,6 +1059,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			if (!replacement) {
 				UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
 				UFillCDataOfListItem(storage, item, data);
+				lirsByIndex[thisIndex] = item;
 
 				newContents.push(item);
 				continue;
@@ -1052,6 +1068,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			UModifyListItemRendererFromDataForAlbumPage(replacement, cachedAlbum, item);
 			UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
 			UFillCDataOfListItem(storage, item, replacement.video);
+			lirsByIndex[thisIndex] = item;
 
 			newContents.push(item);
 		};

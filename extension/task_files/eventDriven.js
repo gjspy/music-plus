@@ -38,6 +38,7 @@ export async function MWEventDriven_PageChanges() {
 
 	async function _AlbumPage() {
 		let listItems = await UWaitForBySelector(U_HELPFUL_QUERIES.listItemRenderersOfCurrentBrowseResponse);
+		console.log("LISTITEMS",listItems);
 
 		for (let listItem of listItems) {
 			let nameElem = listItem.querySelector(".title-column yt-formatted-string.title");
@@ -94,6 +95,7 @@ export async function MWEventDriven_PageChanges() {
 	function _EvaluateNewValue(browsePage, state, newValue) {
 		browsePage.setAttribute("c-page-type", newValue);
 		browsePage.removeAttribute("c-fancy-page");
+		console.log("NEWVALUE", newValue);
 
 		switch (newValue) {
 			case "MUSIC_PAGE_TYPE_PLAYLIST":
@@ -101,7 +103,9 @@ export async function MWEventDriven_PageChanges() {
 				_PlaylistPage(browsePage);
 				break;
 
-			case "MUSIC_PAGE_TYPE_ALBUM" || "C_PAGE_TYPE_PRIVATE_ALBUM":
+			case "C_PAGE_TYPE_PRIVATE_ALBUM":
+			case "MUSIC_PAGE_TYPE_ALBUM":
+				console.log("ISALBUM");
 				_AlbumAndPlaylistPage(browsePage, state);
 				_AlbumPage();
 				break;

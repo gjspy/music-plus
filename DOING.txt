@@ -15,45 +15,33 @@ ARTISTS:
 
 RATINGS:
 	- custom ratings (star count?)
-//	- tags to label songs with
 
 SONGS:
-	- add lyrics to private
 	- edit lyrics
-
-improve udigdict, predefine paths
 
 ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED TO SAME ALBUM (PRIVATE)
 hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 
-
-next, please do naming stuff to make ti consistent, artists and //albums.
-does album editing work with two being queued?
-#shuffling with two?
+shuffling with two albums?
 
 LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD, LIKE EDITMODE. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
 n3rds-inc.time
 
-onDeletePlaylist, still deleting the wrong one?
 update eventdriven & playerPageFeatures.
 
-EDIT AND DELETE BUTTON OF FOLDERS DON'T WORK (SIDEBAR)
-BUTTON TO UPDATE LIGHT COLOURS BASED ON PLAYING.
-/Xneed some sort of write lock for storage? eg: making a change, some cache event happens, overwrites and hides change.
+BUTTON TO UPDATE LIGHT COLOURS BASED ON PLAYING. (IN POPUP)
 make CATEGORIES and RATINGS. RATINGS = 1-5 stars or smth, categories = too pop, nice pop, no texture, etc...
-//gotta fix extraSongs, how does it cope with adding multiple  what happens to index :(
-
 CLEAR QUEUE BUTTON DOESNT CLEAR SERVER QUEUE.
 CLICK IT, THEN ADD SOMETHING ELSE TO THE QUEUE, THEN SHUFFLE IT.
 SERVER RETURNS QUEUE WHICH HAS STUFF FROM OLD QUEUE IN IT!!
 can i edit the request before its sent? change videoId to videoIds and add all except the 1
-(egiting QP backing playlist, see dissmiss queue endpoint, in buildQueuePanelRenderer stuff)
+(egiting QP backing playlist, see dissmiss queue endpoint, in buildQueuePanelRenderer stuff) ****
 
 have feature to have player page popout, and "add to queue" adds to that. while popped out, disable play buttons on playlist pages etc? or, make it only play if current is paused.
 
 
 MAKE MINI WINDOW FOR TABLET, YT MUSIC WIDGET, make it auto appear on login and fill screen, using firefox as desktop backgorund ish user showcase mode smth
-COULD DEFINE OWN MUSIC VIDEOS, IN /NEXT API CALL, playlistPanelVideoWrapperRenderer.counterpart.counterpartRenderer + segmentMan
+COULD DEFINE OWN MUSIC VIDEOS, IN /NEXT API CALL, playlistPanelVideoWrapperRenderer.counterpart.counterpartRenderer + segmentMan**
 
 
 MAKE IT CHANGE BROWSER THEME: browser.theme.update(), TO IMAGE OF ALBUM PLAYING!!
@@ -64,39 +52,20 @@ couldnt set image from external url, try base64? (str repr of img)
 MAKE IT NOT EVEN CALL YT, AND RETURN THE RESPONSE IN newFetch, NOT ACCESSING originalFetch()!
 
 now need to edit tworowitemrenderers with custom metadata.
-
-CUSTOM VIEW COUNTS PLEASE!!! QUICKLY!!
-CAN GET FROM YT, WHEN queueImpress COMES THRU, MIGHT BE IN /next API REQUEST?
-
-
-//MAKE ADDING EXTRA SONGS, JUST POPUP WITH videoId and index
-//	- "remove" page, do squre popups, with cached information if its available, otherwise just videoId, index and whatever. do rows instead of square?
 give ability to hide releases: Dawn FM alternate worlds, let me delete the others
 
 custom automix!! or custom radio, based on selected albums (exclude skips!!)
-
 what is makeAUtomixInteractable in playerPgaeFeatures?
 
 "export human data" = give json response of playlist info, what songs (including name, album and id, for manual reading)
 
 DOING NOW:
-//extraSongs nearly work, need to go back to
-//light control works okay, undimming is a bit slow
+
 DOES NOT work with private albums, no auth to get img in bkg script
 LIGHT ROTATING almost works, does 4 clicks then jumps one (cw), test acw
 
-//extra songs working, but check playlistSetVideoIds please, is looking odd. click first item in album (this is how tomorrow moves) and it stays hovered without a play button icon?
 
-//REMOVE "DELETE SONG" FROM PPR
-
-CLEAN POPUP: HAVE DROPDOWN FOR "Queue", "Playlist", "Other": Report, Share, ..
-
-WORKING:
-//- won't delete "delete song" button
-//- WORKS playing live from paris when on page
--// DOESNT WORK playing done beat saber from sidebar while live from paris open. - buildFrom issue
-//(think its actually just cus we dont select a videoRenderer, RDAMPL errors.)
-//- check upscaling thumbnails works (ONLY UPSCALE ICONS FOR NEWLY CREATED ELEMS.)
+CLEAN POPUP DROPDOWN: HAVE DROPDOWN FOR "Queue", "Playlist", "Other": Report, Share, ..
 
 STAGE CACHE UPDATE, ONLY PUBLISH TO SERVER EVERY MINUTE
 EG, ON UPDATE FOR WHATEVER, ADD TO QUEUE, TIMEOUT 60 SECONDS, GET MOST RECENT FROM LOCAL STORAGE AND GO?
@@ -108,34 +77,14 @@ YES DO THIS SUPER GOOD. EXPORT BUTTON TO RECEIVE A ZIP OF THEM!
 
 
 LYRIC EDTING! PRIVATE SONGS ALL HAVE A UNIQUE LYRIC ENDPOINT!!
-
-
-//playing from playlist but loongbyline is edited, so cant click on the album of playing song, goes to playlist.
-
-
-
-
-
-
-
-
-
-
-
 SOUNDS LIKE LINKS!!
-//todo: on cache, if tag playlist, update tags.
+
 tag playlist thumbnails!!
-//playlist thimbnails!!
-#MAKE IT ADD TO PLAYLIST WHEN CHOOSING UR NEW tag
+
 MAKE IT NOT ADD TAGS TWICE WHEN UPDATING
 CHECK VOERFLOW ON POPUP
-//MAKE IT NOT DO QUOTES FOR TAGS, HOW CAN I MAKE TEXT FOR THAT BETTER?
 RATINGS NEXT.
-#make it let u remove tags from items
-
-#CAN'T MAKE SKIPS / CUSTOMISATION ON PRIV ONLY ALBUMS
-#subtitle runs for album show unskipped time
-#edit album artist
+edit album artist, check work yes?
 
 want "recently most played" to give a queue full of ur top songs, nto a radio of that song
 for when we track plays.
@@ -150,13 +99,10 @@ NEED PUBLIC COUNTERPARTS FOR PUBLIC ARTISTS.
 each artist has tons of different topic channels. twent yone pilots channel generated with capitals for The Line, ending in Gw, normal ends with Cw?
 
 SHOW CUSTOMISATION IN MORE PLACES. ALLOW USER TO EDIT ARTIST NAME, AND ENSURE ITS SHOWN EVERYWHERE. _EditLongBylineOfPlaylistPanelVideoRenderer HAS CUSTOMISATION BUT UCreateLongBylineForPlaylistPanel DOES NOT.
-CHECK TODOS NEXT TO PARTICULARLY LISTITEMRENDERER CUSTOMISING.
+CHECK TODOS IN CODE NEXT TO PARTICULARLY LISTITEMRENDERER CUSTOMISING.
 EDIT THUMBNAILS IN PPVR, CAREFUL THAT IT DOESNT OVERWRITE WRONG THING (BUILDFROM, WANT EARLIER VERSION SAME JST EDIT DELUXE.)
 
-playing in playlist changes palying version as if was from album
-
-WORKS! LOOK AT WHETHER YT STATS THINK I DONT LIKE THE SONG:
-
+SKIP AREAS WORK: LOOK AT WHETHER YT STATS THINK I DONT LIKE THE SONG:
 polymerController.playerUiService.playerApi.addEventListener("onVideoProgress", (e) => {
 	if (e >=180 ) polymerController.playerApi.seekTo(201)
 })
@@ -169,25 +115,3 @@ song metadata editing - name, explicit, LYRICS, PLAY SECTION! SEE ABOVE! DO NOW!
 
 *** NEW BACKUPS SYSTEM: ***
 make it so it saves not literally EVERY time, but one every hour for the past 24 hours, then 1 a day for the past week/month?
-
-CAME FROM /next/ SMALL TASK:
-/*DONT DELETE THIS. ONGOING STRUGGLE, KEEP THE CODE!  let headerButtons = UDigDict(response, [
-				"contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer",
-				"watchNextTabbedResultsRenderer", "tabs", 0,
-				"tabRenderer", "content", "musicQueueRenderer",
-				"header", "musicQueueHeaderRenderer", "buttons"
-			]);
-
-			if (!headerButtons) return response; // has been changed in place.
-
-			headerButtons.push({
-				chipCloudChipRenderer: {
-					style: { styleType: "STYLE_DEFAULT" },
-					text: { runs: [ {text: "Clear Queue Actually" } ] },
-					navigationEndpoint: { dismissQueueCommand: {} },
-					icon: { iconType: "DISMISS_QUEUE" },
-					accessibilityData: { accessibilityData: { label: "Clear Queue" } },
-					isSelected: false,
-					uniqueId: "Clear"
-				}
-			});*/

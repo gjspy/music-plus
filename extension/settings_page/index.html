@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+</head>
+
+<style>
+	body {
+		overflow: clip clip;
+	}
+	#main-cont {
+		width: 400px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	#header {
+		width: 100%;
+		text-align: center;
+		margin: 0;
+	}
+	#debug-cont {
+		max-width: 100%;
+		gap: 0px;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	.danger {
+		background-color: red;
+	}
+
+	.btn-cont {
+		width: 100%;
+		gap: 0px;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	button {
+		flex: auto;
+	}
+
+
+	textarea {
+		margin-top: 10px;
+		width: 100%;
+		max-width: 100%;
+
+	}
+
+	#error {
+		max-width: 100%;
+		width: 100%;
+
+		word-break: break-all;
+		word-wrap: break-word;
+	}
+
+	#lights {
+		width: 100%;
+		margin-top: 15px;
+	}
+
+	#lights-control {
+		display: flex;
+		width: 100%;
+	}
+</style>
+
+<body>
+	<a id="go-back" style="font-variant: normal; cursor:pointer" hidden>←</a>
+
+	<div id="main-cont">
+		<h1 id="header">YTMusic+</h1>
+
+		<div class="btn-cont" id="main-btns">
+			<button type="button" id="clr-cache">Clear Cache</button>
+			<button type="button" id="tab-toggle" style="width: 100%;">Tab Toggle</button>
+			<div id="lights" style="display: none;">
+				<input type="checkbox">
+				<label class="lights-label">Enable Auto Lights</label>
+				<div id="lights-control">
+					<button id="dim" style="flex: 50%;">Dim</button>
+					<button id="undim" style="flex: 50%;">Undim</button>
+				</div>
+				<button id="goto-ls" style="width: 100%;">Light Show</button>
+			</div>
+			<button id="ref-side" style="width: 100%;">Refresh Sidebar</button>
+			
+			<button type="button" id="debug" style="margin-top: 22px;">Debug Actions</button>
+			
+		</div>
+
+		<div id="debug-cont" style="display: none;">
+			<button id="r-dmp">Dump Local Storage</button>
+			<button id="er-dmp">Dump Ext Storage (REFRESH)</button>
+			<button id="e-dmp">Dump Ext Storage</button>
+			<button id="s-dmp">Dump Session Storage</button>
+			<button id="clr-strg" class="danger">Clear Local Storage</button>
+			<textarea rows="6" cols="25" id="run-code-input" placeholder="Paste in JSON to fully replace storage with. No undo. **MUST BE CLEAN STORAGE, NOT RAW**"></textarea>
+			<button id="set-strg-e" style="padding: 0;">Set ExtStorage to textarea value</button>
+			<button id="set-strg-l" style="padding: 0;">Set LclStorage to textarea value</button>
+			<button id="set-uid" style="padding: 0; font-size: 0.8em;">Set Storage API UID to textarea value</button>
+			<button id="set-token" style="padding: 0;">Set Storage API Token to textarea value</button>
+			<button id="set-light-api" style="padding: 0;">Set Lights API creds to textarea value</button>
+			<button id="set-entities-api" style="padding: 0;">Set Lights API EntitiesToKeys to textarea value</button>
+			<button id="del-cache-entry" style="padding: 0;">Delete Cache Entry ID of textarea value</button>
+			<button id="get-human" style="padding: 0;">Show Cache Entry ID of textarea value</button>
+		</div>
+
+		<a id="error" style="text-align: left; word-break: keep-all;"></a>
+	</div>
+
+	<ul id="lists"></ul>
+	
+	<script type="module" src="./popup.js"></script>
+</body>
+</html>
