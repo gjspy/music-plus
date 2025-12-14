@@ -1,4 +1,42 @@
-playerBar -> musicApp
+completely redo popups
+make inject.css scripted and not instant/automatic
+make tab ignoring work cMusicFixerExtIgnoreTab
+the reason we lose error context in bkg world when injecting code is bcs exceptions arent json serializable so cant be transferred. should catch but retrhow String(caught)
+can easily edit utils.GetSVG() to look in youtube's SVG store. so we could auto-update to their icons when they change them!
+do something to default yt "New platlist" button, beore sidebarEditfeatures appear. make it flex: 50% and let it be big until we change it and put max_width: (dpo we rlly need that?)
+"js/ts.implicitProjectConfig.checkJs": true
+
+"javascript.suggestionActions.enabled": false
+popups: try to load one on top of other
+
+install node.js to get npm and npx
+add this to settings.json:
+
+{
+    "eslint.validate": [
+        "javascript", // Enable ESLint for JavaScript files
+        "javascriptreact", // Enable ESLint for React (if applicable)
+        "typescript", // Enable ESLint for TypeScript files (if applicable)
+        "typescriptreact" // Enable ESLint for TypeScript React (if applicable)
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true // Automatically fix ESLint issues on save
+    },
+    "eslint.run": "onType", // Run ESLint as you type
+    "eslint.format.enable": true // Enable ESLint as a formatter
+}
+npm install --save @types/firefox-webext-browser
+npm install globals --save-dev
+npx eslint .
+install eslint vs code extension
+
+
+FEELS SNAPPY STILL AFTER ADDING PAPERITEMS!
+
+
+
+
+playerBar -> musicApp (already done? see fixer.getPolymerControll)
 TAB IGNORING DOES NOT WORK :(
 
 for songs with too many plays (we are never ever getting back together 1b tv), see video detail from playerResponse.

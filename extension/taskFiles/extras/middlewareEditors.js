@@ -793,7 +793,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		for (let b of structuredClone(buttons)) {
 			i ++;
 
-			let serviceAction = UDigDict(b, UDictGet.serviceActionPlaylistEditEndpointFromMenuItem);
+			let serviceAction = UDigDict(b, UDictGet.serviceActionPlaylistEditEndpointFromMenuItem)?.action;
 			if (serviceAction === "ACTION_REMOVE_VIDEO" ) {
 				buttons.splice(i, 1);
 				i--;
@@ -1429,7 +1429,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				let serviceEndpoint = UDigDict(serviceItem, UDictGet.serviceEndpointFromMenuItem);
 				if (!serviceEndpoint) continue;
 
-				let action = UDigDict(serviceItem, UDictGet.serviceActionPlaylistEditEndpointFromMenuItem);
+				let action = UDigDict(serviceItem, UDictGet.serviceActionPlaylistEditEndpointFromMenuItem)?.action;
 				if (action !== "ACTION_REMOVE_VIDEO") continue;
 				
 				indexToAddNew = i;

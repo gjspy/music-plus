@@ -1,7 +1,7 @@
-export function MWCaching() {
+export class CacheService {
 	
 
-	function _GetListIsSavedFromHeaderRenderer(headerRenderer) {
+	/*function _GetListIsSavedFromHeaderRenderer(headerRenderer) {
 		let saveToLibraryButton = headerRenderer.buttons.filter(v => 
 			v.toggleButtonRenderer !== undefined &&
 			v.toggleButtonRenderer.defaultServiceEndpoint.likeEndpoint !== undefined
@@ -278,48 +278,149 @@ export function MWCaching() {
 			type: response.browsePageType,
 			items: cleanedItems
 		};
+	};*/
+
+	static GetDefaultDataForTRIRFromPageType(browsePageType) {
+		const isSaved = browsePageType === "MUSIC_PAGE_TYPE_LIBRARY_CONTENT_LANDING_PAGE" || // library
+			browsePageType === "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE";
+		
+		const isPrivate = browsePageType === "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE";
+		
+		return {saved: isSaved, private: isPrivate};
 	};
 
-	function _CollectContinuationData(response) {
-		let items = [];
-		let hasContinuation = null;
 
-		if (response.contents.appendContinuationItemsAction) {
-			items = response.contents.appendContinuationItemsAction.continuationItems;
-			hasContinuation = !!items[items.length - 1].continuationItemRenderer;
+	static GetArtistsFromTextRuns(runs) {
+		if (!runs) return []; // COLUMN ONLY APPEARS IF IS COLLABORATIVE ALBUM.
 
-		} else if (response.contents.sectionListContinuation) {
-			let contents = response.contents.sectionListContinuation.contents[0];
+		const artistsData = [];
 
-			if (contents.gridRenderer) {
-				items = contents.gridRenderer.items;
-				hasContinuation = !!contents.gridRenderer.continuations;
+		runs.forEach((run) => {
+			const n = run.navigationEndpoint;
+			if (!n) return;
 
-			} /*else if (contents.musicShelfRenderer) { THIS BAD, PLAYLIST PAGE, "SUGGESTIONS", GETS CONFUSED AND ADDS TO PLAYLIST CONTENTS
-				items = contents.musicShelfRenderer.contents;
-				hasContinuation = !!contents.musicShelfRenderer.continuations;
+			const id = musicFixer.SafeDeepGet(n, musicFixer.SafeDeepGetRoutes.browseIdFromNavigationEndpoint);
+			let type = musicFixer.SafeDeepGet(n, musicFixer.SafeDeepGetRoutes.pageTypeFromNavigationEndpoint);
 
-			};*/
+			if (type === "MUSIC_PAGE_TYPE_UNKNOWN" && id.match("^FEmusic_library_privately_owned_artist_detail")) {
+				type = "MUSIC_PAGE_TYPE_ARTIST";
+			};
 
-		} else if (response.contents.gridContinuation) {
-			items = response.contents.gridContinuation.items;
-			hasContinuation = !!response.contents.gridContinuation.continuations;
+			artistsData.push({ name: run.text, id, type });
+		});
 
+		return artistsData;
+	};
+
+
+	static GetSongInfoFromLIR(lir) {
+		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
+		if (!lir) return;
+
+		const thumbnails = musicFixer.SafeDeepGet(lir, musicFixer.SafeDeepGetRoutes.thumbnailsFromItem);
+		const thumb = (thumbnails) ? musicFixer.ChooseBestThumbnail(thumbnails) : "";
+
+		const watchEndpoint = musicFixer.SafeDeepGet(lir, musicFixer.SafeDeepGetRoutes.watchEndpointFromLIRDataPlayButton);
+		const type = musicFixer.SafeDeepGet(watchEndpoint, musicFixer.SafeDeepGetRoutes.videoTypeFromWatchEndpoint) || "SONG";
+
+		const name = musicFixer.SafeDeepGet(lir, musicFixer.SafeDeepGetRoutes.titleTextFromLIR);
+		const lengthStr = musicFixer.SafeDeepGet(lir, musicFixer.SafeDeepGetRoutes.lengthStrFromLIRData);
+		const artists = this.GetArtistsFromTextRuns(listItemRenderer.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs)
+		const liked = musicFixer.SafeDeepGet(lir, musicFixer.SafeDeepGetRoutes.isLikedFromItem);
+
+
+		let id, playlistSetVideoId;
+
+		if (lir.playlistItemData) {
+			id = lir.playlistItemData.videoId;
+			playlistSetVideoId = lir.playlistItemData.playlistSetVideoId;
+		
+		} else if (lir.menu) {
+			const menu = musicFixer.SafeDeepGet(lir, musicFixer.SafeDeepGetRoutes.firstMenuItem);
+			id = musicFixer.SafeDeepGet(menu, musicFixer.SafeDeepGetRoutes.serviceActionPlaylistEditEndpointFromMenuItem)?.removedVideoId;
+		
+		} else {
+			fconsole.log(`CANNOT GET DATA FOR ${lir} HAS DISPLAY POLICY AND NO MENU.`);
+			return;
 		};
 
+		let album;
+
+		// ALL BECAUSE OF ARTIST PAGE TOP SONGS SHELF, col 2 = n plays, 3 = album
+		for (let i = 2; i < lir.flexColumns.length; i++) {
+			let albumListItem = lir.flexColumns[i];
+			if (!albumListItem) break;
+			
+			albumListItem = albumListItem.musicResponsiveListItemFlexColumnRenderer.text;
+			if (!albumListItem || !albumListItem.runs) break;
+			
+			albumListItem = albumListItem.runs[0];
+			if (!albumListItem.navigationEndpoint) continue; 
+
+			album = {
+				name: albumListItem.text,
+				id: albumListItem.navigationEndpoint.browseEndpoint.browseId
+			};
+
+			break;
+		};
+
+		return {
+			name,
+			lengthStr,
+			artists:  		 ,
+			index: 	  		(listItemRenderer.index || { runs: [ { } ] }).runs[0].text,
+			badges:		    (listItemRenderer.badges || []).map(v => v.musicInlineBadgeRenderer.icon.iconType),
+			album, thumb, id, type, liked, playlistSetVideoId,
+			_DISPLAY_POLICY: lir.musicItemRendererDisplayPolicy
+		}
+	};
+
+
+
+
+
+
+
+	static CollectContinuationData(response) {
+		function GetItems() {
+			const appendItems = musicFixer.SafeDeepGet(response, musicFixer.SafeDeepGetRoutes.continuationAppendItems);
+			if (appendItems) return [appendItems, !!musicFixer.ArrayNLast(items).continuationItemRenderer];
+
+			const sectionList = musicFixer.SafeDeepGet(response, musicFixer.SafeDeepGetRoutes.continuationSectionListGrid);
+			if (sectionList) return [sectionList.items, !!sectionList.continuations];
+
+			const grid = musicFixer.SafeDeepGet(response, musicFixer.SafeDeepGetRoutes.continuationGrid);
+			if (grid) return [grid.items, !!grid.continuations];
+
+			return [[], null];
+		};
+
+		function GetDataFromItem(item) {
+			if (item.musicResponsiveListItemRenderer) retur 
+		};
+
+
+		const [items, hasContinuation] = GetItems();
 		if (items.length === 0) return;
 		
-		gathered = {
+		const gathered = {
 			id: response.browseId,
 			type: response.browsePageType,
 			items: [],
 			_CONTINUATION_DATA: {
-				itemsIsContinuation: true, // we're in the "if" statement of "if is continuation" :)
+				itemsIsContinuation: true, // WE KNOW WE ARE. "CollectContinuationData"
 				itemsHasContinuation: hasContinuation
 			}
 		};
 
-		let defaultData = UGetDefaultDataForTwoRowItemRendererFromBrowsePageType(response.browsePageType);
+		const defaultData = this.GetDefaultDataForTRIRFromPageType(response.browsePageType);
+
+		items.forEach((v) => {
+			const formatted;
+
+			if (v.musicResponsiveListItemRenderer)
+		})
 
 		for (let item of items) {
 			if (item.musicResponsiveListItemRenderer) {
@@ -338,7 +439,7 @@ export function MWCaching() {
 	};
 
 
-	window.CachePageContents = function(responseOrStateOrNone) {
+	static CachePageContents(responseOrStateOrNone) {
 		// provide: undefined to use polymerController.store.getState()
 		//			state to use provided store.state
 		//			response to use respBody of api call
@@ -348,26 +449,19 @@ export function MWCaching() {
 
 		let response = responseOrStateOrNone;
 
-		if (responseOrStateOrNone.navigation && responseOrStateOrNone.navigation.mainContent) { // IS STATE
-			browseIdOrNone = responseOrStateOrNone.navigation.mainContent.endpoint.data.browseId;
+		if (responseOrStateOrNone.navigation) { // IS POLYMERSTATE
+			const browseIdOrNone = musicFixer.SafeDeepGet(response, musicFixer.SafeDeepGetRoutes.browseIdFromPolymerState);
+			const mainContentResponse = musicFixer.SafeDeepGet(response, musicFixer.SafeDeepGetRoutes.mainContentFromPolymerState);
 
 			response = {
 				browseId: browseIdOrNone,
-				browsePageType: UGetBrowsePageType(responseOrStateOrNone),
-				responseIsContinuation: false, // polymerController always returns full state
-				contents: responseOrStateOrNone.navigation.mainContent.response.contents
-			};
-
-			if (responseOrStateOrNone.navigation.mainContent.response.header) {
-				response.contents.header = responseOrStateOrNone.navigation.mainContent.response.header;
-			};
-
-			if (responseOrStateOrNone.navigation.mainContent.response.microformat) {
-				response.contents.microformat = responseOrStateOrNone.navigation.mainContent.response.microformat;
+				browsePageType: musicFixer.GetBrowsePageType(responseOrStateOrNone),
+				responseIsContinuation: false, // POLYMER ALWAYS RETURNS FULL STATE
+				contents: mainContentResponse.contents,
+				header: mainContentResponse.header, // MOVED OTUSIDE CONTENTS
+				microformat: mainContentResponse.microformat // MOVED OTUSIDE CONTENTS
 			};
 		};
-
-		//console.log("response", response);
 
 		let gathered, tab;
 		let condition = response.browsePageType;
@@ -418,6 +512,4 @@ export function MWCaching() {
 			data: gathered
 		});
 	};
-
-	window.CachePageContents();
 };

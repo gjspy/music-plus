@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "globals": "^16.5.0"
+  },
+  "dependencies": {
+    "@types/firefox-webext-browser": "^143.0.0"
+  }
+}

@@ -1,4 +1,4 @@
-export async function MWSidebarEditFeatures() {
+export function SidebarEditFeatures() {
 	// this function connects dragging events to all papers.
 	function _AddDraggableFeatures(ovf) {
 		function __OnEnter() {
@@ -664,69 +664,4 @@ export async function MWSidebarEditFeatures() {
 		_AddDraggableFeatures(ovf);		
 	};
 
-	// main function, creates primary edit button + invokes creation of other features
-	function _PrepareEditButtons() {
-		// ytButtonsCont just holds "New Playlst" until we edit it.
-		// id buttons with class ytmusic-sect-renderer and has child of type button-renderer
-		// unlike itemsCont, another buttons cont does exist above is-primary items, but no children.
-		const ytButtonsCont = document.querySelector("#buttons.ytmusic-guide-section-renderer:has(yt-button-renderer)");
-
-		let oldBtn = ytButtonsCont.querySelector("#edit.c-button");
-		if (oldBtn) oldBtn.remove();
-
-		// change other button from New Playlist -> New
-		let otherButtonText = ytButtonsCont.querySelector(".yt-core-attributed-string");
-		otherButtonText.textContent = "New";
-		
-		// insert edit button
-		let editButton = UCreateButton("pencil", "Edit", "dark");
-
-		editButton.addEventListener("click",function() {
-			_EnableEditMode(ytButtonsCont, editButton);
-		});
-
-		ytButtonsCont.append(editButton);
-	};
-
-	// CODE THAT RUNS
-
-	/*return new Promise(async function(resolve, reject) {
-		try {
-			console.log("MWSIDEEDIT");	
-		
-			_PrepareEditButtons();
-			
-			resolve("success");
-		} catch (err) {
-			console.log("ERROR:",err);
-			reject(["failure", err.toString()]);
-		};
-	});*/
-
-	async function _AsyncStartProcesses() {
-		return new Promise(function(resolve, reject) {
-			try {
-				_PrepareEditButtons();
-				resolve("success");
-	
-			} catch(err) {
-				console.log("ERROR:",err);
-				reject(["failure", err.toString()]);
-	
-			};
-		});
-	};
-
-	async function _ExpireAndReject() {
-		return new Promise(function(_, reject) {
-			setTimeout(() => reject(["TIMEOUT!"]), UMAX_EXECUTION_TIMEOUT);
-		});
-	};
-
-	console.log("MWSIDEEDIT");
-
-	return Promise.race([ // return fastest
-		_AsyncStartProcesses(),
-		_ExpireAndReject()
-	]);
-};
+}:

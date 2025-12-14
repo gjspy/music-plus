@@ -1,2 +1,2 @@
-browser.tabs.create({url: browser.runtime.getURL("settings_page/index.html"), active: true});
+browser.tabs.create({url: browser.runtime.getURL("settingsPage/index.html"), active: true});
 window.close();

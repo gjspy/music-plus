@@ -1,20 +1,18 @@
-"use strict";
-
-import { Utils } from "../utils.js";
-import { MWInjectMyPaperItems } from "../task_files/injectMyPaperItems.js";
-import { MWSidebarEditFeatures } from "../task_files/sidebarEditFeatures.js";
-import { MWEventDriven_PageChanges } from "../task_files/eventDriven.js";
-//import { AlbumEditFeatures } from "../task_files/albumEditMode.js";
-import { MWCaching } from "../task_files/caching.js";
+import { MWInit } from "../initmw.js";
+import { EWUtils as utils } from "../utilsew.js";
 
 const EXTRAS_FILE_LOC = "../task_files/extras/";
 const EXTRAS = ["niceMiniGuide.js", "playerPageFeatures.js", "editMode.js", "middlewareEditors.js", "customEndpointHandler.js"];
 const MIDDLEWARE = "../networkMiddleware.js";
 
+const MODULESCRIPTS = {
+	"musicFixer": "utilsmw.js",
+	"sidebarService": "taskFiles/sidebarService.js",
+	"sidebarEditService": "taskFiles/sidebarEditService.js"
+};
 
-const utils = Utils;
+const TEMPLATE_ELEMS_FP = "../templateElements.html";
 
-let clonableUtils;
 
 
 /* FUNCTIONS FOR USE IN THE
@@ -31,70 +29,6 @@ let clonableUtils;
 */
 
 
-async function MWInit(toGlobalise) {
-	console.log(toGlobalise);
-
-
-	//init, convert cloned utils to usable varaibles
-	for (let group of toGlobalise) {
-		for (let [i,v] of Object.entries(group)) {
-			if (typeof(v) === "string" && (v.startsWith("window["))) {
-				eval(v); // eval runs code to "create" function, adding it to local scope. dumb ik :)
-			} else {
-				window[i] = v; // add value to local scope
-			};
-		};
-	};
-
-	UEventListenerInMWFromEW(); // launch this to start listening for us.
-
-	window.polymerController = undefined;
-	window.menuServiceItemBehaviour = undefined;
-	window.NETWORK_EDITING_ENABLED = true;
-	
-	interval = setInterval(function() { // backup, incase loop in paperitems doesnt work.
-		let utilsGot = UGetPolymerController();
-		if (!utilsGot) return;
-
-		console.log("got polymerController");
-
-
-		let menu = UGetMenuServiceItemBehaviour();
-		if (!menu) return;
-
-		console.log("got menuservicebehaviour");
-
-		clearInterval(interval);
-	}, 500);
-
-
-	// we now want to keep templateElem forever, so add it to a new div separate from paper items.
-	// must be separate otherwise it interferes with clicking/dragging.
-	let templates = document.createElement("template");
-	templates.setAttribute("class", "c-templates-list");
-	
-	
-	for (let templateClass of ["c-paper-wrapper", "c-sidebar-sep"]) {
-		let elem = document.createElement("div");
-		templates.append(elem);
-
-		elem.outerHTML = UTemplateElementsStrings[templateClass];
-	};
-
-	document.head.appendChild(templates);
-
-
-	document.documentElement.addEventListener("click", function(e) {
-		let currentDropdown = document.querySelector("body .c-popup-bkg .c-dropdown");
-		if (!currentDropdown) return;
-
-		if (e.target.matches(".c-dropdown") || e.target.closest(".c-dropdown")) return;
-
-		currentDropdown.parentElement.remove();
-	});
-};
-
-
 /* FUNCTIONS FOR USE IN THE
 
 
@@ -109,54 +43,16 @@ async function MWInit(toGlobalise) {
 */
 
 async function EWInit(injectionTarget) {
-	let toGlobalise = [clonableUtils];//, clonableAlbumEditFeatures];
+	const files = Object.entries(MODULESCRIPTS).map(v => [v[0], browser.runtime.getURL(v[1])]);
 
-	let resp1 = await browser.scripting.executeScript({
+	const resp1 = await browser.scripting.executeScript({
 		"target": injectionTarget,
 		"func": MWInit,
-		"args": [toGlobalise],
+		"args": [files],
 		"world": "MAIN"
 	});
 
-	console.warn("EWINIT: INJECT UTILS RESP1", JSON.stringify(resp1));
-
-	window["utils"] = utils;
-}
-
-function EWUnhideItemsCont(injectionTarget) {
-	browser.scripting.insertCSS({
-		target: injectionTarget,
-		css: `#guide #items.ytmusic-guide-section-renderer:not(:has(ytmusic-guide-entry-renderer[is-primary])) {opacity: 1 !important; }`,
-		origin: "USER"
-	});
-};
-
-
-async function EWInjectMyPaperItems(injectionTarget) {
-	console.log("in EWINJECT");
-
-	// main function to remove old + create new paper items.
-	let resp1 = await browser.scripting.executeScript({
-		"target": injectionTarget,
-		"func": MWInjectMyPaperItems,
-		//"files": ["task_fikes\\injectMyPaperItems.js"], args dont work with files
-		//"args": ["first-tasks", cache, savedCustomConfigs, savedAccountInfo],
-		"world": "MAIN"
-	});
-
-	console.warn("EWINJECT: MWINJECT RESP1", JSON.stringify(resp1));
-
-	EWUnhideItemsCont(injectionTarget);
-
-	if (resp1 && resp1[0] && !resp1[0].error) {
-		let resp2 = await browser.scripting.insertCSS({
-			target: injectionTarget,
-			css: "ytmusic-guide-entry-renderer:not([is-primary]) { display: none !important; }",
-			origin: "USER"
-		});
-
-		console.warn("EWINJECT: INSERTCSS RESP2", JSON.stringify(resp2));
-	};
+	fconsole.warn("EWINIT: INJECT UTILS RESP1", JSON.stringify(resp1));
 };
 
 
@@ -167,7 +63,7 @@ async function EWSidebarEditFeatures(injectionTarget) {
 		"world": "MAIN"
 	});
 
-	console.warn("EWSIDEBAR: RESP1", JSON.stringify(resp1));
+	fconsole.warn("EWSIDEBAR: RESP1", JSON.stringify(resp1));
 };
 
 
@@ -183,10 +79,10 @@ async function EWExtras(injectionTarget) {
 				"world": "MAIN"
 			});
 		} catch (err) {
-			console.error("DOING", f, resp, err);
+			fconsole.error("DOING", f, resp, err);
 		};
 
-		console.log(f, "resp", JSON.stringify(resp));
+		fconsole.log(f, "resp", JSON.stringify(resp));
 	};
 };
 
@@ -197,7 +93,7 @@ async function EWEventDriven(injectionTarget) {
 		"world": "MAIN"
 	});
 
-	console.log("EWEVENTDRIVEN RESP0 MWCACHING", JSON.stringify(resp0));
+	fconsole.log("EWEVENTDRIVEN RESP0 MWCACHING", JSON.stringify(resp0));
 
 	let resp = await browser.scripting.executeScript({
 		"target": injectionTarget,
@@ -205,7 +101,7 @@ async function EWEventDriven(injectionTarget) {
 		"world": "MAIN"
 	});
 
-	console.log("EWEVENTDRIVEN RESP", JSON.stringify(resp));
+	fconsole.log("EWEVENTDRIVEN RESP", JSON.stringify(resp));
 };
 
 async function EWInjectMiddleware(injectionTarget) {
@@ -215,43 +111,35 @@ async function EWInjectMiddleware(injectionTarget) {
 		"world": "MAIN"
 	});
 
-	console.log("EWINJECTMIDDLEWARE RESP", JSON.stringify(resp));
+	fconsole.log("EWINJECTMIDDLEWARE RESP", JSON.stringify(resp));
 };
 
 async function EWInitSidebarThings(injectionTarget) {
 	try {await EWInjectMyPaperItems(injectionTarget);}
-	catch (err) {console.error("couldnt inject paperitems", err)};
+	catch (err) {fconsole.error("couldnt inject paperitems", err)};
 
 	try {await EWSidebarEditFeatures(injectionTarget);}
-	catch (err) {console.error("couldnt inject sidebarfeatures", err)};
+	catch (err) {fconsole.error("couldnt inject sidebarfeatures", err)};
 };
 
 async function main(request, sender, sendResponse) {
-	let tab = sender.tab;
-	let injectionTarget = {
-		"tabId": tab.id
-	};
+	fconsole.log("BKGSCRIPT STARTED FOR TAB", sender.tab.id);
 
-	console.log("BkgScript MAIN function began.");
-
-	await utils._ULoadTemplateElements();
-	clonableUtils = utils.toString();
+	let injectionTarget = { "tabId": sender.tab.id };	
 	await EWInit(injectionTarget);
 
-	console.log(clonableUtils);	
-
-	console.log("TAB", tab.id);
+	return
 
 	await EWInitSidebarThings(injectionTarget);
 
 	try {await EWInjectMiddleware(injectionTarget);}
-	catch (err) {console.error("couldnt inject middleware", err)};
+	catch (err) {fconsole.error("couldnt inject middleware", err)};
 
 	try {await EWExtras(injectionTarget);}
-	catch (err) {console.error("couldnt inject extras", err)};
+	catch (err) {fconsole.error("couldnt inject extras", err)};
 
 	try {await EWEventDriven(injectionTarget);}
-	catch (err) {console.error("couldnt inject eventdriven", err)};
+	catch (err) {fconsole.error("couldnt inject eventdriven", err)};
 };
 
 
@@ -268,6 +156,16 @@ async function main(request, sender, sendResponse) {
                                                                                    
 */
 
+async function EWOMGetTemplateElems(request, sender) {
+	const file = await fetch(TEMPLATE_ELEMS_FP);
+	const text = (await file.text()).replaceAll(/[\t\n]/g, "");
+
+	browser.tabs.sendMessage(sender.tab.id, {
+		functionResponseCorrelation: request.functionResponseCorrelation,
+		HTMLString: text,
+		csAction: "init-template-elems" // CSP REQUIRED SETTING .innerHTML IN ISO WORLD ONLY.
+	});
+};
 
 async function EWOMSaveAccountInfo(request) {
 	let storage = await utils.UStorageGetLocal();
@@ -278,8 +176,8 @@ async function EWOMSaveAccountInfo(request) {
 };
 
 async function EWOMSidebarSaveChanges(request) {
-	console.log("GOT CUSTOM EVENT");
-	console.log(request);
+	fconsole.log("GOT CUSTOM EVENT");
+	fconsole.log(request);
 
 	let storage = await utils.UStorageGetExternal(false);
 
@@ -292,8 +190,8 @@ async function EWOMSidebarSaveChanges(request) {
 	};
 
 	await utils.UStorageSetExternal(storage);
-	console.log("SET STORAGE");
-	console.log(JSON.stringify(storage));
+	fconsole.log("SET STORAGE");
+	fconsole.log(JSON.stringify(storage));
 };
 
 async function EWOMSidebarNewFolder(request, sender) {
@@ -316,27 +214,21 @@ async function EWOMSidebarNewFolder(request, sender) {
 
 	await utils.UStorageSetExternal(storage);
 
-	// tabs, not runtime, bcs cant send to contentscripts with runtime
-	let response = {
-		func: utils.UEventFuncForSidebarUpdate,
-		time: -1,
-
+	// browser.tabs, NOT browser.runtime, BCS CANT SENT TO CONTENTSCRIPTS WITH runtime.
+	browser.tabs.sendMessage(sender.tab.id, {
+		functionResponseCorrelation: request.functionResponseCorrelation,
 		storage: storage,
 		action: "new",
 		parent: "guide",
 		position: 0,
 		id: thisId
-	};
-
-	browser.tabs.sendMessage(sender.tab.id, response);
-
-	console.warn("EWOMSIDEBARNEWFOLDER: MWINJECT RESP1", JSON.stringify(response));
+	});
 };
 
 async function EWOMSidebarDeleteFolder(request) {
 	let storage = await utils.UStorageGetExternal(false);
 
-	console.log(JSON.stringify(request));
+	fconsole.log(JSON.stringify(request));
 
 	delete storage.sidebar.folders.folders[request.folderId];
 	
@@ -357,13 +249,13 @@ async function EWOMSidebarRenameFolder(request) {
 	};
 
 	storage.sidebar.folders.folders[request.plId].subtitle = request.editInfo.subtitle;
-	console.log(request);
+	fconsole.log(request);
 	await utils.UStorageSetExternal(storage);
 };
 
 async function EWOMSidebarVisibilityChange(request) {
 	let storage = await utils.UStorageGetExternal(false);
-	console.log(JSON.stringify(request));
+	fconsole.log(JSON.stringify(request));
 
 	let id = request.change.id;
 
@@ -407,9 +299,10 @@ async function EWOMSidebarNewSep(request, sender) {
 		id: thisId
 	};
 
+	// browser.tabs, NOT browser.runtime, BCS CANT SENT TO CONTENTSCRIPTS WITH runtime.
 	browser.tabs.sendMessage(sender.tab.id, response);
 
-	console.warn("EWOMSIDEBARNEWSEPARATOR: MWINJECT", JSON.stringify(response));
+	fconsole.warn("EWOMSIDEBARNEWSEPARATOR: MWINJECT", JSON.stringify(response));
 };
 
 async function EWOMSidebarDeleteSep(request) {
@@ -456,14 +349,13 @@ async function EWOMSidebarNewCarousel(request, sender) {
 
 	browser.tabs.sendMessage(sender.tab.id, response);
 
-	console.warn("EWOMSIDEBARNEWCAROUSEL: MWINJECT RESP1", JSON.stringify(response));
+	fconsole.warn("EWOMSIDEBARNEWCAROUSEL: MWINJECT RESP1", JSON.stringify(response));
 };
 
 
 
 async function EWOMGetStorage(request, sender, sendResponse) {
-	let gotStorage = await utils.UStorageGetExternal(request.fetchNew);
-	// sendResponse({toHide: toHide}); could do this, would mean more logic in cs, just making new customEvent instead.
+	let gotStorage = await utils.StorageGetExternal(request.forceRefresh);
 
 	if (request.path) {
 		for (let seg of request.path.split(".")) {
@@ -471,17 +363,11 @@ async function EWOMGetStorage(request, sender, sendResponse) {
 		};
 	};
 
-	// tabs, not runtime, bcs cant send to contentscripts with runtime
-	let response = {
-		func: request.func,
-		time: request.time,
+	// browser.tabs, NOT browser.runtime, BCS CANT SENT TO CONTENTSCRIPTS WITH runtime.
+	browser.tabs.sendMessage(sender.tab.id, {
+		functionResponseCorrelation: request.functionResponseCorrelation,
 		storage: gotStorage
-	};
-
-	browser.tabs.sendMessage(sender.tab.id, response);
-
-	console.log("response", response);
-	console.log("after send message");
+	});
 };
 
 async function EWAddTagToStorage(request, storage) {
@@ -610,7 +496,7 @@ async function EWCacheUpdateWithData(storable) {
 	let cache = storage.cache;
 
 	for (let toStore of storable) {
-		console.log(JSON.stringify(toStore));
+		fconsole.log(JSON.stringify(toStore));
 
 		// ADD VIDEOS TO TAGS IF THEY EXIST
 		if (toStore.type === "PLAYLIST" && storage.customisation.tags.tags[toStore.id]) {
@@ -629,7 +515,7 @@ async function EWCacheUpdateWithData(storable) {
 
 		if (!defaultData) {
 			cache[toStore.id] = toStore; 
-			console.warn("NO DEFAULT DATA FOR MUSIC TYPE\"", toStore.type, "\"SAVING RAW DATA", toStore);
+			fconsole.warn("NO DEFAULT DATA FOR MUSIC TYPE\"", toStore.type, "\"SAVING RAW DATA", toStore);
 			continue;
 		};
 
@@ -685,7 +571,7 @@ async function EWCacheUpdateWithData(storable) {
 
 	cache = EWCacheLinkPrivateCounterparts(cache);
 
-	console.log(cache);
+	fconsole.log(cache);
 
 	await utils.UStorageSetExternal(storage);
 
@@ -820,17 +706,17 @@ function EWCacheCreateStorableFromItemsList(data, newPl) {
 	let storable = [];
 
 	for (let item of (data.items || [])) {
-		console.log(item);
+		fconsole.log(item);
 
 		if (!item) continue;
 
 		try {
 			let itemStorable = EWCacheCreateStorableFromListItem(item, newPl, newPl.id);
-			console.log(itemStorable);
+			fconsole.log(itemStorable);
 
 			storable = storable.concat(itemStorable);
 		} catch (err) {
-			console.log("error", err);
+			fconsole.log("error", err);
 		};
 	};
 
@@ -886,7 +772,7 @@ function EWCacheCreateStorableFromListPage(data) {
 async function EWCacheData(data) {
 	let storable;
 
-	console.log(data.type, data.type === "C_PAGE_TYPE_CHANNEL_OR_ARTIST");
+	fconsole.log(data.type, data.type === "C_PAGE_TYPE_CHANNEL_OR_ARTIST");
 
 	let isArray = data.constructor === Array;
 
@@ -918,7 +804,7 @@ async function EWCacheData(data) {
 
 
 		default:
-			console.warn("What is this value of store.getState() browsePageType for EWcachePage", data.type);
+			fconsole.warn("What is this value of store.getState() browsePageType for EWcachePage", data.type);
 			return;
 	};
 	
@@ -1022,7 +908,7 @@ async function EWOMRemoveInsertedSong(request) {
 	let storage = await utils.UStorageGetExternal(false);
 	let extraSongs = storage.customisation.extraSongs[request.id] || [];
 	storage.customisation.extraSongs[request.id] = extraSongs.filter((v) => v.videoId !== request.data.videoId);
-	console.log("old", extraSongs, "new", storage.customisation.extraSongs[request.id])
+	fconsole.log("old", extraSongs, "new", storage.customisation.extraSongs[request.id])
 
 	await utils.UStorageSetExternal(storage);
 };
@@ -1058,7 +944,7 @@ async function EWOMRemoveVideoFromTag(request) {
 async function EWOMAutoLights(request) {
 	let storage = await utils.UStorageGetLocal();
 
-	console.log(request, storage.lightApi.endpoint, storage.lightApi.enabled);
+	fconsole.log(request, storage.lightApi.endpoint, storage.lightApi.enabled);
 	if (!storage.lightApi.endpoint || (!storage.lightApi.enabled && request.autoMusic)) return;
 
 	if (request.action === "dim") {
@@ -1070,7 +956,7 @@ async function EWOMAutoLights(request) {
 				brightness: 0,
 				transition: request.transition
 			})
-		}).then(v => console.log(v));
+		}).then(v => fconsole.log(v));
 
 	} else if (request.action === "undim") {
 		fetch(storage.lightApi.endpoint + "/api/brightness?auto_music=" + request.autoMusic, {
@@ -1081,7 +967,7 @@ async function EWOMAutoLights(request) {
 				brightness: 255,
 				transition: request.transition
 			})
-		}).then(v => console.log(v));
+		}).then(v => fconsole.log(v));
 
 	} else if (request.action === "setImg") {
 		let resp = await fetch(request.url);
@@ -1094,7 +980,7 @@ async function EWOMAutoLights(request) {
 		fetch(storage.lightApi.endpoint + "/api/set-by-img-file?auto_music=" + request.autoMusic, {
 			method: "POST",
 			body: formData
-		}).then(v => console.log(v));
+		}).then(v => fconsole.log(v));
 	};
 };
 
@@ -1117,11 +1003,12 @@ async function EWOMWatchtimeStore(request) {
 
 
 function OnMessage(request, sender, sendResponse) {
-	console.log("received in EW", JSON.stringify(request), sender, sendResponse);
+	fconsole.log("received in EW", JSON.stringify(request), sender, sendResponse);
 	
 	const f = request.func;
 	if (f === "start")                          main(request, sender, sendResponse);
-	else if (f === "reinit-sidebar")			EWInitSidebarThings({"tabId": sender.tab.id});
+	else if (f === "get-template-elements")		EWOMGetTemplateElems(request, sender);
+	else if (f === "reinit-sidebar")			EWInitSidebarThings({"tabId": sender.tab.id}); //TODO: UGLY, WHY?
 	else if (f === "save-account-info")         EWOMSaveAccountInfo(request);
 	else if (f === "sidebar-save-changes")      EWOMSidebarSaveChanges(request);
 	else if (f === "sidebar-new-folder")        EWOMSidebarNewFolder(request, sender);
@@ -1153,48 +1040,21 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "video-watched")				EWOMWatchtimeStore(request);
 };
 
+
+
+
+/* eslint-disable no-restricted-globals */
+//@ts-ignore
+window.fconsole = class fconsole {
+	static kw = "MFIXER:";
+
+	static debug = (...data) => console.debug(this.kw, ...data);
+	static log = (...data) => console.log(this.kw, ...data);
+	static info = (...data) => console.info(this.kw, ...data);
+	static warn = (...data) => console.warn(this.kw, ...data);
+	static error = (...data) => console.error(this.kw, ...data);
+};
+
+
+
 browser.runtime.onMessage.addListener(OnMessage);
-
-
-
-/*HOW TO PASS UTILS TO MAIN WORLD/CONTENT SCRIPTS:
-1) convert indicidual functions to string, pass as arg in executeScript, then on receiving end:
-	const AsyncFunction = async function() {}.constructor; //creates equivalent of Function() constructor;
-	paramUtils = AsyncFunction("return new Promise(resolve => {("+paramUtils+")(\"tp-yt-paper-item\").then(function(paperItems) {resolve(paperItems);}); });"); WORKs
-	//this ends up being: 
-	async function anonymous() {
-		return new Promise(resolve => {(async function waitForBySelector(selector) {
-			console.log("IN WAITFORBYSELECTOR FROM UTILS");
-
-			return new Promise(resolve => {
-				let found = document.querySelectorAll(selector);
-				if (found.length > 0) { resolve(found); };
-
-				let observer = new MutationObserver(function() {
-					found = document.querySelectorAll(selector);
-
-					if (found.length > 0) {
-						observer.disconnect();
-						resolve(found);
-					};
-				})
-				observer.observe(document.body, {childList:true, subtree:true});
-			});
-		})("tp-yt-paper-item").then(
-			function(paperItems) {
-				resolve(paperItems);
-			}); 
-		});
-	}	
-	(a mess)
-
-2) eval() the function body, to create new local function in namespace, then can just call normally! RIDICULOUS!!
-//init, convert cloned utils to usable varaibles
-for (let [i,v] of Object.entries(clonedUtils)) {
-	if (typeof(v) === "string" && (v.startsWith("async") || v.startsWith("function"))) {
-		eval(v); // eval runs code to "create" function, adding it to local scope. dumb ik :)
-	} else {
-		window[i] = v; // add value to local scope
-	};
-};/
-*/

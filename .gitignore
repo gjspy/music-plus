@@ -1,4 +1,2 @@
-.env
-keys.py
-
-server/
+node_modules/
+.vscode/
