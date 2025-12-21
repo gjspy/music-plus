@@ -14,11 +14,6 @@ export function MWInit(moduleScriptsEntries) {
 		};
 	};
 
-
-
-
-
-
 	async function ImportAllWebAccessibleResources() {
 		// IMPORT ALL WEB ACCESSIBLE RESOURCES
 
@@ -29,7 +24,11 @@ export function MWInit(moduleScriptsEntries) {
 
 			promises.push(import(v).then(
 				( exports ) => {
-					window[k] = Object.values(exports)[0];
+					const exportObjs = Object.values(exports);
+
+					if (exportObjs.length === 1) window[k] = Object.values(exports)[0];
+					else window[k] = exports;
+
 					fconsole.debug(k, "imported successfully");
 				},
 				( rejection ) => {
@@ -46,10 +45,10 @@ export function MWInit(moduleScriptsEntries) {
 		await ImportAllWebAccessibleResources();
 
 		// LOAD GLOBALLY REQUIRED RESOURCES
-		musicFixer.LaunchListenerOfEWEvents();
-		musicFixer.WaitForPolymerController(); // NOT AWAITING.
-		musicFixer.GetMenuServiceItemBehaviour();
-		musicFixer.InitTemplateElements(); // NOT AWAITING.
+		ext.LaunchListenerOfEWEvents();
+		ext.WaitForPolymerController(); // NOT AWAITING.
+		ext.GetMenuServiceItemBehaviour();
+		ext.InitTemplateElements(); // NOT AWAITING.
 
 		window.cMusicFixerNetworkMiddlewareEnabled = true;
 		window.cMusicFixerRunningServices = {};
@@ -69,15 +68,15 @@ export function MWInit(moduleScriptsEntries) {
 		// START EXTENSION FEATURES
 		try {
 			const sidebar = new window.sidebarService();
-			sidebar.MainTasks(true);
+			sidebar.init(true);
 
 			window.cMusicFixerRunningServices.sidebarService = sidebar;
 		} catch (err) { fconsole.error("failed to load sidebarService because", err); };
 
 		try {
-			const sidebar = new window.sidebarEditService();
+			const edit = new window.sidebarEditService();
 
-			window.cMusicFixerRunningServices.sidebarEditService = sidebar;
+			window.cMusicFixerRunningServices.sidebarEditService = edit;
 		} catch (err) { fconsole.error("failed to load sidebarEditService because", err); };
 	};
 

@@ -24,13 +24,13 @@ export class SidebarEditFeatures {
 
 
 	OpenEditModeOnClick() {
-		musicFixer.HideElem(this.ytNewPlBtn);
-		musicFixer.HideElem(this.buttons.edit);
+		ext.HideElem(this.ytNewPlBtn);
+		ext.HideElem(this.buttons.edit);
 
-		musicFixer.UnhideElem(this.buttons.finish);
-		musicFixer.UnhideElem(this.buttons.folder);
-		musicFixer.UnhideElem(this.buttons.sep);
-		musicFixer.UnhideElem(this.buttons.carousel);
+		ext.UnhideElem(this.buttons.finish);
+		ext.UnhideElem(this.buttons.folder);
+		ext.UnhideElem(this.buttons.sep);
+		ext.UnhideElem(this.buttons.carousel);
 
 
 	};
@@ -42,11 +42,11 @@ export class SidebarEditFeatures {
 
 	CreateAllEditButtons() {
 		this.buttons = {
-			edit: musicFixer.CreateButtonElem("pencil", "Edit", "dark"),
-			finish: musicFixer.CreateButtonElem("check", "Finish", "dark"),
-			folder: musicFixer.CreateButtonElem("folder", "Create", "dark"),
-			sep: musicFixer.CreateButtonElem("add", "Line", "dark"),
-			carousel: musicFixer.CreateButtonElem("add", "Carousel", "dark")
+			edit: ext.CreateButtonElem("pencil", "Edit", "dark"),
+			finish: ext.CreateButtonElem("check", "Finish", "dark"),
+			folder: ext.CreateButtonElem("folder", "Create", "dark"),
+			sep: ext.CreateButtonElem("add", "Line", "dark"),
+			carousel: ext.CreateButtonElem("add", "Carousel", "dark")
 		};
 
 		this.buttons.edit.addEventListener("click", this.OpenEditModeOnClick);
@@ -56,7 +56,7 @@ export class SidebarEditFeatures {
 		this.buttons.carousel.addEventListener("click", this.CreateCarouselOnClick);
 
 		Object.values(this.buttons).forEach((button) => {
-			musicFixer.HideElem(button);
+			ext.HideElem(button);
 			this.ytButtonsCont.append(button);
 		});
 
@@ -76,11 +76,11 @@ export class SidebarEditFeatures {
 	GenerateSVGs() {
 		this.svgs = {};
 		Object.entries(this.REQUIRED_ICONS_AND_SIZES).forEach(([icon, size]) => {
-			const svg = musicFixer.GetSVG(icon);
+			const svg = ext.GetSVG(icon);
 			
 			const div = document.createElement("div");
-			musicFixer.AddToClass(div, "c-paper-btn");
-			musicFixer.AddToClass(div, size);
+			ext.AddToClass(div, "c-paper-btn");
+			ext.AddToClass(div, size);
 
 			div.append(svg);
 			this.svgs[icon] = div;
@@ -89,7 +89,7 @@ export class SidebarEditFeatures {
 
 
 	constructor() {
-		this.ytButtonsCont = document.querySelector(musicFixer.HELPFUL_SELECTORS.sidebarYTButtonsCont);
+		this.ytButtonsCont = document.querySelector(ext.HELPFUL_SELECTORS.sidebarYTButtonsCont); // TODO: this errors, bcs queries before yt has loaded the buttn
 		this.ytNewPlBtn = this.ytButtonsCont.querySelector("yt-button-renderer");
 
 		// RENAME YT BUTTON FROM "New Playlist" TO "New"
@@ -98,7 +98,7 @@ export class SidebarEditFeatures {
 		this.ClearEditButtons(); // DELETE OLD, INCASE MODULE RELOADED.
 		this.CreateAllEditButtons(); // CREATE NEW
 
-		musicFixer.UnhideElem(this.buttons.edit);
+		ext.UnhideElem(this.buttons.edit);
 		this.GenerateSVGs();
 	};
 };

@@ -1,11 +1,13 @@
 import { MWUtils } from "../extension/utilsmw"
 import { InjectMyPaperItems } from "../extension/taskFiles/sidebarService";
 import { SidebarEditFeatures } from "../extension/taskFiles/sidebarEditService";
+import { CacheService } from "../extension/taskFiles/cacheService";
+import { GETEditors, MainPOSTEditors, SmallPOSTEditors } from "../extension/taskFiles/middlewareEditors";
 
 declare const console: undefined;
 
 declare global {
-	var musicFixer: typeof MWUtils;
+	var ext: typeof MWUtils;
 
 	var polymerController: polymerController;
 	var apiComponent: Element;
@@ -13,10 +15,15 @@ declare global {
 	var fconsole: Console;
 	var console: undefined;
 
+	var cacheService: typeof CacheService;
+	var middlewareEditors: middlewareEditors;
+
 	interface Window {
-		musicFixer: typeof MWUtils;
+		ext: typeof MWUtils;
 		sidebarService: typeof InjectMyPaperItems;
 		sidebarEditService: typeof SidebarEditFeatures;
+		cacheService: typeof CacheService;
+		middlewareEditors: middlewareEditors;
 
 		fconsole: Console;
 		console: undefined;
@@ -26,7 +33,7 @@ declare global {
 		cMusicFixerNetworkMiddlewareEnabled: boolean;
 		cMusicFixerRunningServices: {
 			sidebarService?: InjectMyPaperItems;
-			sidebarEditService?: SidebarEditFeatures
+			sidebarEditService?: SidebarEditFeatures;
 		};
 
 		polymerController: polymerController;
@@ -54,13 +61,20 @@ declare global {
 		handleNavigateAction: function;
 	};
 
+	interface middlewareEditors {
+		MainPOSTEditors: typeof MainPOSTEditors;
+		SmallPOSTEditors: typeof SmallPOSTEditors;
+		GETEditors: typeof GETEditors;
+		urlsToEdit: Array;
+	};
+
 	interface Console {
 		log: never; // Prevent usage of console.log
 		warn: never; // Prevent usage of console.warn
 		error: never; // Prevent usage of console.error
 		info: never; // Prevent usage of console.info
 		debug: never; // Prevent usage of console.debug
-    }
+    };
 };
 
 export {};

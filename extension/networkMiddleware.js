@@ -20,7 +20,7 @@ function initiateDelayedCacheOfOldResp(browseId, pageType, responseIsContinuatio
 		if (toCacheOriginal.header) response.contents.header = toCacheOriginal.header;
 		if (toCacheOriginal.microformat) response.contents.microformat = toCacheOriginal.microformat;
 
-		CachePageContents(response);
+		cacheService.CachePageContents(response);
 	}, 100);
 };
 
@@ -30,7 +30,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		let cParams = request.cParams;
 
 		if (cParams) return [cParams, undefined];
-		if (!UBrowseParamsByRequest) return [undefined, undefined];
+		if (!ext.state.BrowseParamsByRequest) return [undefined, undefined];
 
 		let refs = [
 			browseId,
@@ -43,28 +43,28 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		for (let ref of refs) {
 			if (ref === undefined) continue;
 
-			cParams = UBrowseParamsByRequest[ref];
+			cParams = ext.state.BrowseParamsByRequest[ref];
 			if (cParams) return [cParams, ref];
 		};
 
-		if (!UBrowseParamsByRequest.pageSpecific) return [undefined, undefined];
+		if (!ext.state.BrowseParamsByRequest.pageSpecific) return [undefined, undefined];
 
 		for (let ref of refs) {
-			cParams = UBrowseParamsByRequest.pageSpecific[ref];
+			cParams = ext.state.BrowseParamsByRequest.pageSpecific[ref];
 			if (cParams) return [cParams, undefined]; // PAGESPEFIC MUST BE PERSISTENT, NO DELETE.
 		};
 
-		cParams = UBrowseParamsByRequest.pageSpecific.all
+		cParams = ext.state.BrowseParamsByRequest.pageSpecific.all;
 		if (cParams) return [cParams, undefined]; 
 
-		return [undefined, undefined]
+		return [undefined, undefined];
 	};
 
 	if (
 		(!xhr && !String(oldResp.status).startsWith("2")) ||
 		(!xhr && !(oldResp.headers.get("Content-Type") || "").includes("application/json")) ||
 		!request ||
-		NETWORK_EDITING_ENABLED === false
+		ext.state.networkEditingEnabled === false
 	) {
 		return oldResp;
 	};
@@ -79,16 +79,16 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	let pathname = urlObj.pathname;
 
 	if (request.method !== "POST") {
-		let task = MiddlewareGetTasks.endpointToTask[pathname];
+		let task = middlewareEditors.GETEditors.endpointToTask[pathname];
 		if (!task) return oldResp;
 
 		let change = task(request, oldResp);
-		if (change) return change
+		if (change) return change;
 
 		return oldResp;
 	};
 
-	if (!request.body || MiddlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
+	if (!request.body || middlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
 		return oldResp;
 	};
 
@@ -102,7 +102,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	let toCacheOriginal = structuredClone(respBody);
 
 	let browseId = request.body.browseId ||
-		UGetBrowseIdFromResponseContext(toCacheOriginal.responseContext);
+		ext.GetBrowseIdFromResponseContext(toCacheOriginal.responseContext);
 
 	let responseIsContinuation = !!(
 		request.body.continuation ||
@@ -115,7 +115,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	if (cParams) {
 		cParams = structuredClone(cParams);
 
-		if (cParamsRef) delete UBrowseParamsByRequest[cParamsRef];
+		if (cParamsRef) delete ext.state.BrowseParamsByRequest[cParamsRef];
 		if (cParams.returnOriginal) return oldResp;
 
 		request.cParams = cParams;
@@ -125,19 +125,19 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 
 	let newBody;
 
-	let smallTask = MiddlewareSmallTasks.endpointToTask[pathname];
-	if (smallTask) newBody = smallTask.apply(MiddlewareSmallTasks, [request, respBody]);
+	let smallTask = middlewareEditors.SmallPOSTEditors.endpointToTask[pathname];
+	if (smallTask) newBody = smallTask.apply(middlewareEditors.SmallPOSTEditors, [request, respBody]);
 
 
-	let smallTaskWithCache = MiddlewareSmallTasks.endpointToTaskCache[pathname];
+	let smallTaskWithCache = middlewareEditors.SmallPOSTEditors.endpointToTaskCache[pathname];
 	if (smallTaskWithCache) {
-		let storage = await UMWStorageGet();
+		let storage = await ext.StorageGet();
 
-		newBody = smallTaskWithCache.apply(MiddlewareSmallTasks, [request, respBody, storage]);
+		newBody = smallTaskWithCache.apply(middlewareEditors.SmallPOSTEditors, [request, respBody, storage]);
 	};
 
 
-	let pageType = UGetBrowsePageTypeFromBrowseId(browseId);
+	let pageType = ext.GetBrowsePageTypeFromBrowseId(browseId);
 
 	initiateDelayedCacheOfOldResp(browseId, pageType, responseIsContinuation, toCacheOriginal);
 
@@ -151,18 +151,18 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		if (!pageType) return oldResp;
 		if (responseIsContinuation) pageType = "CONT_" + pageType;
 
-		let f = MiddlewareEditors[pageType];
+		let f = middlewareEditors.MainPOSTEditors[pageType];
 
 		if (!f) return oldResp;
 
 		// functions MUST take response, browseId. MAY take cache, that's the only change.
 		if (f.length === 3) { // only get cache for functions that need it.
-			let storage = await UMWStorageGet();
+			let storage = await ext.StorageGet();
 
-			newBody = f.apply(MiddlewareEditors, [respBody, browseId, storage]);
+			newBody = f.apply(middlewareEditors.MainPOSTEditors, [respBody, browseId, storage]);
 
 		} else {
-			newBody = f.apply(MiddlewareEditors, [respBody, browseId]);
+			newBody = f.apply(middlewareEditors.MainPOSTEditors, [respBody, browseId]);
 		};
 
 		if (newBody) {
@@ -215,9 +215,9 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 function FetchModifyRequest(requestData, resource, body_) {
 	if (requestData.method !== "POST") return;
 	if (requestData.url.indexOf("youtubei/v1/playlist/create") !== -1) {
-		if (!body_.title.startsWith(U_TAG_PLAYLIST_DATA.titlePrefix)) return;
+		if (!body_.title.startsWith(ext.TAG_PLAYLIST_DEFAULT_METADATA.titlePrefix)) return;
 		
-		body_.description = U_TAG_PLAYLIST_DATA.description;
+		body_.description = ext.TAG_PLAYLIST_DEFAULT_METADATA.description;
 
 		const {
 			cache, credentials, headers, integrity, method,
@@ -248,20 +248,22 @@ async function newFetch(resource, options) {
 
 	if (resourceIsStr) { // used for random stuff
 		request = {
-			"url": resource,
-			"method": options.method || "GET"
+			url: resource,
+			method: options.method || "GET",
+			body: undefined
 		};
 
 	} else {
 		request = { // used for JSON things like browsing.
-			"url": resource.url,
-			"method": resource.method || "GET"
+			url: resource.url,
+			method: resource.method || "GET",
+			body: undefined
 		};
 
 	};
 
 	// REFRESHES PAGESPECIFIC HERE!!
-	if (request.url.includes("/browse")) UBrowseParamsByRequest.pageSpecific = {};
+	if (request.url.includes("/browse")) ext.state.BrowseParamsByRequest.pageSpecific = {};
 
 	if (request.method === "POST") { // have to do this first, or body is used in originalFetch.
 		try {
@@ -276,8 +278,8 @@ async function newFetch(resource, options) {
 				let body = JSON.parse(reqText);
 				let newR;
 
-				try { newR = FetchModifyRequest(request, resource, body) }
-				catch (err) { console.error("couldnt modify fetch request", request, body, resource, err) };
+				try { newR = FetchModifyRequest(request, resource, body); }
+				catch (err) { console.error("couldnt modify fetch request", request, body, resource, err); };
 
 				if (newR) resource = newR;
 				request.body = body;

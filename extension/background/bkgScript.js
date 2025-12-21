@@ -6,9 +6,11 @@ const EXTRAS = ["niceMiniGuide.js", "playerPageFeatures.js", "editMode.js", "mid
 const MIDDLEWARE = "../networkMiddleware.js";
 
 const MODULESCRIPTS = {
-	"musicFixer": "utilsmw.js",
+	"ext": "utilsmw.js",
 	"sidebarService": "taskFiles/sidebarService.js",
-	"sidebarEditService": "taskFiles/sidebarEditService.js"
+	"sidebarEditService": "taskFiles/sidebarEditService.js",
+	"cacheService": "taskFiles/cacheService.js",
+	"middlewareEditors": "taskFiles/middlewareEditors.js"
 };
 
 const TEMPLATE_ELEMS_FP = "../templateElements.html";
@@ -56,17 +58,6 @@ async function EWInit(injectionTarget) {
 };
 
 
-async function EWSidebarEditFeatures(injectionTarget) {
-	let resp1 = await browser.scripting.executeScript({
-		"target": injectionTarget,
-		"func": MWSidebarEditFeatures,
-		"world": "MAIN"
-	});
-
-	fconsole.warn("EWSIDEBAR: RESP1", JSON.stringify(resp1));
-};
-
-
 async function EWExtras(injectionTarget) {
 	for (let file of EXTRAS) {
 		let f = EXTRAS_FILE_LOC + file;
@@ -86,23 +77,6 @@ async function EWExtras(injectionTarget) {
 	};
 };
 
-async function EWEventDriven(injectionTarget) {
-	let resp0 = await browser.scripting.executeScript({
-		"target": injectionTarget,
-		"func": MWCaching,
-		"world": "MAIN"
-	});
-
-	fconsole.log("EWEVENTDRIVEN RESP0 MWCACHING", JSON.stringify(resp0));
-
-	let resp = await browser.scripting.executeScript({
-		"target": injectionTarget,
-		"func": MWEventDriven_PageChanges,
-		"world": "MAIN"
-	});
-
-	fconsole.log("EWEVENTDRIVEN RESP", JSON.stringify(resp));
-};
 
 async function EWInjectMiddleware(injectionTarget) {
 	let resp = await browser.scripting.executeScript({
@@ -114,13 +88,6 @@ async function EWInjectMiddleware(injectionTarget) {
 	fconsole.log("EWINJECTMIDDLEWARE RESP", JSON.stringify(resp));
 };
 
-async function EWInitSidebarThings(injectionTarget) {
-	try {await EWInjectMyPaperItems(injectionTarget);}
-	catch (err) {fconsole.error("couldnt inject paperitems", err)};
-
-	try {await EWSidebarEditFeatures(injectionTarget);}
-	catch (err) {fconsole.error("couldnt inject sidebarfeatures", err)};
-};
 
 async function main(request, sender, sendResponse) {
 	fconsole.log("BKGSCRIPT STARTED FOR TAB", sender.tab.id);
@@ -128,18 +95,13 @@ async function main(request, sender, sendResponse) {
 	let injectionTarget = { "tabId": sender.tab.id };	
 	await EWInit(injectionTarget);
 
-	return
-
-	await EWInitSidebarThings(injectionTarget);
-
 	try {await EWInjectMiddleware(injectionTarget);}
-	catch (err) {fconsole.error("couldnt inject middleware", err)};
+	catch (err) {fconsole.error("couldnt inject middleware", err); };
+
+	return;
 
 	try {await EWExtras(injectionTarget);}
 	catch (err) {fconsole.error("couldnt inject extras", err)};
-
-	try {await EWEventDriven(injectionTarget);}
-	catch (err) {fconsole.error("couldnt inject eventdriven", err)};
 };
 
 
@@ -546,7 +508,7 @@ async function EWCacheUpdateWithData(storable) {
 			};
 
 			if (toStore.type === "PLAYLIST" || toStore.type === "ALBUM") {
-				if (toStore._CONTINUATION_DATA && toStore._CONTINUATION_DATA.itemsHasContinuation === false && toStore._CONTINUATION_DATA.itemsIsContinuation === false) {
+				if (toStore._ContinuationData && toStore._ContinuationData.itemsHasContinuation === false && toStore._ContinuationData.itemsIsContinuation === false) {
 					currentData[k] = nonDuplicate;
 					continue;
 				};
@@ -581,7 +543,7 @@ async function EWCacheUpdateWithData(storable) {
 function EWCacheCreateStorableFromListItem(item, listData, albumId) {
 	// param listData is newPl.
 
-	if (item._DISPLAY_POLICY) albumId = "";
+	if (item._displayPolicy) albumId = "";
 	if (item.type === "MUSIC_PAGE_TYPE_ARTIST") {
 		item.type = utils.UGetCleanTypeFromPageType(item.type);
 
@@ -684,7 +646,7 @@ function EWCacheCreateStorableFromListItem(item, listData, albumId) {
 		storable.push(artist);
 	};
 
-	if (item._DISPLAY_POLICY) return storable;
+	if (item._displayPolicy) return storable;
 
 	// playlist can be here now due to tworowitems. only do the following for a song, not coming from an album page.
 	if (listData.type === "ALBUM" || formattedItem.type === "ALBUM" || formattedItem.type === "PLAYLIST" || !item.album) return storable;

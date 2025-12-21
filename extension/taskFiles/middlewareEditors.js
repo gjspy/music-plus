@@ -1,4 +1,4 @@
-window.MiddlewareGetTasks = class MiddlewareGetTasks {
+export class GETEditors {
 	static WatchtimeStore(request, response) {
 		// final = video has ended, full play.
 		let isFinal = request.urlObj.searchParams.get("final");
@@ -17,7 +17,7 @@ window.MiddlewareGetTasks = class MiddlewareGetTasks {
 
 		//if (!validWatch) return; want to cache when was skipped! don't return :)
 
-		UDispatchEventToEW({
+		ext.DispatchEventToEW({
 			func: "video-watched",
 			videoId: request.urlObj.searchParams.get("docid"),
 			playingFrom: request.urlObj.searchParams.get("list"),
@@ -32,7 +32,7 @@ window.MiddlewareGetTasks = class MiddlewareGetTasks {
 
 
 
-window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
+export class SmallPOSTEditors {
 
 	static PlaylistCreateCommand(request, response) {
 		let gathered = { // doesnt actually cache.
@@ -43,27 +43,27 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 			items: request.body.videoIds || []
 		};
 
-		UDispatchEventToEW({
+		ext.DispatchEventToEW({
 			func: "playlist-create",
 			cacheData: gathered,
 			tagData: request.cParams
 		});
 
 		return;
-	}
+	};
 
 	static PlaylistDeleteCommand(request, response) {
 		let gathered = {
 			id: "VL" + request.body.playlistId
 		};
 
-		UDispatchEventToEW({
+		ext.DispatchEventToEW({
 			func: "playlist-delete",
 			data: gathered
 		});
 
 		return;
-	}
+	};
 
 	static CacheVideoViews(request, response) {
 		let gathered = {
@@ -72,13 +72,13 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 			type: response.videoDetails.musicVideoType
 		};
 
-		UDispatchEventToEW({
+		ext.DispatchEventToEW({
 			func: "cache-data",
 			data: gathered
 		});
 
 		return;
-	}
+	};
 
 	static CacheDislike(request, reponse) {
 		let gathered = {
@@ -89,28 +89,28 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 
 		if (!gathered) return;
 
-		UDispatchEventToEW({
+		ext.DispatchEventToEW({
 			func: "cache-data",
 			data: gathered
 		});
 
 		return;
-	}
+	};
 
 	static OnPlaylistEdit(request, response) {
 		let currentState = polymerController.store.getState();
-		let browsedToId = UDigDict(currentState, UDictGet.browseIdFromPolymerState);
+		let browsedToId = ext.SafeDeepGet(currentState, ext.Structures.browseIdFromPolymerState());
 		if (!browsedToId) return;
 
 		browsedToId = browsedToId.replace(/^VL/, "");
 		if (browsedToId !== request.body.playlistId) return;
 
-		let listItems = document.querySelectorAll(U_HELPFUL_QUERIES.listItemRenderersOfCurrentBrowseResponse);
+		let listItems = document.querySelectorAll(ext.HELPFUL_SELECTORS.listItemRenderersOfCurrentBrowseResponse);
 		if (!listItems || listItems.length === 0) return;
 
 		let videoIdsToListItem = {};
 		for (let listItem of listItems) {
-			let videoId = UDigDict(listItem, UDictGet.videoIdFromLIRElem);
+			let videoId = ext.SafeDeepGet(listItem, ext.Structures.videoIdFromLIRElem());
 			if (!videoId) continue;
 
 			videoIdsToListItem[videoId] = listItem;
@@ -124,7 +124,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 
 			listItem.remove();
 		};
-	}
+	};
 
 	/*
 	TOPIC CHANNELS COUNTED AS SAME, BUT DIFFERENT IDS..
@@ -174,7 +174,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		};
 
 		if (request.body.target.playlistId) {
-			let type = UGetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
+			let type = ext.GetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
 			let id = (type === "MUSIC_PAGE_TYPE_ALBUM") ? storage.cache.mfIdMap[request.body.target.playlistId]
 				: "VL" + request.body.target.playlistId;
 			
@@ -187,13 +187,13 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 
 		if (!gathered || !gathered.id) return;
 
-		UDispatchEventToEW({
+		ext.DispatchEventToEW({
 			func: "cache-data",
 			data: gathered
 		});
 
 		return;
-	}
+	};
 
 	static CacheUnlike(request, response, storage) {
 		let gathered;
@@ -207,7 +207,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		};
 
 		if (request.body.target.playlistId) {
-			let type = UGetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
+			let type = ext.GetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
 			let id = (type === "MUSIC_PAGE_TYPE_ALBUM") ? storage.cache.mfIdMap[request.body.target.playlistId]
 				: "VL" + request.body.target.playlistId;
 			
@@ -220,7 +220,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 
 		if (!gathered || !gathered.id) return;
 
-		UDispatchEventToEW({
+		ext.DispatchEventToEW({
 			func: "cache-data",
 			data: gathered
 		});
@@ -247,7 +247,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		};
 		console.log("GATHERED", gathered);
 
-		UDispatchEventToEW({
+		ext.DispatchEventToEW({
 			func: "cache-data",
 			data: gathered
 		});
@@ -268,8 +268,8 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 			return;
 		};
 
-		let playlistPanel = UDigDict(response, UDictGet.playlistPanelFromNextResponse);
-		let lyricPanel = UDigDict(response, UDictGet.lyricPanelFromNextResponse);
+		let playlistPanel = ext.SafeDeepGet(response, ext.Structures.playlistPanelFromNextResponse());
+		let lyricPanel = ext.SafeDeepGet(response, ext.Structures.lyricPanelFromNextResponse());
 
 		try {this.CacheFromNextItems(request, response, lyricPanel); }
 		catch (err) { console.trace(err); };
@@ -306,7 +306,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 			console.log({lyricsBID, lyricPanel});
 
 			if (lyricsBID && lyricPanel) {
-				lyricPanel.endpoint = UBuildEndpoint({
+				lyricPanel.endpoint = ext.BuildEndpoint({
 					navType: "browse",
 					id: lyricsBID
 				});
@@ -316,10 +316,10 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		lyricPanel && (lyricPanel.unselectable = false);
 
 
-		let overlayButtons = UDigDict(response, UDictGet.overlayButtonsFromNextResponse);
+		let overlayButtons = ext.SafeDeepGet(response, ext.Structures.overlayButtonsFromNextResponse);
 		if (!overlayButtons) return response; // changed in place
 
-		let like = UGetButtonFromButtons(overlayButtons, "likeButtonRenderer");
+		let like = ext.GetEndpointByNameFromArray(overlayButtons, "likeButtonRenderer");
 		like.likeStatus = currentVideoCache.liked;
 		like.target.videoId = currentVideoWE.videoId;
 		like.serviceEndpoints[0].likeEndpoint.target.videoId = currentVideoWE.videoId;
@@ -329,7 +329,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		console.log("newPlPancontents", playlistPanel.contents);
 
 		return response; // was changed in-place.
-	}
+	};
 
 
 	static TidyGetQueueItems(request, response, storage) {
@@ -345,7 +345,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 
 		if (newContents) response.queueDatas = newContents;
 		return response; // was changed in-place.
-	}
+	};
 
 
 	static endpointToTask = {
@@ -356,25 +356,19 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 		"/youtubei/v1/browse/edit_playlist": this.OnPlaylistEdit
 		//"/youtubei/v1/subscription/subscribe"
 		//"/youtubei/v1/subscription/unsubscribe"
-	}
+	};
 
 	static endpointToTaskCache = {
 		"/youtubei/v1/like/like": this.CacheLike,
 		"/youtubei/v1/like/removelike": this.CacheUnlike,
 		"/youtubei/v1/next": this.TidyQueueNextItems,
 		"/youtubei/v1/music/get_queue": this.TidyGetQueueItems
-	}
-}
+	};
+};
 
 
 
-window.MiddlewareEditors = class MiddlewareEditors {
-	static urlsToEdit = [
-		"/youtubei/v1/browse",
-		...Object.keys(MiddlewareSmallTasks.endpointToTask),
-		...Object.keys(MiddlewareSmallTasks.endpointToTaskCache)
-	];
-
+export class MainPOSTEditors {
 	static _GetDictOfButtonTypesFromOldAlbumPage(oldMenuRenderer) {
 		let buttons = {topLevel: {}, menu: {}};
 
@@ -419,13 +413,13 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		};
 
 
-		let subtitleOneData = UGetDataFromSubtitleRuns({}, response.header.musicDetailHeaderRenderer.subtitle);
+		let subtitleOneData = cacheService.GetDataFromSubtitleRuns(response.header.musicDetailHeaderRenderer.subtitle);
 		let subtitleOneRuns = [];
 
 		if (subtitleOneData.subType && subtitleOneData.yearStr) {
 			subtitleOneRuns = [
 				{text: subtitleOneData.subType},
-				{text: U_YT_DOT},
+				{text: ext.YT_DOT},
 				{text: subtitleOneData.yearStr}
 			];
 
@@ -465,13 +459,13 @@ window.MiddlewareEditors = class MiddlewareEditors {
 						text: (cachedCreator || creator).name
 					}
 				]
-			}
+			};
 
-			if (creator.id !== U_VARIOUS_ARTISTS_EXTID) {
-				straplineTextOne.runs[0].navigationEndpoint = UBuildEndpoint({
+			if (creator.id !== ext.VARIOUS_ARTISTS_ID) {
+				straplineTextOne.runs[0].navigationEndpoint = ext.BuildEndpoint({
 					navType: "browse",
 					id: cachedCreator.id
-				})
+				});
 			};
 
 
@@ -481,8 +475,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 						thumbnails: [
 							{
 								url: cachedCreatorThumb,
-								width: UIMG_HEIGHT,
-								header: UIMG_HEIGHT
+								width: ext.IMG_HEIGHT,
+								header: ext.IMG_HEIGHT
 							}
 						]
 					},
@@ -664,7 +658,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				};
 			};
 
-			let videoId = UDigDict(listItem, UDictGet.videoIdFromLIRData);
+			let videoId = ext.SafeDeepGet(listItem, ext.Structures.videoIdFromLIRData);
 			if (!videoId) continue;
 
 			let cachedVideo = cache[videoId];
@@ -673,7 +667,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			listItem.flexColumns.push({
 				musicResponsiveListItemFlexColumnRenderer: {
 					displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_MEDIUM",
-					text: { runs: [ { text: UBigNumToText(cachedVideo.views) + " plays" } ] }
+					text: { runs: [ { text: ext.BigNumToStr(cachedVideo.views) + " plays" } ] }
 				}
 			});
 		};
@@ -693,7 +687,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 	static _EditLongBylineOfPlaylistPanelVideoRenderer(storage, videoRenderer, realAlbum) {
 		let cache = storage.cache;
 
-		let longBylineData = UGetDataFromSubtitleRuns({}, videoRenderer.longBylineText);
+		let longBylineData = cacheService.GetDataFromSubtitleRuns(videoRenderer.longBylineText);
 
 		let songCacheData = cache[videoRenderer.videoId];
 		let albumId = (longBylineData.album) ? longBylineData.album.id :
@@ -706,7 +700,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 		if (albumCacheData && albumCacheData.year && !longBylineData.yearStr) {
 			videoRenderer.longBylineText.runs.push(
-				{ text: U_YT_DOT },
+				{ text: ext.YT_DOT },
 				{ text: String(albumCacheData.year)}
 			);
 		};
@@ -720,15 +714,15 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			if (!run.navigationEndpoint) continue;
 
-			let type = UDigDict(run.navigationEndpoint, UDictGet.pageTypeFromNavigationEndpoint);
+			let type = ext.SafeDeepGet(run.navigationEndpoint, ext.Structures.pageTypeFromNavigationEndpoint);
 			let id;
 			if (!type) continue;
 
 			if (!type || type === "MUSIC_PAGE_TYPE_UNKNOWN") {
-				id = UDigDict(run.navigationEndpoint, UDictGet.browseIdFromNavigationEndpoint);
+				id = ext.SafeDeepGet(run.navigationEndpoint, ext.Structures.browseIdFromNavigationEndpoint);
 				if (!id) continue;
 
-				type = UGetBrowsePageTypeFromBrowseId(id, false, true);
+				type = ext.GetBrowsePageTypeFromBrowseId(id, false, true);
 			};
 
 			let counterpartData;
@@ -736,14 +730,14 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			if (type === "MUSIC_PAGE_TYPE_ALBUM" && realAlbum.id) {
 				if (albumMetadata.title) run.text = albumMetadata.title;
 
-				run.navigationEndpoint = UBuildEndpoint({
+				run.navigationEndpoint = ext.BuildEndpoint({
 					navType: "browse",
 					id: realAlbum.id
 				});
 			};
 
 			if (type === "C_PAGE_TYPE_PRIVATE_ARTIST") {
-				counterpartData = UGetCounterpartFromData(cache, artistCacheData);
+				counterpartData = ext.GetCounterpartFromData(cache, artistCacheData);
 
 				if (videoRenderer.shortBylineText) {
 					videoRenderer.shortBylineText.runs[0] = {
@@ -755,7 +749,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				let counterpartCustomisation = storage.customisation.metadata[counterpartData.id] || {};
 
 				run.text = counterpartCustomisation.name || counterpartData.name;
-				run.navigationEndpoint = UBuildEndpoint({
+				run.navigationEndpoint = ext.BuildEndpoint({
 					navType: "browse",
 					id: counterpartData.id
 				});
@@ -764,7 +758,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			};
 
 			if (type === "MUSIC_PAGE_TYPE_ARTIST") {
-				if (!id) id = UDigDict(run.navigationEndpoint, UDictGet.browseIdFromNavigationEndpoint);
+				if (!id) id = ext.SafeDeepGet(run.navigationEndpoint, ext.Structures.browseIdFromNavigationEndpoint);
 				if (!id) continue;
 
 				let artistCustomisation = storage.customisation.metadata[id] || {};
@@ -786,23 +780,23 @@ window.MiddlewareEditors = class MiddlewareEditors {
 	};
 
 	static _DeleteRemoveFromPlaylistButtonFromPPVR(videoRenderer) {
-		let buttons = UDigDict(videoRenderer, UDictGet.menuItemsFromAnything);
+		let buttons = ext.SafeDeepGet(videoRenderer, ext.Structures.menuItems);
 		if (!buttons) return;
 
 		let i = -1;
 		for (let b of structuredClone(buttons)) {
 			i ++;
 
-			let serviceAction = UDigDict(b, UDictGet.serviceActionPlaylistEditEndpointFromMenuItem)?.action;
+			let serviceAction = ext.SafeDeepGet(b, ext.Structures.serviceActionPlaylistEditEndpointFromMenuItem())?.action;
 			if (serviceAction === "ACTION_REMOVE_VIDEO" ) {
 				buttons.splice(i, 1);
 				i--;
 				continue;
 			};
 
-			let navigateActionOnConfirm = UDigDict(b, UDictGet.endpointOnConfirmDialogFromNavigationMenuItem);
+			let navigateActionOnConfirm = ext.SafeDeepGet(b, ext.Structures.endpointOnConfirmDialogFromNavigationMenuItem);
 			if (navigateActionOnConfirm && navigateActionOnConfirm.musicDeletePrivatelyOwnedEntityCommand) {
-				buttons.splice(i, 1)
+				buttons.splice(i, 1);
 				i--;
 				continue;
 			};
@@ -811,10 +805,10 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas, queueDataRequestIds) {
 		let buildFromAlbum = (buildQueueFromBId) ? storage.cache[buildQueueFromBId] || {} : {}; // cache[undefined] may exist. do ternary.
-		let loadedFromAlbum = UGetObjFromMfId(storage.cache, loadedQueueFromMfId) || {};
+		let loadedFromAlbum = ext.GetObjFromMfId(storage.cache, loadedQueueFromMfId) || {};
 		console.log(buildQueueFromBId, loadedQueueFromMfId, buildFromAlbum, loadedFromAlbum);
 
-		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, buildQueueFromBId, loadedFromAlbum.id) || {};
+		let idsToReplace = ext.GetIdsToReplaceFromRealAlbum(storage, buildQueueFromBId, loadedFromAlbum.id) || {extraByIndex: {}, indexToVideoIdOfThis: {}};
 		console.log("replacements", idsToReplace);
 		console.log("queueContentsBefore", structuredClone(queueContents));
 
@@ -828,11 +822,11 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 		let backingPlaylistId; // for use later. get it in this loop from anything we can!
 		let videoRenderersData = queueContents.map((v) => {
-			let vr = UGetPlaylistPanelVideoRenderer(v);
+			let vr = ext.GetPPVR(v);
 
-			if (!backingPlaylistId) backingPlaylistId = UDigDict(vr, UDictGet.backingPlaylistIdFromVideoRenderer);
+			if (!backingPlaylistId) backingPlaylistId = ext.SafeDeepGet(vr, ext.Structures.backingPlaylistIdFromVideoRenderer);
 
-			return (vr) ? [vr.videoId, [v,vr]] : [undefined, undefined]
+			return (vr) ? [vr.videoId, [v,vr]] : [undefined, undefined];
 		});
 		let videoRenderersByVideoId = Object.fromEntries(videoRenderersData);
 
@@ -846,11 +840,11 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			console.log(structuredClone({videoId, data, item, vr, replacement}));
 
-			if (replacement) UModifyPlaylistPanelRendererFromData(vr, replacement, buildFromAlbum, cachedArtist);
+			if (replacement) ext.ModifyPlaylistPanelRendererFromData(vr, replacement, buildFromAlbum, cachedArtist);
 			else if (vr) {
 				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage, vr, buildFromAlbum);
 				vr.cData = { video: cachedVideo, from: buildFromAlbum };// why did we set cData here? dont think it worked?
-				console.log("ADD NotReplacemtn")
+				console.log("ADD NotReplacemtn");
 				this._DeleteRemoveFromPlaylistButtonFromPPVR(vr);
 			};
 
@@ -894,7 +888,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			let createNew = byIndex[String(i_)];
 
 			if (createNew) {
-				let newItem = UBuildPlaylistPanelRendererFromData(createNew, buildFromAlbum, cachedArtist, backingPlaylistId);
+				let newItem = ext.BuildPlaylistPanelRendererFromData(createNew, buildFromAlbum, cachedArtist, backingPlaylistId);
 				if (areQueueDatas) newItem = { content: newItem };
 
 				// INSERT IN RANDOM POSITION FOR SHUFFLE!
@@ -903,7 +897,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 					continue;
 				};
 
-				vr = UGetPlaylistPanelVideoRenderer(newItem);
+				vr = ext.GetPPVR(newItem);
 				gappy[i_] = [newItem, vr];
 			};
 
@@ -914,7 +908,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		queueContents = gappy.filter((v) => v[0] !== undefined && v[1] !== undefined).map((v) => v[0]);
 
 		for (let v of shuffleItemsToAdd) {
-			queueContents.splice(URandInt(1, queueContents.length), 0, v);
+			queueContents.splice(ext.RandInt(1, queueContents.length), 0, v);
 		};
 
 		if (lastItem) queueContents.push(lastItem);
@@ -937,7 +931,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		// LAST ITERATION. HIDE ANY WE NEED TO, AND UPDATE ENDPOINT INDEXES.
 		// THIS CLEANS THE MESS FOR US, SO WE CAN ADD SONGS WHEREVER WE WANT!
 		for (let item of queueContents) {
-			let videoRenderer = UGetPlaylistPanelVideoRenderer(item);
+			let videoRenderer = ext.GetPPVR(item);
 
 			console.log(structuredClone(item), structuredClone(videoRenderer), "START OF EDIT ITERTAION(3)");
 
@@ -946,18 +940,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				continue;
 			};
 
-			let we = UDigDict(videoRenderer, UDictGet.watchEndpointFromVideoRenderer);
-
-			/*console.log(
-				item,
-				videoRenderer,
-				videoIdToSelect,
-				(videoRenderer) ? [videoRenderer.selected, videoRenderer.videoId] : undefined,
-				we,
-				"deleting",
-				hiddenSongs.includes(we.videoId),
-				(!videoRenderer.cData) || (videoRenderer.cData && videoRenderer.cData.from.id === loadedFromAlbum.id)
-			);*/
+			let we = videoRenderer.watchEndpoint;
 
 			if (
 				hiddenSongs.includes(we.videoId) &&
@@ -1002,26 +985,26 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		// caching stuff
 		// need to edit album subtitleTwo total minutes based on contents.
 
-		let idsToReplace = UGetIdsToReplaceFromRealAlbum(storage, id, id) || {};
+		let idsToReplace = ext.GetIdsToReplaceFromRealAlbum(storage, id, id) || {extraByIndex: {}};
 		console.log("replacements", structuredClone(idsToReplace));
 
-		let musicShelfRenderer = UDigDict(response, UDictGet.albumListItemShelfRendererFromBrowseResponse);
+		let musicShelfRenderer = ext.SafeDeepGet(response, ext.Structures.listPageItemsSectionRenderer);
 		if (!musicShelfRenderer || !musicShelfRenderer.contents) return;
 
 		let cachedAlbum = storage.cache[id] || {};
 		let hiddenSongs = storage.customisation.hiddenSongs[id] || [];
 		let skippedSongs = storage.customisation.skippedSongs[id] || [];
 
-		UBrowseParamsByRequest.pageSpecific[cachedAlbum.mfId] = { buildQueueFrom: cachedAlbum.id };
+		ext.state.BrowseParamsByRequest.pageSpecific[cachedAlbum.mfId] = { buildQueueFrom: cachedAlbum.id };
 		console.log("listitems before", structuredClone(musicShelfRenderer.contents));
 
 		// iter thru each existing item, modify if necessary
 		let newContents = [];
 		let maxIndex = 0; // Number
-		let lirsByIndex = {} // Number: object
+		let lirsByIndex = {}; // Number: object
 
 		for (let item of structuredClone(musicShelfRenderer.contents)) { // structuredClone, so wont edit ref of original!
-			let data = UGetSongInfoFromListItemRenderer(item);
+			let data = cacheService.GetInfoFromLIR(item);
 			let replacement = idsToReplace[data.id];
 
 			let listItemRenderer = item.musicResponsiveListItemRenderer;
@@ -1038,8 +1021,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				
 
 				if (!replacement) { // can delete base video, but have replacement. do this for custom view count.
-					UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
-					UFillCDataOfListItem(storage, item, data);
+					ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
+					ext.FillCDataOfListItem(storage, item, data);
 					listItemRenderer.cData.changedByDeletion = { isDeleted: true };
 					lirsByIndex[thisIndex] = item;
 					
@@ -1047,9 +1030,9 @@ window.MiddlewareEditors = class MiddlewareEditors {
 					continue;
 				};
 
-				let newListItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
-				UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
-				UFillCDataOfListItem(storage, newListItem, replacement.video);
+				let newListItem = ext.BuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
+				ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
+				ext.FillCDataOfListItem(storage, newListItem, replacement.video);
 				lirsByIndex[thisIndex] = newListItem; // !! NEWlistItem
 
 				newContents.push(newListItem); // as if overwritten
@@ -1057,17 +1040,17 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			};
 
 			if (!replacement) {
-				UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
-				UFillCDataOfListItem(storage, item, data);
+				ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
+				ext.FillCDataOfListItem(storage, item, data);
 				lirsByIndex[thisIndex] = item;
 
 				newContents.push(item);
 				continue;
 			};
 
-			UModifyListItemRendererFromDataForAlbumPage(replacement, cachedAlbum, item);
-			UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
-			UFillCDataOfListItem(storage, item, replacement.video);
+			ext.ModifyListItemRendererFromDataForAlbumPage(replacement, cachedAlbum, item);
+			ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
+			ext.FillCDataOfListItem(storage, item, replacement.video);
 			lirsByIndex[thisIndex] = item;
 
 			newContents.push(item);
@@ -1085,20 +1068,17 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 		// GAPPY WORKS PERFECTLY! CREATES AN ARR WITH GAPS, LENGTH UP TO MAX FOUND INDEX + ALL EXTRA INDEXES
 		// FILL IN WITH GAPS, THEN REMOVE GAPS, AND UPDAT EINDEX TEXTS.
-		let i_ = -1;
-		for (let v of structuredClone(gappy)) {
-			i_ ++;
-
-			let replacement = byIndex[String(i_)];
+		for (let i = 0; i < gappy.length; i++) {
+			let replacement = byIndex[String(i)];
 			if (!replacement) continue;
 
 			// use cachedAlbum from before, to keep public playlistIds etc.
-			let newListItem = UBuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
-			UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
-			UFillCDataOfListItem(storage, newListItem, replacement.video);
-			newListItem.musicResponsiveListItemRenderer.index.runs[0].text = String(i_)
+			let newListItem = ext.BuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
+			ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
+			ext.FillCDataOfListItem(storage, newListItem, replacement.video);
+			newListItem.musicResponsiveListItemRenderer.index.runs[0].text = String(i_);
 
-			gappy[i_] = newListItem;
+			gappy[i] = newListItem;
 		};
 
 		musicShelfRenderer.contents = gappy.filter((v) => v !== undefined);
@@ -1119,19 +1099,19 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			// add per video id. used to do "all", but if clicked play from sidebar, would replace
 			// whatever with this. dont want.
-			UBrowseParamsByRequest.pageSpecific[lirId] = { buildQueueFrom: cachedAlbum.id };
+			ext.state.BrowseParamsByRequest.pageSpecific[lirId] = { buildQueueFrom: cachedAlbum.id };
 			
 			// hiding song stuff. dont delete, just give hidden attr, so can readd in edit mode.
 			let hideThis = hiddenSongs.includes(lirId);
 			let thisIndex = Number(lir.index.runs[0].text);
 
-			let thisLenStr = UDigDict(lir, UDictGet.lengthStrFromLIRData);
+			let thisLenStr = ext.SafeDeepGet(lir, ext.Structures.lengthStrFromLIRData);
 
 			let skipThis = skippedSongs.includes(lirId);
 			if (skipThis) {
 				if (!lir.cData) lir.cData = {};
 				lir.cData.skip = true;
-				skippedTime += ULengthStrToSeconds(thisLenStr);
+				skippedTime += ext.LengthStrToSeconds(thisLenStr);
 			};
 
 			if (hideThis && (!lir.cData || !lir.cData.changedByDeletion)) {
@@ -1144,12 +1124,12 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			// INDEX CORRECTION. FILLS GAPS, AND ACCOMMODATES FOR DELETED ITEMS.
 			// continue if is deleted dont want to increment.
-			if (UDigDict(lir, UDictGet.cIsDeletedFromLIRData)) continue;
+			if (ext.SafeDeepGet(lir, ext.Structures.cIsDeletedFromLIRData)) continue;
 
 			
 
 			
-			totalSeconds += ULengthStrToSeconds(thisLenStr);
+			totalSeconds += ext.LengthStrToSeconds(thisLenStr);
 			songCount ++;
 
 			// EDIT INDEXES IF INCORRECT.
@@ -1162,10 +1142,10 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				lir.cData.changedByDeletion.originalIndex = thisIndex;
 				lir.cData.changedByDeletion.updatedIndex = indexCount;
 
-				let we = UDigDict(lir, UDictGet.watchEndpointFromLIRDataPlayButton);
+				let we = ext.SafeDeepGet(lir, ext.Structures.watchEndpointFromLIRDataPlayButton());
 				if (we) we.index = indexCount;
 
-				let titleEndpoint = UDigDict(lir, UDictGet.watchEndpointFromLIRDataTitle);
+				let titleEndpoint = ext.SafeDeepGet(lir, ext.Structures.watchEndpointFromLIRDataTitle);
 				if (titleEndpoint) titleEndpoint.index = indexCount;
 			};
 
@@ -1177,7 +1157,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		// EDIT HEADER DETAILS, AUTOMATICALLY, BASED ON NEW CONTENTS.
 		let customMetadata = storage.customisation.metadata[id] || {};
 
-		let headerRenderer = UDigDict(response, UDictGet.albumHeaderRendererFromBrowseResponse);
+		let headerRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer());
 
 		if (customMetadata.title) headerRenderer.title.runs = [ { text: customMetadata.title } ];
 		if (customMetadata.desc) {
@@ -1190,7 +1170,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 		if (coolBkg || customMetadata.thumb) {
 			let thumbnails = [
-				{ url: coolBkg || customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
+				{ url: coolBkg || customMetadata.thumb, width: ext.IMG_HEIGHT, height: ext.IMG_HEIGHT }
 			];
 
 			headerRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
@@ -1200,7 +1180,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		};
 
 		let albumType = customMetadata.type;
-		if (!albumType && UIsEntryPrivateSingle(storage, cachedAlbum.id)) albumType = "Single";
+		if (!albumType && ext.IsEntryPrivateSingle(storage, cachedAlbum.id)) albumType = "Single";
 		
 		if (albumType) headerRenderer.subtitle.runs[0].text = albumType;
 		if (customMetadata.year) headerRenderer.subtitle.runs[2].text = customMetadata.year;
@@ -1212,7 +1192,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				headerRenderer.straplineTextOne = {
 					runs: [{
 						text: cacheOfNewArtist.name,
-						navigationEndpoint: UBuildEndpoint({
+						navigationEndpoint: ext.BuildEndpoint({
 							navType: "browse",
 							browseId: customMetadata.id
 						})
@@ -1227,8 +1207,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 						thumbnailScale: "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED",
 						thumbnails: [{
 							url: cacheOfNewArtist.thumb,
-							width: UIMG_HEIGHT,
-							height: UIMG_HEIGHT
+							width: ext.IMG_HEIGHT,
+							height: ext.IMG_HEIGHT
 						}]
 					}
 				}
@@ -1236,16 +1216,16 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		};
 
 		headerRenderer.secondSubtitle.runs[0].text = `${songCount} songs`;
-		headerRenderer.secondSubtitle.runs[2].text = USecondsToLengthStr(totalSeconds, true, false);
+		headerRenderer.secondSubtitle.runs[2].text = ext.SecondsToWordyHMS(totalSeconds);
 
 		if (skippedTime !== 0) headerRenderer.secondSubtitle.runs.push(
-			{text: U_YT_DOT},
-			{text: `${USecondsToLengthStr(totalSeconds - skippedTime, true, false)} unskipped`}
+			{text: ext.YT_DOT},
+			{text: `${ext.SecondsToWordyHMS(totalSeconds - skippedTime)} unskipped`}
 		);
 
-		let playButton = UGetButtonFromButtons(headerRenderer.buttons, "musicPlayButtonRenderer");
+		let playButton = ext.GetEndpointByNameFromArray(headerRenderer.buttons, "musicPlayButtonRenderer");
 		let firstLIR = musicShelfRenderer.contents[0].musicResponsiveListItemRenderer;
-		let firstWE = UDigDict(firstLIR, UDictGet.watchEndpointFromLIRDataPlayButton);
+		let firstWE = ext.SafeDeepGet(firstLIR, ext.Structures.watchEndpointFromLIRDataPlayButton());
 
 		playButton.playNavigationEndpoint.watchEndpoint = structuredClone(firstWE);
 		delete playButton.playNavigationEndpoint.watchEndpoint.videoId;
@@ -1262,10 +1242,10 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		// THIS ONLY HAPPENS THE FIRST TIME. NAVIGATION = THROUGH CONTINUATIONS
 		// SO ADDING OUR CUSTOM ELEMS IS IN THE CONTINUATION!
 
-		let sectionListRenderer = UDigDict(response, UDictGet.sectionListRendererFromBrowseResponseForBasicGrid);
+		let sectionListRenderer = ext.SafeDeepGet(response, ext.Structures.sectionListRendererFromSingleColumn);
 		if (!sectionListRenderer) return;
 
-		let sortOptions = UDigDict(sectionListRenderer, UDictGet.sortOptionsFromSectionListRendererForBasicGrid);
+		let sortOptions = ext.SafeDeepGet(sectionListRenderer, ext.Structures.sortOptionsFromSectionListRendererForBasicGrid);
 
 		if (!sortOptions) return;
 		let recencyOpt;
@@ -1279,7 +1259,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		};
 		if (!recencyOpt) return;
 
-		let cmds = UDigDict(recencyOpt, UDictGet.commandsFromMultiSelectItemRenderer);
+		let cmds = ext.SafeDeepGet(recencyOpt, ext.Structures.commandsFromMultiSelectItemRenderer);
 		let navEndp;
 
 		for (let cmd of cmds) {
@@ -1288,7 +1268,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			break;
 		};
 
-		let continuation = UDigDict(navEndp, UDictGet.reloadContinuationDataFromNavigationEndpoint);
+		let continuation = ext.SafeDeepGet(navEndp, ext.Structures.reloadContinuationDataFromNavigationEndpoint);
 
 		//gridRenderer.items = [];
 		sectionListRenderer.contents = [];
@@ -1324,10 +1304,10 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			releaseToYear[album.id] = album.year;
 		};
 
-		let gridRenderer = UDigDict(response, UDictGet.gridRendererFromContinuationResponse);
+		let gridRenderer = ext.SafeDeepGet(response, ext.Structures.gridRendererFromContinuationResponse);
 
 		if (!gridRenderer) {
-			gridRenderer = UDigDict(response, UDictGet.gridContinuationDataFromResponse);
+			gridRenderer = ext.SafeDeepGet(response, ext.Structures.gridContinuationDataFromResponse);
 
 			if (!gridRenderer) return;
 		};
@@ -1337,7 +1317,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		let newItems = [];
 
 		for (let i of gridRenderer.items) {
-			let data = UGetDataFromTwoRowItemRenderer(i);
+			let data = cacheService.GetInfoFromTRIR(i, ext.BrowsePageTypes.artistDiscography);
 
 			if (!data.yearStr || doneYears.indexOf(data.yearStr) !== -1) {
 				newItems.push(i);
@@ -1349,7 +1329,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			for (let [album, year] of Object.entries(structuredClone(releaseToYear))) {
 				if (Number(year) <= Number(data.yearStr)) continue;
 
-				let twoRow = UBuildTwoRowItemRendererFromData(cache[album]);
+				let twoRow = ext.BuildTwoRowItemRendererFromData(cache[album]);
 				newItems.push(twoRow);
 
 				delete releaseToYear[album];
@@ -1360,7 +1340,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 		if (!gridRenderer.continuation) {
 			for (let i of Object.keys(releaseToYear)) {
-				let twoRow = UBuildTwoRowItemRendererFromData(cache[i]);
+				let twoRow = ext.BuildTwoRowItemRendererFromData(cache[i]);
 				newItems.push(twoRow);
 			};
 		};
@@ -1371,7 +1351,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 
 	static MUSIC_PAGE_TYPE_ARTIST(response, id) {
-		let sectionList = UDigDict(response, UDictGet.sectionListRendererFromBrowseResponseForBasicGrid);
+		let sectionList = ext.SafeDeepGet(response, ext.Structures.sectionListRendererFromSingleColumn);
 		if (!sectionList || !sectionList.contents) return;
 
 		let sectionListContents = sectionList.contents;
@@ -1379,8 +1359,8 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		for (let shelf of sectionListContents) {
 			if (!shelf.musicCarouselShelfRenderer) continue;
 
-			let header = UDigDict(shelf, UDictGet.headerFromSectionListShelf);
-			let title = UDigDict(header, UDictGet.titleTextFromAnything);
+			let header = ext.SafeDeepGet(shelf, ext.Structures.headerFromSectionListShelf);
+			let title = ext.SafeDeepGet(header, ext.Structures.titleText);
 
 			if (title !== "Albums" && title !== "Singles and EPS") continue;
 			if (header.moreContentButton) continue;
@@ -1389,7 +1369,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 				buttonRenderer: {
 					style: "STYLE_TEXT",
 					text: { runs: [ { text: "More" } ] },
-					navigationEndpoint: UBuildEndpoint({
+					navigationEndpoint: ext.BuildEndpoint({
 						navType: "browse",
 						id: "MPAD" + id
 					}),
@@ -1408,28 +1388,28 @@ window.MiddlewareEditors = class MiddlewareEditors {
 	};
 
 	static MUSIC_PAGE_TYPE_PLAYLIST(response, id, storage) {
-		let listItems = UDigDict(response, UDictGet.listItemsFromBrowseResponseForListPage) || [];
+		const listItems = ext.SafeDeepGet(response, ext.Structures.playlistListItems()) || [];
 
 		for (let lir of listItems) {
 			lir = lir.musicResponsiveListItemRenderer;
 			if (!lir) continue;
 
-			UModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_PLAYLIST", lir);
+			ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_PLAYLIST", lir);
 
 			let indexToAddNew = -1;
 			let removingServiceEndpoint;
 
-			let menuItems = UDigDict(lir, UDictGet.menuItemsFromAnything);
+			let menuItems = ext.SafeDeepGet(lir, ext.Structures.menuItems);
 			if (!menuItems) continue;
 
 			let i = -1;
 			for (let serviceItem of menuItems) {
 				i ++;
 
-				let serviceEndpoint = UDigDict(serviceItem, UDictGet.serviceEndpointFromMenuItem);
+				let serviceEndpoint = ext.SafeDeepGet(serviceItem, ext.Structures.serviceEndpointFromMenuItem);
 				if (!serviceEndpoint) continue;
 
-				let action = UDigDict(serviceItem, UDictGet.serviceActionPlaylistEditEndpointFromMenuItem)?.action;
+				let action = ext.SafeDeepGet(serviceItem, ext.Structures.serviceActionPlaylistEditEndpointFromMenuItem())?.action;
 				if (action !== "ACTION_REMOVE_VIDEO") continue;
 				
 				indexToAddNew = i;
@@ -1440,13 +1420,13 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 			if (indexToAddNew === -1) continue;
 
-			let songName = UDigDict(lir, UDictGet.titleTextFromLIR) || "this song";
+			let songName = ext.SafeDeepGet(lir, ext.Structures.titleTextFromLIR) || "this song";
 
-			let toAdd = UBuildEndpoint({
+			let toAdd = ext.BuildEndpoint({
 				navType: "menuNavigationItemRenderer",
 				icon: "REMOVE_FROM_PLAYLIST",
 				text: "Remove from playlist",
-				endpoint: UBuildEndpoint({
+				endpoint: ext.BuildEndpoint({
 					navType: "confirmDialog",
 					title: "Delete from playlist",
 					prompt: `Are you sure you want to remove "${songName}" from this playlist?`,
@@ -1460,15 +1440,15 @@ window.MiddlewareEditors = class MiddlewareEditors {
 
 		let customMetadata = storage.customisation.metadata[id] || {};
 
-		let userOwnedHeaderRenderer = UDigDict(response, UDictGet.playlistHeaderRendererFromBrowseResponseUserOwned);
-		let otherHeaderRenderer = UDigDict(response, UDictGet.playlistHeaderRendererFromBrowseResponse);
+		let userOwnedHeaderRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRendererUserOwned());
+		let otherHeaderRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer());
 		let headerRenderer = userOwnedHeaderRenderer || otherHeaderRenderer;
 
 		let coolBkg = customMetadata.bkg;
 
 		if (coolBkg || customMetadata.thumb) {
 			let thumbnails = [
-				{ url: coolBkg || customMetadata.thumb, width: UIMG_HEIGHT, height: UIMG_HEIGHT }
+				{ url: coolBkg || customMetadata.thumb, width: ext.IMG_HEIGHT, height: ext.IMG_HEIGHT }
 			];
 
 			headerRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
@@ -1485,5 +1465,11 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		return response; // changed in place, still return so acknowledges change
 	};
 };
+
+export const urlsToEdit = [
+	"/youtubei/v1/browse",
+	...Object.keys(SmallPOSTEditors.endpointToTask),
+	...Object.keys(SmallPOSTEditors.endpointToTaskCache)
+];
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = a class, non clonable, so throws err in bkgScript.)

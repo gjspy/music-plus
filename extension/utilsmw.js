@@ -2,7 +2,8 @@ export class MWUtils {
 	static state = {
 		EWEventListener: {listening: false, idCount: 0, waiters: {}},
 		TemplateElems: {},
-		BrowseParamsByRequest: {}
+		BrowseParamsByRequest: {},
+		networkEditingEnabled: true
 	};
 	
 	static MAX_EXECUTION_TIMEOUT = 10000; // ms, used for script injection timeout
@@ -30,7 +31,11 @@ export class MWUtils {
 	static YT_DOT = " • ";
 	static DOM_HIDDEN_CLS = "c-hidden";
 
+	static VARIOUS_ARTISTS_NAME = "Various Artists";
 	static VARIOUS_ARTISTS_ID = "VARIOUS";
+
+	static RELEASE_SUBTYPES_REGEX = /(single)|(ep)|(album)|(radio)/;
+	static ALBUM_PAGE_ALT_CAROUSEL_TITLE = "other versions";
 
 	static YT_PLAYER_PARAMS = {
 		shuffle: "wAEB8gECKAE%3D",
@@ -63,58 +68,127 @@ export class MWUtils {
 	};
 
 	
-	static SafeDeepGetRoutes = {
-		videoIdFromLIRData: ["playlistItemData", "videoId"],
-		videoIdFromLIRElem: ["controllerProxy", "__data", "data","playlistItemData", "videoId"],
+	static Structures = {
 		dataFromElemDH: ["__dataHost", "__data", "data"],
 		dataFromElem: ["controllerProxy", "__data", "data"],
-		cDataFromElem: ["controllerProxy", "__data", "data", "cData"],
+		cDataFromElem: () => [...this.Structures.dataFromElem, "cData"],
+		videoIdFromLIRData: ["playlistItemData", "videoId"],
+		videoIdFromLIRElem: () => [...this.Structures.dataFromElem, ...this.Structures.videoIdFromLIRData],
 		cIsDeletedFromLIRData: ["cData", "changedByDeletion", "isDeleted"],
 		userAccountInfoFromPC: ["accountService", "cachedGetAccountMenuRequestPromise", "result_", "actions", 0, "openPopupAction", "popup", "multiPageMenuRenderer", "header", "activeAccountHeaderRenderer"],
 		lengthStrFromLIRData: ["fixedColumns", 0, "musicResponsiveListItemFixedColumnRenderer", "text", "runs", 0, "text"],
-		watchEndpointFromLIRDataPlayButton: ["overlay", "musicItemThumbnailOverlayRenderer", "content", "musicPlayButtonRenderer", "playNavigationEndpoint", "watchEndpoint"],
+
+		playButtonFromOverlay: ["musicItemThumbnailOverlayRenderer", "content", "musicPlayButtonRenderer"],
+		playButtonFromLIRData: () => ["overlay", ...this.Structures.playButtonFromOverlay],
+		playButtonFromTRIRData: () => ["thumbnailOverlay", ...this.Structures.playButtonFromOverlay],
+
+		watchEndpointFromLIRDataPlayButton: () => [...this.Structures.playButtonFromLIRData(), "playNavigationEndpoint", "watchEndpoint"],
 		watchEndpointFromLIRDataTitle: ["flexColumns", 0, "musicResponsiveListItemFlexColumnRenderer", "text", "runs", 0, "navigationEndpoint", "watchEndpoint"],
 		videoTypeFromWatchEndpoint: ["watchEndpoint", "watchEndpointMusicSupportedConfigs", "watchEndpointMusicConfig", "musicVideoType"],
-		playButtonFromLIRData: ["overlay", "musicItemThumbnailOverlayRenderer", "content", "musicPlayButtonRenderer"],
-		browseIdFromPolymerState: ["navigation", "mainContent", "endpoint","data", "browseId"],
-		browseEndpointFromPolymerState: ["navigation", "mainContent", "endpoint","data"],
+
 		mainContentFromPolymerState: ["navigation", "mainContent", "response"],
-		cDidExtChangeResponse: ["navigation", "mainContent", "response", "cMusicFixerExtChangedResponse"],
-		cExtCoolBkg: ["navigation", "mainContent", "response", "cMusicFixerExtCoolBkg"],
-		playlistPanelFromNextResponse: ["contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer","watchNextTabbedResultsRenderer", "tabs", 0,"tabRenderer", "content", "musicQueueRenderer","content", "playlistPanelRenderer"],
-		lyricPanelFromNextResponse: ["contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer","watchNextTabbedResultsRenderer", "tabs", 1,"tabRenderer"],
+		cDidExtChangeResponse: () => [...this.Structures.mainContentFromPolymerState, "cMusicFixerExtChangedResponse"],
+		cExtCoolBkg: () => [...this.Structures.mainContentFromPolymerState, "cMusicFixerExtCoolBkg"],
+
+		browseEndpointFromPolymerState: ["navigation", "mainContent", "endpoint", "data"],
+		browseIdFromPolymerState: () => [...this.Structures.browseEndpointFromPolymerState, "browseId"],
+		
+		nextResponseTabs: ["contents", "singleColumnMusicWatchNextResultsRenderer", "tabbedRenderer","watchNextTabbedResultsRenderer", "tabs"],
+		playlistPanelFromNextResponse: () => [...this.Structures.nextResponseTabs, 0, "tabRenderer", "content", "musicQueueRenderer","content", "playlistPanelRenderer"],
+		lyricPanelFromNextResponse: () => [...this.Structures.nextResponseTabs, 1,"tabRenderer"], // want to change to make look like above
+
 		overlayButtonsFromNextResponse: ["playerOverlays", "playerOverlayRenderer", "actions"],
-		pageTypeFromNavigationEndpoint: ["browseEndpoint", "browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"],
+
+		navigationEndpointFromMenuNavigationItem: ["menuNavigationItemRenderer", "navigationEndpoint"],
+
+		pageTypeFromNavigationEndpoint: ["browseEndpointContextSupportedConfigs", "browseEndpointContextMusicConfig", "pageType"],
+		pageTypeFromOuterNavigationEndpoint: () => ["browseEndpoint", ...this.Structures.pageTypeFromNavigationEndpoint],
+		pageTypeFromMenuNavigationItem: () => [...this.Structures.navigationEndpointFromMenuNavigationItem, ...this.Structures.pageTypeFromOuterNavigationEndpoint()],
+
 		browseIdFromNavigationEndpoint: ["browseEndpoint", "browseId"],
-		reloadContinuationDataFromNavigationEndpoint: ["browseSectionListReloadEndpoint", "continuation", "reloadContinuationData"],
-		watchEndpointFromVideoRenderer: ["navigationEndpoint", "watchEndpoint"],
-		menuItemsFromAnything: ["menu", "menuRenderer", "items"],
-		firstMenuItem: ["menu", "menuRenderer", "items", 0],
+		browseIdFromMenuNavigationEndpoint: () => [...this.Structures.navigationEndpointFromMenuNavigationItem, ...this.Structures.browseIdFromNavigationEndpoint],
+		
+		menuItems: ["menu", "menuRenderer", "items"],
+		isLikedFromMenu: ["menu", "menuRenderer", "topLevelButtons", 0, "likeButtonRenderer", "likeStatus"],
 		serviceEndpointFromMenuItem: ["menuServiceItemRenderer", "serviceEndpoint"],
-		serviceActionPlaylistEditEndpointFromMenuItem: ["menuServiceItemRenderer", "serviceEndpoint", "playlistEditEndpoint", "actions", 0],
+		serviceActionPlaylistEditEndpointFromMenuItem: () => [...this.Structures.serviceEndpointFromMenuItem, "playlistEditEndpoint", "actions", 0],
+
 		endpointOnConfirmDialogFromNavigationMenuItem: ["menuNavigationItemRenderer", "navigationEndpoint", "confirmDialogEndpoint", "content", "confirmDialogRenderer", "confirmButton", "buttonRenderer", "command"],
 		backingPlaylistIdFromVideoRenderer: ["queueNavigationEndpoint", "queueAddEndpoint", "queueTarget", "backingQueuePlaylistId"],
-		albumListItemShelfRendererFromBrowseResponse: ["contents", "twoColumnBrowseResultsRenderer", "secondaryContents", "sectionListRenderer", "contents", 0, "musicShelfRenderer"],
-		albumHeaderRendererFromBrowseResponse: ["contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "musicResponsiveHeaderRenderer"],
-		playlistHeaderRendererFromBrowseResponseUserOwned: ["contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "musicEditablePlaylistDetailHeaderRenderer", "header", "musicResponsiveHeaderRenderer"],
-		playlistHeaderRendererFromBrowseResponse: ["contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "musicResponsiveHeaderRenderer"],
-		sectionListRendererFromBrowseResponseForBasicGrid: ["contents", "singleColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer"],
-		listItemsFromBrowseResponseForListPage: ["contents", "twoColumnBrowseResultsRenderer", "secondaryContents", "sectionListRenderer", "contents", 0, "musicPlaylistShelfRenderer", "contents"],
+
+		sectionListRendererFromSingleColumn: ["contents", "singleColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer"],
+
+		listPageItemsSectionRenderer: ["contents", "twoColumnBrowseResultsRenderer", "secondaryContents", "sectionListRenderer"],
+		listPageItemsSectionRendererContents: () => [...this.Structures.listPageItemsSectionRenderer, "contents"],
+		albumListItems: () => [...this.Structures.listPageItemsSectionRendererContents(), 0, "musicShelfRenderer", "contents"],
+		playlistListItems: () => [...this.Structures.listPageItemsSectionRendererContents(), 0, "musicPlaylistShelfRenderer", "contents"],
+		privAlbumListItems: () => [...this.Structures.sectionListRendererFromSingleColumn, "contents", 0, "musicShelfRenderer", "contents"],
+
+		listPageHeaderSectionRenderer: ["contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0],
+		listPageHeaderRenderer: () => [...this.Structures.listPageHeaderSectionRenderer, "musicResponsiveHeaderRenderer"], // ALBUM AND PLAYLIST
+		listPageHeaderRendererUserOwned: () => [...this.Structures.listPageHeaderSectionRenderer, "musicEditablePlaylistDetailHeaderRenderer", "header", "musicResponsiveHeaderRenderer"],
+		
 		sortOptionsFromSectionListRendererForBasicGrid: ["header", "musicSideAlignedItemRenderer", "endItems", 0, "musicSortFilterButtonRenderer", "menu", "musicMultiSelectMenuRenderer", "options"],
 		commandsFromMultiSelectItemRenderer: ["selectedCommand", "commandExecutorCommand", "commands"],
-		gridRendererFromContinuationResponse: ["continuationContents", "sectionListContinuation", "contents", 0, "gridRenderer"],
-		gridContinuationDataFromResponse: ["continuationContents", "gridContinuation"],
+
 		headerFromSectionListShelf: ["musicCarouselShelfRenderer", "header", "musicCarouselShelfBasicHeaderRenderer"],
-		titleTextFromAnything: ["title", "runs", 0, "text"],
+
+		titleText: ["title", "runs", 0, "text"],
+		indexFromLIR: ["index", "runs", 0, "text"],
 		titleTextFromLIR: ["flexColumns", 0, "musicResponsiveListItemFlexColumnRenderer", "text", "runs", 0, "text"],
+		headerTitleFromSectionListShelf: () => [...this.Structures.headerFromSectionListShelf, ...this.Structures.titleText],
+
+		artistsFromAlbumLIR: ["flexColumns", 1, "musicResponsiveListItemFlexColumnRenderer", "text", "runs"],
+		
 		PPVRThroughVideoWrapper: ["playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"],
 		PPVRFromGetQueueData: ["content", "playlistPanelVideoRenderer"],
-		PPVRFromGetQueueDataThroughVideoWrapper: ["content", "playlistPanelVideoWrapperRenderer", "primaryRenderer", "playlistPanelVideoRenderer"],
+		PPVRFromGetQueueDataThroughVideoWrapper: () => ["content", ...this.Structures.PPVRThroughVideoWrapper],
+
+		gridRendererFromContinuationResponse: ["continuationContents", "sectionListContinuation", "contents", 0, "gridRenderer"],
+		gridContinuationDataFromResponse: ["continuationContents", "gridContinuation"],
+
+		continuationsFromListPage: () => [...this.Structures.listPageItemsSectionRenderer, "continuations"],
+		reloadContinuationDataFromNavigationEndpoint: ["browseSectionListReloadEndpoint", "continuation", "reloadContinuationData"],
 		continuationAppendItems: ["contents", "appendContinuationItemsAction", "continuationItems"],
 		continuationSectionListGrid: ["contents", "sectionListContinuation", "contents", 0, "gridRenderer"],
 		continuationGrid: ["contents", "gridContinuation"],
-		thumbnailsFromItem: ["thumbnail", "musicThumbnailRenderer", "thumbnail", "thumnails"],
-		isLikedFromItem: ["menu", "menuRenderer", "topLevelButtons", 0, "likeButtonRenderer", "likeStatus"],
+
+		thumbnailsFromMTR: ["musicThumbnailRenderer", "thumbnail", "thumbnails"],
+		thumbnailsFromThumbnail: () => ["thumbnail", ...this.Structures.thumbnailsFromMTR],
+		thumbnailsFromThumbnailRenderer: () => ["thumbnailRenderer", ...this.Structures.thumbnailsFromMTR],
+		thumbnailsFromCroppedSquare: ["thumbnail", "croppedSquareThumbnailRenderer", "thumbnail", "thumbnails"],
+
+		badgeIconFromBadge: ["musicInlineBadgeRenderer", "icon", "iconType"],
+		creatorNameFromFacepile: ["facepile", "avatarStackViewModel", "text", "content"],
+		mfUrlFromResponse: ["microformat", "microformatDataRenderer", "urlCanonical"],
+		isSubscribedFromArtistHeaderRenderer: ["subscriptionButton", "subscribeButtonRenderer", "subscribed"]
+	};
+
+	static BrowsePageTypes = {
+		unknown: "MUSIC_PAGE_TYPE_UNKNOWN",
+		artist: "MUSIC_PAGE_TYPE_ARTIST",
+		unknownCreator: "C_PAGE_TYPE_CHANNEL_OR_ARTIST",
+		privArtistC: "C_PAGE_TYPE_PRIVATE_ARTIST",
+		channel: "MUSIC_PAGE_TYPE_USER_CHANNEL",
+		album: "MUSIC_PAGE_TYPE_ALBUM",
+		privAlbumC: "C_PAGE_TYPE_PRIVATE_ALBUM",
+		playlist: "MUSIC_PAGE_TYPE_PLAYLIST",
+
+		artistDiscography: "MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY",
+		libraryMain: "MUSIC_PAGE_TYPE_LIBRARY_CONTENT_LANDING_PAGE",
+		libraryPrivate: "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE",
+
+		isArtist: (v) => v === this.BrowsePageTypes.artist || v === this.BrowsePageTypes.privArtistC,
+		isPublicArtist: (v) => v === this.BrowsePageTypes.artist || v === this.BrowsePageTypes.unknownCreator,
+		isUnknown: (v) => v === this.BrowsePageTypes.unknown,
+		isChannel: (v) => v === this.BrowsePageTypes.channel,
+		isRegularAlbum: (v) => v === this.BrowsePageTypes.album,
+		isPrivAlbum: (v) => v === this.BrowsePageTypes.privAlbumC,
+		isPlaylist: (v) => v === this.BrowsePageTypes.playlist,
+		isVideo: (v) => !!v.match("^MUSIC_VIDEO_TYPE"),
+		isGenericGrid: (v) => [this.BrowsePageTypes.artistDiscography, this.BrowsePageTypes.libraryMain, this.BrowsePageTypes.libraryPrivate].indexOf(v) !== -1,
+		isLibraryPage: (v) => v === this.BrowsePageTypes.libraryMain || v === this.BrowsePageTypes.libraryPrivate,
+		isPrivatePage: (v) => v === this.BrowsePageTypes.libraryPrivate
 	};
 
 	static async InitTemplateElements() {
@@ -124,7 +198,7 @@ export class MWUtils {
 
 		const cont = document.head.querySelector(`#${data.contId}`);
 
-		window.musicFixer.state.TemplateElements = Object.fromEntries(
+		window.ext.state.TemplateElements = Object.fromEntries(
 			Array.from(cont.children)
 				.map(v => [v.classList[0], v])
 		);
@@ -143,7 +217,7 @@ export class MWUtils {
 
 	static RandInt = (minInc, maxInc) => minInc + Math.round(Math.random() * (maxInc - minInc));
 	static ArrayInsert = (array, obj, index) => [...array.slice(0, index), obj, ...array.slice(index)];
-	static ArrayGetIndexOfMaxValue = (array) => array.indexOf(Math.max(array));
+	static ArrayGetIndexOfMaxValue = (array) => array.indexOf(Math.max(...array));
 	static ArrayNLast = (array, n) => array[array.length - (n || 1)];
 
 	static WaitForBySelector(selector, parent, shouldTimeout) {
@@ -190,7 +264,7 @@ export class MWUtils {
 		return imgUrl.replace(/=s\d+/g, `=s${this.IMG_HEIGHT}`);
 	};
 
-	static ChooseBestThumbnail = (thumbnails) => thumbnails[this.ArrayGetIndexOfMaxValue(thumbnails.map((v) => (v.width || 1) * (v.height || 1)))];
+	static ChooseBestThumbnail = (thumbnails) => thumbnails ? thumbnails[this.ArrayGetIndexOfMaxValue(thumbnails.map((v) => (v.width || 1) * (v.height || 1)))]?.url : "";
 	static GetEndpointByNameFromArray = (arrayofOuterEndps, endpName) => (arrayofOuterEndps.filter( v => v[endpName] )[0] || {})[endpName];
 
 	static CreateButtonElem(icon, textContent, style, id) {
@@ -652,6 +726,28 @@ export class MWUtils {
 
 	
 
+	
+
+
+
+
+
+
+
+	// UNCLEAN CODE:
+
+
+
+	static GetBrowseIdFromResponseContext(responseContext) {
+		let GFEEDBACK = responseContext.serviceTrackingParams.filter( v => v.service === "GFEEDBACK" )[0];
+		if (!GFEEDBACK) return null;
+
+		let browseEntry = GFEEDBACK.params.filter( v => v.key === "browse_id" )[0];
+		if (!browseEntry) return null;
+
+		return browseEntry.value;
+	};
+
 	static GetBrowsePageTypeFromBrowseId(browseId, excludeCTypes, resultisImportant, hasEditedResponse) {
 		if (!browseId) browseId = "";
 
@@ -705,7 +801,7 @@ export class MWUtils {
 		let browseEndpoint = stateOrNavEndp;
 
 		if (stateOrNavEndp.navigation) { // get browseEndpoint from store.state
-			browseEndpoint = musicFixer.SafeDeepGet(stateOrNavEndp, musicFixer.SafeDeepGetRoutes.browseEndpointFromPolymerState);
+			browseEndpoint = this.SafeDeepGet(stateOrNavEndp, this.Structures.browseEndpointFromPolymerState);
 
 		} else if (stateOrNavEndp.browseEndpoint) { // get from whatever else (navEndpoint?)
 			browseEndpoint = stateOrNavEndp.browseEndpoint;
@@ -713,11 +809,11 @@ export class MWUtils {
 
 		if (!browseEndpoint) return null;
 
-		const browseId = musicFixer.SafeDeepGet(browseEndpoint, musicFixer.SafeDeepGetRoutes.browseIdFromNavigationEndpoint);
+		const browseId = browseEndpoint.browseId;
 		const fromId = this.GetBrowsePageTypeFromBrowseId(browseId);
 		if (fromId) return fromId;
 
-		return musicFixer.SafeDeepGet(browseEndpoint, this.SafeDeepGetRoutes.pageTypeFromNavigationEndpoint);
+		return this.SafeDeepGet(browseEndpoint, this.Structures.pageTypeFromNavigationEndpoint);
 
 	};
 
@@ -730,6 +826,1885 @@ export class MWUtils {
 			
 			case "MUSIC_PAGE_TYPE_PLAYLIST":
 				return browseId.replace(/^VL/, "");
+		};
+	};
+
+	static GetPPVR(obj) {
+		if (!obj) return {};
+
+		return obj.playlistPanelVideoRenderer
+			|| this.SafeDeepGet(obj, this.Structures.PPVRThroughVideoWrapper)
+			|| this.SafeDeepGet(obj, this.Structures.PPVRFromGetQueueData)
+			|| this.SafeDeepGet(obj, this.Structures.PPVRFromGetQueueDataThroughVideoWrapper());
+	};
+
+
+	static GetObjFromMfId(cache, mfId) {
+		if (!mfId) return;
+
+		if (mfId.startsWith("PL")) {
+			return cache["VL" + mfId];
+		};
+
+		let id = cache.mfIdMap[mfId];
+		if (!id) return undefined;
+
+		return cache[id];
+	};
+
+
+	static GetPrimaryVersions(storage, nonMainId) {
+		let linked = [];
+
+		for (let [mainVer, alts] of Object.entries(storage.customisation.primaryAlbums)) {
+			if (mainVer === nonMainId) continue; // do we want to do anything here? provided album IS the prim ver.
+			if (!alts.includes(nonMainId)) continue;
+
+			linked.push(mainVer);
+		};
+
+		return linked;
+	};
+
+	static GetCounterpartFromData(cache, data) {
+		if (!data || (data.privateCounterparts || []).length === 0) return;
+
+		return (cache || {})[data.privateCounterparts[0]];
+	};
+
+
+
+	static GetIdsToReplaceFromRealAlbum(storage, buildQueueFrom, loadedBulkFrom) {
+		// buildQueueFrom is the real nav playlist. (deluxe)
+		// loadedBulkFrom is the perspective, playlist of song that was clicked. (could be non-deluxe) 
+		if (buildQueueFrom === undefined || loadedBulkFrom === undefined) return;
+
+		let cache = storage.cache;
+		let buildingFromAlbum = cache[buildQueueFrom];
+		let loadedFromAlbum = cache[loadedBulkFrom];
+		let indexToVideoIdOfThis = {}; // list of indexes to videoIds in REAL ALBUM (loadedFrom) only.
+
+		if (!buildingFromAlbum || !loadedFromAlbum) return;
+		//TESTING WITHOUT THIS. WORKS OK! if (buildingFromAlbum.private) return;
+
+		// MAP INDEX TO VIDEO OF ALBUM WE HAVE LOADED.
+		// DO ALL BASED ON CACHE NOW, SO SHUFFLING DOESNT MATTER.
+		console.log("LOADEDFROMALBUM", {loadedFromAlbum});
+
+		for (let video of (loadedFromAlbum.items || [])) {
+			video = cache[video] || {};
+			indexToVideoIdOfThis[video.index] = video.id;
+		};
+		console.log(structuredClone({indexToVideoIdOfThis}), "FIRST TIME");
+
+		let albumsToUse = [];
+		let primaryVersions = this.GetPrimaryVersions(storage, buildQueueFrom) || [];
+		let linkedAlbums = storage.customisation.albumLinks[buildQueueFrom] || [];
+		let counterparts = buildingFromAlbum.privateCounterparts || [];
+
+		let extraSongs = storage.customisation.extraSongs[buildQueueFrom] || [];
+		
+		// priority order (later overwrite earlier)
+		if (primaryVersions) albumsToUse.push(...primaryVersions);
+		if (linkedAlbums) {
+			linkedAlbums = linkedAlbums
+				.map( v => { return { obj: cache[typeof(v) === "string" ? v : v.linkedId], off: v.offsetIndex }} ) // docs: "a and b will never be undefined", so no placeholder.
+				.sort( (a, b) => (a.obj.private && !b.obj.private) ? 1 : (!a.obj.private && b.obj.private) ? -1 : b.obj.items.length - a.obj.items.length )
+				.map( v => {return { id: v.obj.id, off: v.off }} );
+
+			// sort: (a,b): negative = a before b, positive = a after b, 0 or NaN = equal
+			// a is private and b is not: put a after always
+			// a is not and b is private: put b after always
+			// privacy is same (both are or both arent): do based on items length.
+
+			albumsToUse.push(...linkedAlbums);
+		};
+		if (counterparts) albumsToUse.push(...counterparts);
+
+		// if loading from smaller (eg original), need to add extra from deluxe.
+		// add to start of list, so is low priority.
+		if (buildingFromAlbum.id !== loadedFromAlbum.id) {
+			albumsToUse.unshift(buildingFromAlbum.id);
+		};
+
+		console.log(albumsToUse);
+
+		let changesByIndex = {};
+
+		for (let data of albumsToUse) {
+			let dataDatatype = typeof(data);
+			let album = (dataDatatype === "string") ? data : data.id;
+			let offsetIndex = (dataDatatype === "string") ? undefined : data.off;
+
+			album = cache[album];
+			if (!album || album.items.length === 0) continue;
+
+			for (let item of album.items) {
+				item = cache[item];
+				if (!item) continue;
+
+				let index = (offsetIndex) ? String(Number(item.index) + Number(offsetIndex)) : item.index;
+
+				let alreadyChanging = changesByIndex[index];
+				if (alreadyChanging) {
+					if (alreadyChanging.from.private === true) continue;
+					// removed this. instead, made priority of albumsToUse correct. most important last.
+					// if (album.private === false) continue; 
+				};
+
+				// why change if its the same?
+				// because midnights. queue built from original, replaced by 3am. 
+				// need to bring back to original.
+
+				changesByIndex[index] = {
+					video: item,
+					from: album
+				};
+			};
+		};
+
+		let changesByOriginalId = {extraByIndex: {}, "indexToVideoIdOfThis": indexToVideoIdOfThis};
+
+		console.log("indexToVideoIdOfThis", indexToVideoIdOfThis);
+		console.log("changesByIndex", structuredClone(changesByIndex));
+
+		for (let [k,v] of Object.entries(changesByIndex)) {
+			let originalId = indexToVideoIdOfThis[k];
+
+			if (originalId) changesByOriginalId[originalId] = v;
+			else changesByOriginalId.extraByIndex[k] = v;
+		};
+
+		// ADD EXTRA SONGS
+		for (let song of extraSongs) {
+			let item = cache[song.videoId];
+			if (!item) continue;
+
+			let fromAlbum = cache[item.album];
+			if (!fromAlbum) continue;
+
+			// WON'T HAVE AN originalId AS IS NEW TO ALBUM
+			//let existingHere = changesByOriginalId[song.index];
+			//if (existingHere && song.overwrite) {
+			//	changesByOriginalId[song.index]
+			//}
+			changesByOriginalId.extraByIndex[song.index] = {
+				video: item,
+				from: fromAlbum,
+				manualExtra: true,
+				overwrite: song.overwrite
+			};
+		};
+
+		return changesByOriginalId;
+	};
+
+
+
+
+
+
+	static CreateLongBylineForPlaylistPanel(replacement, buildingFromAlbum, artist) {
+		return [
+			{
+				text: artist.name,
+				navigationEndpoint: this.BuildEndpoint({
+					navType: "browse",
+					id: artist.id
+				})
+			},
+			{ text: this.YT_DOT },
+			{
+				text: replacement.from.name,
+				navigationEndpoint: this.BuildEndpoint({
+					navType: "browse",
+					id: buildingFromAlbum.id
+				})
+			},
+			{ text: this.YT_DOT },
+			{ text: buildingFromAlbum.year }
+		];
+	};
+
+
+	static CreateToggleMenuItemForLikeButton(cacheItem) {
+		if (!cacheItem) return;
+
+		if (cacheItem.type === "ALBUM") {
+			if (cacheItem.saved) return {
+				"toggleMenuServiceItemRenderer": {
+					"defaultText": {
+						"runs": [
+							{
+								"text": "Remove album from library"
+							}
+						]
+					},
+					"defaultIcon": {
+						"iconType": "LIBRARY_SAVED"
+					},
+					"defaultServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "INDIFFERENT",
+							"target": {
+								"playlistId": cacheItem.mfId
+							}
+						}
+					},
+					"toggledText": {
+						"runs": [
+							{
+								"text": "Save album to library"
+							}
+						]
+					},
+					"toggledIcon": {
+						"iconType": "LIBRARY_ADD"
+					},
+					"toggledServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "LIKE",
+							"target": {
+								"playlistId": cacheItem.mfId
+							}
+						}
+					}
+				}
+			};
+
+			return {
+				"toggleMenuServiceItemRenderer": {
+					"defaultText": {
+						"runs": [
+							{
+								"text": "Save album to library"
+							}
+						]
+					},
+					"defaultIcon": {
+						"iconType": "LIBRARY_ADD"
+					},
+					"defaultServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "LIKE",
+							"target": {
+								"playlistId": cacheItem.mfId
+							}
+						}
+					},
+					"toggledText": {
+						"runs": [
+							{
+								"text": "Remove album from library"
+							}
+						]
+					},
+					"toggledIcon": {
+						"iconType": "LIBRARY_SAVED"
+					},
+					"toggledServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "INDIFFERENT",
+							"target": {
+								"playlistId": cacheItem.mfId
+							}
+						}
+					}
+				}
+			};
+		};
+
+		if (this.UCacheItemIsSong(cacheItem)) {
+			if (cacheItem.liked === "LIKE") return {
+				"toggleMenuServiceItemRenderer": {
+					"defaultText": {
+						"runs": [
+							{
+								"text": "Remove from liked songs"
+							}
+						]
+					},
+					"defaultIcon": {
+						"iconType": "UNFAVORITE"
+					},
+					"defaultServiceEndpoint": {
+						
+						"likeEndpoint": {
+							"status": "INDIFFERENT",
+							"target": {
+								"videoId": cacheItem.id
+							}
+						}
+					},
+					"toggledText": {
+						"runs": [
+							{
+								"text": "Add to liked songs"
+							}
+						]
+					},
+					"toggledIcon": {
+						"iconType": "FAVORITE"
+					},
+					"toggledServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "LIKE",
+							"target": {
+								"videoId": cacheItem.id
+							}
+						}
+					}
+				}
+			};
+
+			return { // ALSO DO THIS IF DISLIKED.
+				"toggleMenuServiceItemRenderer": {
+					"defaultText": {
+						"runs": [
+							{
+								"text": "Add to liked songs"
+							}
+						]
+					},
+					"defaultIcon": {
+						"iconType": "FAVORITE"
+					},
+					"defaultServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "LIKE",
+							"target": {
+								"videoId": cacheItem.id
+							}
+						}
+					},
+					"toggledText": {
+						"runs": [
+							{
+								"text": "Remove from liked songs"
+							}
+						]
+					},
+					"toggledIcon": {
+						"iconType": "UNFAVORITE"
+					},
+					"toggledServiceEndpoint": {
+						"likeEndpoint": {
+							"status": "INDIFFERENT",
+							"target": {
+								"videoId": cacheItem.id
+							}
+						}
+					}
+				}
+			};
+		};
+	};
+
+	static CreateWriteNoteMenuItemRenderer(videoId) {
+		return {
+			"menuServiceItemRenderer": {
+				"text": {
+					"runs": [
+						{
+							"text": "Write note"
+						}
+					]
+				},
+				"icon": {
+					"cSvg": "note"
+				},
+				"serviceEndpoint": {
+					"customEndpoint": {
+						"action": "writeNotePopup",
+						"videoId": videoId
+					}
+				}
+			}
+		};
+	};
+
+	static CreateAddTagMenuItemRenderer(videoId) {
+		return {
+			"menuServiceItemRenderer": {
+				"text": {
+					"runs": [
+						{
+							"text": "Add tag"
+						}
+					]
+				},
+				"icon": {
+					"cSvg": "tag"
+				},
+				"serviceEndpoint": {
+					"customEndpoint": {
+						"action": "addTagPopup",
+						"videoId": videoId
+					}
+				}
+			}
+		};
+	};
+
+
+
+	static FillCDataOfListItem(storage, lir, data) {
+		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
+
+		if (!lir.cData) lir.cData = {};
+		
+		lir.cData.customNote = storage.customisation.notes[data.id];
+		lir.cData.tags = (storage.customisation.tags.videos[data.id] || []).map(v => storage.customisation.tags.tags[v]);
+
+	};
+
+
+
+	static BuildTwoRowItemRendererFromData(data) {
+		const navEndp = this.BuildEndpoint({
+			navType: "browse",
+			browseId: data.id
+		});
+
+		return {				
+			"musicTwoRowItemRenderer": {
+				"thumbnailRenderer": {
+					"musicThumbnailRenderer": {
+						"thumbnail": {
+							"thumbnails": [
+								{
+									"url": data.thumb,
+									"width": this.IMG_HEIGHT,
+									"height": this.IMG_HEIGHT
+								}
+							]
+						},
+						"thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+						"thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FILL"
+					}
+				},
+				"aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+				"title": {
+					"runs": [
+						{
+							"text": data.name,
+							"navigationEndpoint": navEndp
+						}
+					]
+				},
+				"subtitle": {
+					"runs": [
+						{
+							"text": data.subType
+						},
+						{
+							"text": this.YT_DOT
+						},
+						{
+							"text": data.year
+						}
+					]
+				},
+				"navigationEndpoint": navEndp,
+				"menu": {
+					"menuRenderer": {
+						"items": [
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Shuffle play"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "MUSIC_SHUFFLE"
+									},
+									"navigationEndpoint": {
+										"watchPlaylistEndpoint": {
+											"playlistId": data.mfId,
+											"params": this.YT_PLAYER_PARAMS.shuffle
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Start radio"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "MIX"
+									},
+									"navigationEndpoint": {
+										"watchPlaylistEndpoint": {
+											"playlistId": "RDAMPL" + data.mfId,
+											"params": this.YT_PLAYER_PARAMS.normal
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Play next"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "QUEUE_PLAY_NEXT"
+									},
+									"serviceEndpoint": {
+										"queueAddEndpoint": {
+											"queueTarget": {
+												"playlistId": data.mfId,
+												"onEmptyQueue": {
+													"watchEndpoint": {
+														"playlistId": data.mfId
+													}
+												}
+											},
+											"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Album will play next"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Add to queue"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ADD_TO_REMOTE_QUEUE"
+									},
+									"serviceEndpoint": {
+										"queueAddEndpoint": {
+											"queueTarget": {
+												"playlistId": data.mfId,
+												"onEmptyQueue": {
+													"watchEndpoint": {
+														"playlistId": data.mfId
+													}
+												}
+											},
+											"queueInsertPosition": "INSERT_AT_END",
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Album added to queue"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							this.CreateToggleMenuItemForLikeButton(data),
+							{
+								"menuServiceItemDownloadRenderer": {
+									"serviceEndpoint": {
+										"offlinePlaylistEndpoint": {
+											"playlistId": data.mfId,
+											"action": "ACTION_ADD",
+											"offlineability": {
+												"offlineabilityRenderer": {
+													"offlineable": true
+												}
+											},
+											"onAddCommand": {
+												"getDownloadActionCommand": {
+													"playlistId": data.mfId,
+													"params": "CAI%3D"
+												}
+											}
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Save to playlist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ADD_TO_PLAYLIST"
+									},
+									"navigationEndpoint": {
+										"addToPlaylistEndpoint": {
+											"playlistId": data.mfId
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Go to artist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ARTIST"
+									},
+									"navigationEndpoint": {
+										"browseEndpoint": {
+											"browseId": data.artist,
+											"browseEndpointContextSupportedConfigs": {
+												"browseEndpointContextMusicConfig": {
+													"pageType": "MUSIC_PAGE_TYPE_ARTIST"
+												}
+											}
+										}
+									}
+								}
+							}
+						],
+						"accessibility": {
+							"accessibilityData": {
+								"label": "Action menu"
+							}
+						}
+					}
+				},
+				"thumbnailOverlay": {
+					"musicItemThumbnailOverlayRenderer": {
+						"background": {
+							"verticalGradient": {
+								"gradientLayerColors": [
+									"2147483648",
+									"0",
+									"0"
+								]
+							}
+						},
+						"content": {
+							"musicPlayButtonRenderer": {
+								"playNavigationEndpoint": {
+									"watchEndpoint": {
+										"playlistId": data.mfId,
+										"watchEndpointMusicSupportedConfigs": {
+											"watchEndpointMusicConfig": {
+												"musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+											}
+										}
+									}
+								},
+								"playIcon": {
+									"iconType": "PLAY_ARROW"
+								},
+								"pauseIcon": {
+									"iconType": "PAUSE"
+								},
+								"iconColor": 4294967295,
+								"backgroundColor": 2566914048,
+								"activeBackgroundColor": 4278190080,
+								"loadingIndicatorColor": 14745645,
+								"playingIcon": {
+									"iconType": "VOLUME_UP"
+								},
+								"iconLoadingColor": 1308622847,
+								"activeScaleFactor": 1.2,
+								"buttonSize": "MUSIC_PLAY_BUTTON_SIZE_MEDIUM",
+								"rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+								"accessibilityPlayData": {
+									"accessibilityData": {
+										"label": "Play " + data.name
+									}
+								},
+								"accessibilityPauseData": {
+									"accessibilityData": {
+										"label": "Pause " + data.name
+									}
+								}
+							}
+						},
+						"contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+						"displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+					}
+				}
+			}
+		};
+	};
+
+	static ModifyListItemRendererFromDataForAlbumPage(replacement, realAlbum, current) {
+		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
+		// eg, realAlbum = deluxe, replacement.from = original.
+
+		if (current.musicResponsiveListItemRenderer) current = current.musicResponsiveListItemRenderer;
+		let playButton = this.SafeDeepGet(current, this.Structures.playButtonFromLIRData());
+
+		let vId = replacement.video.id;
+		let setPlId = replacement.video.albumPlSetVideoId;
+
+		// want to make play button work with playlistId being base, then adding extra from deluze version.
+		// different relationship, dont want deluxe to be overwriting.
+
+		playButton.playNavigationEndpoint.watchEndpoint.videoId = vId;
+		if (setPlId) playButton.playNavigationEndpoint.watchEndpoint.playlistSetVideoId = setPlId;
+
+		if (replacement.from.private === true) playButton.playNavigationEndpoint.watchEndpoint.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK";
+		else playButton.playNavigationEndpoint.watchEndpoint.playlistId = replacement.from.mfId; // keep this, want to play from the main versions!!
+
+		playButton.accessibilityPlayData.accessibilityData.label = "Play " + replacement.video.name;
+		playButton.accessibilityPauseData.accessibilityData.label = "Pause " + replacement.video.name;
+
+		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = replacement.video.name;
+		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint.watchEndpoint = playButton.playNavigationEndpoint.watchEndpoint;
+
+		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text = this.SecondsToHMSStr(replacement.video.lengthSec);
+		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.accessibility.accessibilityData.label = this.SecondsToWordyHMS(replacement.video.lengthSec);
+
+		current.menu.menuRenderer.items = [
+			{
+				"menuServiceItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Play next"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "QUEUE_PLAY_NEXT"
+					},
+					"serviceEndpoint": {
+						"queueAddEndpoint": {
+							"queueTarget": {
+								"videoId": vId,
+								"onEmptyQueue": {
+									"watchEndpoint": {
+										"videoId": vId
+									}
+								}
+							},
+							"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+							"commands": [
+								{
+									"addToToastAction": {
+										"item": {
+											"notificationTextRenderer": {
+												"successResponseText": {
+													"runs": [
+														{
+															"text": "Song will play next"
+														}
+													]
+												}
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				}
+			},
+			{
+				"menuServiceItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Add to queue"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ADD_TO_REMOTE_QUEUE"
+					},
+					"serviceEndpoint": {
+						"queueAddEndpoint": {
+							"queueTarget": {
+								"videoId": vId,
+								"onEmptyQueue": {
+									"watchEndpoint": {
+										"videoId": vId
+									}
+								}
+							},
+							"queueInsertPosition": "INSERT_AT_END",
+							"commands": [
+								{
+									"addToToastAction": {
+										"item": {
+											"notificationTextRenderer": {
+												"successResponseText": {
+													"runs": [
+														{
+															"text": "Song added to queue"
+														}
+													]
+												}
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				}
+			},
+			{
+				"menuServiceItemDownloadRenderer": {
+					"serviceEndpoint": {
+						"offlineVideoEndpoint": {
+							"videoId": vId,
+							"onAddCommand": {
+								"getDownloadActionCommand": {
+									"videoId": vId,
+									"params": "CAI%3D"
+								}
+							}
+						}
+					}
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Save to playlist"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ADD_TO_PLAYLIST"
+					},
+					"navigationEndpoint": {
+						"addToPlaylistEndpoint": {
+							"videoId": vId
+						}
+					}
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Go to original album"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ALBUM"
+					},
+					"navigationEndpoint": this.BuildEndpoint({
+						navType: "browse",
+						id: replacement.from.id
+					})
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Go to artist"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ARTIST"
+					},
+					"navigationEndpoint": this.BuildEndpoint({
+						navType: "browse",
+						id: realAlbum.artist
+					})
+				}
+			}
+		];
+
+		let l = current.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer;
+
+		if (l && l.likesAllowed) {
+			l.likeStatus = replacement.video.liked;
+			l.target.videoId = vId;
+			l.serviceEndpoints[0].likeEndpoint.target.videoId = vId;
+			l.serviceEndpoints[1].likeEndpoint.target.videoId = vId;
+			l.serviceEndpoints[2].likeEndpoint.target.videoId = vId;
+		};
+
+		current.playlistItemData.videoId = vId;
+
+		current.cData = replacement;
+
+		return current;
+	};
+
+	static ModifyListItemRendererForAnyPage(storage, browsePageType, lir) {
+		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
+
+		lir.menu.menuRenderer.items.push(this.CreateWriteNoteMenuItemRenderer(lir.playlistItemData.videoId));
+		lir.menu.menuRenderer.items.push(this.CreateAddTagMenuItemRenderer(lir.playlistItemData.videoId));
+
+		if (browsePageType === "MUSIC_PAGE_TYPE_PLAYLIST") {
+			let id = lir.playlistItemData?.videoId;
+			if (!id) return lir;
+
+			let cacheThis = storage.cache[id];
+			if (!cacheThis.album || (cacheThis.artists || []).length === 0) return lir;
+
+			let customisationAlbum = storage.customisation.metadata[cacheThis.album] || {};
+			let artistId = customisationAlbum.artist || (cacheThis.type === "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK") ? (storage.cache[cacheThis.artists[0]].privateCounterparts[0]) : cacheThis.artists[0];
+			let customisationArtist = storage.customisation.metadata[artistId] || {};
+
+			let artistCache = storage.cache[artistId];
+
+			if (customisationAlbum.thumb) {
+				lir.thumbnail.musicThumbnailRenderer = {
+					"thumbnail": {
+						"thumbnails": [
+							{
+								"url": customisationAlbum.thumb,
+								"width": this.IMG_HEIGHT,
+								"height": this.IMG_HEIGHT
+							}
+						]
+					},
+					"thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+					"thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+				};
+			};
+
+			if (customisationAlbum.title) lir.flexColumns[2].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = customisationAlbum.title;
+
+			lir.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs = [{
+				text: customisationArtist.name || artistCache.name,
+				navigationEndpoint: this.BuildEndpoint({navType: "browse", id: artistId})
+			}];
+
+			// TODO: CHECK THESE WORK WHEN ADDING ARTIST CUSTOMISATIOn
+			// TODO: ADD DEFINING EXPLICIT SONGS
+			// TODO customisationSong FOR SONG NAME ETCs
+		};
+
+		return lir;
+	};
+
+	static ModifyPlaylistPanelRendererFromData(current, replacement, realAlbum, artist) {
+		let vId = replacement.video.id;
+		let plSetId = replacement.video.albumPlSetVideoId;
+
+		current.title.runs[0].text = replacement.video.name;
+
+		// no longer run editlongbyline, so do here
+		current.longBylineText.runs = this.CreateLongBylineForPlaylistPanel(replacement, realAlbum, artist);
+
+		current.thumbnail = {
+			thumbnails: [
+				{ url: replacement.from.thumb, width: this.IMG_HEIGHT, height: this.IMG_HEIGHT }
+			]
+		};
+		
+		current.lengthText.runs[0].text = this.SecondsToHMSStr(replacement.video.lengthSec);
+		current.lengthText.accessibility.accessibilityData.label = this.SecondsToWordyHMS(replacement.video.lengthSec);
+
+		let we = current.navigationEndpoint.watchEndpoint;
+		we.videoId = vId;
+		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (realAlbum.private === true) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
+		if (plSetId) we.playlistSetVideoId = plSetId;
+
+		current.videoId = vId;
+		current.queueNavigationEndpoint.queueAddEndpoint.videoId = vId;
+
+		current.menu.menuRenderer.items = [
+			{
+				"menuServiceItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Play next"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "QUEUE_PLAY_NEXT"
+					},
+					"serviceEndpoint": {
+						"queueAddEndpoint": {
+							"queueTarget": {
+								"videoId": vId,
+								"onEmptyQueue": {
+									"watchEndpoint": {
+										"videoId": vId
+									}
+								},
+								"backingQueuePlaylistId": current.queueNavigationEndpoint.queueAddEndpoint.queueTarget.backingQueuePlaylistId
+							},
+							"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+							"commands": [
+								{
+									"addToToastAction": {
+										"item": {
+											"notificationTextRenderer": {
+												"successResponseText": {
+													"runs": [
+														{
+															"text": "Song will play next"
+														}
+													]
+												}
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				}
+			},
+			{
+				"menuServiceItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Add to queue"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ADD_TO_REMOTE_QUEUE"
+					},
+					"serviceEndpoint": {
+						"queueAddEndpoint": {
+							"queueTarget": {
+								"videoId": vId,
+								"onEmptyQueue": {
+									"watchEndpoint": {
+										"videoId": vId
+									}
+								},
+								"backingQueuePlaylistId": current.queueNavigationEndpoint.queueAddEndpoint.queueTarget.backingQueuePlaylistId
+							},
+							"queueInsertPosition": "INSERT_AT_END",
+							"commands": [
+								{
+									"addToToastAction": {
+										"item": {
+											"notificationTextRenderer": {
+												"successResponseText": {
+													"runs": [
+														{
+															"text": "Song added to queue"
+														}
+													]
+												}
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				}
+			},
+			this.CreateToggleMenuItemForLikeButton(replacement.video),
+			{
+				"menuServiceItemDownloadRenderer": {
+					"serviceEndpoint": {
+						"offlineVideoEndpoint": {
+							"videoId": vId,
+							"onAddCommand": {
+								"getDownloadActionCommand": {
+									"videoId": vId,
+									"params": "CAI%3D"
+								}
+							}
+						}
+					}
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Save to playlist"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ADD_TO_PLAYLIST"
+					},
+					"navigationEndpoint": {
+						"addToPlaylistEndpoint": {
+							"videoId": vId
+						}
+					}
+				}
+			},
+			{
+				"menuServiceItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Remove from queue"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "REMOVE"
+					},
+					"serviceEndpoint": {
+						"removeFromQueueEndpoint": {
+							"videoId": vId,
+							"commands": [
+								{
+									"addToToastAction": {
+										"item": {
+											"notificationTextRenderer": {
+												"successResponseText": {
+													"runs": [
+														{
+															"text": "Item removed from queue"
+														}
+													]
+												}
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Go to album"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ALBUM"
+					},
+					"navigationEndpoint": this.BuildEndpoint({
+						navType: "browse",
+						id: replacement.from.id
+					})
+				}
+			},
+			{
+				"menuNavigationItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Go to artist"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "ARTIST"
+					},
+					"navigationEndpoint": this.BuildEndpoint({
+						navType: "browse",
+						id: artist.id
+					})
+				}
+			},
+			{
+				"menuServiceItemRenderer": {
+					"text": {
+						"runs": [
+							{
+								"text": "Dismiss queue"
+							}
+						]
+					},
+					"icon": {
+						"iconType": "DISMISS_QUEUE"
+					},
+					"serviceEndpoint": {
+						"deletePlaylistEndpoint": {
+							"playlistId": current.queueNavigationEndpoint.queueAddEndpoint.queueTarget.backingQueuePlaylistId,
+							"command": {
+								"dismissQueueCommand": {}
+							}
+						}
+					}
+				}
+			}
+		];
+
+		return current;
+	};
+
+
+	static BuildListItemRendererFromDataForAlbumPage(replacement, realAlbum) {
+		let video = replacement.video;
+
+		let index = Number(video.index);
+		if (index !== 0) index --;
+
+		let playEndp = this.BuildEndpoint({
+			navType: "watch",
+			playlistId: realAlbum.mfId,
+			firstVideo: video,
+			index: index, // zero base index. TODO IS THIS THE ISSUE
+			playlistSetVideoId: video.albumPlSetVideoId
+		});
+
+		return {
+			musicResponsiveListItemRenderer: {
+				overlay: {
+					musicItemThumbnailOverlayRenderer: {
+						background: { verticalGradient: { gradientLayerColors: ["0", "0"] } },
+						content: {
+							"musicPlayButtonRenderer": {
+								"playNavigationEndpoint": playEndp,
+								"playIcon": {
+									"iconType": "PLAY_ARROW"
+								},
+								"pauseIcon": {
+									"iconType": "PAUSE"
+								},
+								"iconColor": 4294967295,
+								"backgroundColor": 0,
+								"activeBackgroundColor": 0,
+								"loadingIndicatorColor": 14745645,
+								"playingIcon": {
+									"iconType": "VOLUME_UP"
+								},
+								"iconLoadingColor": 0,
+								"activeScaleFactor": 1,
+								"buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+								"rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+								"accessibilityPlayData": {
+									"accessibilityData": {
+										"label": "Play " + video.name
+									}
+								},
+								"accessibilityPauseData": {
+									"accessibilityData": {
+										"label": "Pause " + video.name
+									}
+								}
+							}
+						},
+						contentPosition: "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+						displayStyle: "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+					}
+				},
+				flexColumns: [
+					{
+						musicResponsiveListItemFlexColumnRenderer: {
+							text: {
+								runs: [{
+									text: video.name,
+									navigationEndpoint: playEndp
+								}]
+							},
+							displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+						}
+					},
+					{
+						musicResponsiveListItemFlexColumnRenderer: {
+							text: {},
+							displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+						}
+					},
+					{
+						musicResponsiveListItemFlexColumnRenderer: {
+							text: {
+								runs: [{
+									text: this.BigNumToStr(video.views) + " plays"
+								}]
+							},
+							displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+						}
+					}
+				],
+				fixedColumns: [
+					{
+						musicResponsiveListItemFixedColumnRenderer: {
+							text: {
+								runs: [{
+									text: this.SecondsToHMSStr(video.lengthSec)
+								}],
+								accessibility: {
+									accessibilityData: {
+										label: this.SecondsToWordyHMS(video.lengthSec)
+									}
+								}
+							},
+							displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH",
+							size: "MUSIC_RESPONSIVE_LIST_ITEM_FIXED_COLUMN_SIZE_SMALL"
+						}
+					}
+				],
+				"menu": {
+					"menuRenderer": {
+						"items": [
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Play next"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "QUEUE_PLAY_NEXT"
+									},
+									"serviceEndpoint": {
+										"queueAddEndpoint": {
+											"queueTarget": {
+												"videoId": video.id,
+												"onEmptyQueue": {
+													"watchEndpoint": {
+														"videoId": video.id
+													}
+												}
+											},
+											"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Song will play next"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Add to queue"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ADD_TO_REMOTE_QUEUE"
+									},
+									"serviceEndpoint": {
+										"queueAddEndpoint": {
+											"queueTarget": {
+												"videoId": video.id,
+												"onEmptyQueue": {
+													"watchEndpoint": {
+														"videoId": video.id
+													}
+												}
+											},
+											"queueInsertPosition": "INSERT_AT_END",
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Song added to queue"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemDownloadRenderer": {
+									"serviceEndpoint": {
+										"offlineVideoEndpoint": {
+											"videoId": video.id,
+											"onAddCommand": {
+												"getDownloadActionCommand": {
+													"videoId": video.id,
+													"params": "CAI%3D"
+												}
+											}
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Save to playlist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ADD_TO_PLAYLIST"
+									},
+									"navigationEndpoint": {
+										"addToPlaylistEndpoint": {
+											"videoId": video.id
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Go to album"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ALBUM"
+									},
+									"navigationEndpoint": this.BuildEndpoint({
+										navType: "browse",
+										id: replacement.from.id
+									})
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Go to artist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ARTIST"
+									},
+									"navigationEndpoint": this.BuildEndpoint({
+										navType: "browse",
+										id: realAlbum.artist
+									})
+								}
+							}
+						],
+						"topLevelButtons": [
+							{
+								"likeButtonRenderer": {
+									"target": {
+										"videoId": video.id
+									},
+									"likeStatus": video.liked || "INDIFFERENT",
+									"likesAllowed": true,
+									"serviceEndpoints": [
+										{
+											"likeEndpoint": {
+												"status": "LIKE",
+												"target": {
+													"videoId": video.id
+												}
+											}
+										},
+										{
+											"likeEndpoint": {
+												"status": "DISLIKE",
+												"target": {
+													"videoId": video.id
+												}
+											}
+										},
+										{
+											"likeEndpoint": {
+												"status": "INDIFFERENT",
+												"target": {
+													"videoId": video.id
+												}
+											}
+										}
+									]
+								}
+							}
+						],
+						"accessibility": {
+							"accessibilityData": {
+								"label": "Action menu"
+							}
+						}
+					}
+				},
+				playlistItemData: {
+					playlistSetVideoId: video.albumPlSetVideoId,
+					videoId: video.id
+				},
+				itemHeight: "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_MEDIUM",
+				index: {
+					runs: [ { text: String(video.index) } ]
+				}
+			}
+		};
+	};
+
+	static BuildPlaylistPanelRendererFromData(replacement, realAlbum, artist, queuePlaylistId) {
+		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
+
+		let video = replacement.video;
+
+		let index = Number(video.index);
+		if (index !== 0) index --;
+
+		return {
+			"playlistPanelVideoRenderer": {
+				"title": {
+					"runs": [
+						{
+							"text": video.name
+						}
+					]
+				},
+				"longBylineText": {
+					"runs": this.CreateLongBylineForPlaylistPanel(replacement, realAlbum, artist)
+				},
+				"thumbnail": {
+					"thumbnails": [
+						{
+							"url": this.UpscaleImgQuality(replacement.from.thumb),
+							"width": this.IMG_HEIGHT,
+							"height": this.IMG_HEIGHT
+						}
+					]
+				},
+				"lengthText": {
+					"runs": [
+						{
+							"text": this.SecondsToHMSStr(video.lengthSec)
+						}
+					],
+					"accessibility": {
+						"accessibilityData": {
+							"label": this.SecondsToWordyHMS(video.lengthSec)
+						}
+					}
+				},
+				"selected": false,
+				"navigationEndpoint": {
+					"watchEndpoint": {
+						"videoId": video.id,
+						"playlistId": realAlbum.mfId,
+						"index": index,
+						"playlistSetVideoId": video.albumPlSetVideoId,
+						"watchEndpointMusicSupportedConfigs": {
+							"watchEndpointMusicConfig": {
+								"hasPersistentPlaylistPanel": true,
+								"musicVideoType": (realAlbum.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
+							}
+						}
+					}
+				},
+				"videoId": video.id,
+				"shortBylineText": {
+					"runs": [
+						{
+							"text": artist.name
+						}
+					]
+				},
+				"menu": {
+					"menuRenderer": {
+						"items": [
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Play next"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "QUEUE_PLAY_NEXT"
+									},
+									"serviceEndpoint": {
+										"queueAddEndpoint": {
+											"queueTarget": {
+												"videoId": video.id,
+												"onEmptyQueue": {
+													"watchEndpoint": {
+														"videoId": video.id
+													}
+												},
+												"backingQueuePlaylistId": queuePlaylistId
+											},
+											"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Song will play next"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Add to queue"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ADD_TO_REMOTE_QUEUE"
+									},
+									"serviceEndpoint": {
+										"queueAddEndpoint": {
+											"queueTarget": {
+												"videoId": video.id,
+												"onEmptyQueue": {
+													"watchEndpoint": {
+														"videoId": video.id
+													}
+												},
+												"backingQueuePlaylistId": queuePlaylistId
+											},
+											"queueInsertPosition": "INSERT_AT_END",
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Song added to queue"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							this.CreateToggleMenuItemForLikeButton(video),
+							{
+								"menuServiceItemDownloadRenderer": {
+									"serviceEndpoint": {
+										"offlineVideoEndpoint": {
+											"videoId": video.id,
+											"onAddCommand": {
+												"getDownloadActionCommand": {
+													"videoId": video.id,
+													"params": "CAI%3D"
+												}
+											}
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Save to playlist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ADD_TO_PLAYLIST"
+									},
+									"navigationEndpoint": {
+										"addToPlaylistEndpoint": {
+											"videoId": video.id
+										}
+									}
+								}
+							},
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Remove from queue"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "REMOVE"
+									},
+									"serviceEndpoint": {
+										"removeFromQueueEndpoint": {
+											"videoId": video.id,
+											"commands": [
+												{
+													"addToToastAction": {
+														"item": {
+															"notificationTextRenderer": {
+																"successResponseText": {
+																	"runs": [
+																		{
+																			"text": "Item removed from queue"
+																		}
+																	]
+																}
+															}
+														}
+													}
+												}
+											]
+										}
+									}
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Go to album"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ALBUM"
+									},
+									"navigationEndpoint": this.BuildEndpoint({
+										navType: "browse",
+										id: replacement.from.id
+									}),
+								}
+							},
+							{
+								"menuNavigationItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Go to artist"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "ARTIST"
+									},
+									"navigationEndpoint": this.BuildEndpoint({
+										navType: "browse",
+										id: artist.id
+									})
+								}
+							},
+							{
+								"menuServiceItemRenderer": {
+									"text": {
+										"runs": [
+											{
+												"text": "Dismiss queue"
+											}
+										]
+									},
+									"icon": {
+										"iconType": "DISMISS_QUEUE"
+									},
+									"serviceEndpoint": {
+										"deletePlaylistEndpoint": {
+											"playlistId": queuePlaylistId,
+											"command": {
+												"dismissQueueCommand": {}
+											}
+										}
+									}
+								}
+							}
+						],
+						"accessibility": {
+							"accessibilityData": {
+								"label": "Action menu"
+							}
+						}
+					}
+				},
+				"playlistSetVideoId": video.albumPlSetVideoId,
+				"canReorder": true,
+				"queueNavigationEndpoint": {
+					"queueAddEndpoint": {
+						"queueTarget": {
+							"videoId": video.id,
+							"backingQueuePlaylistId": queuePlaylistId
+						},
+						"queueInsertPosition": "INSERT_AT_END"
+					}
+				},
+				cData: replacement
+			}
 		};
 	};
 };

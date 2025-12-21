@@ -6,8 +6,18 @@ can easily edit utils.GetSVG() to look in youtube's SVG store. so we could auto-
 do something to default yt "New platlist" button, beore sidebarEditfeatures appear. make it flex: 50% and let it be big until we change it and put max_width: (dpo we rlly need that?)
 "js/ts.implicitProjectConfig.checkJs": true
 
+CACHING NOW DOES artists NOT artist FOR ALBUM, and list of them => {type: MUSIC_PAGE_TYPE_ARTIST} not {type: ARTIST}, __FULL_CONTENTS -> contData
+make it not overwrite album/pl.items if items is a list length 0 (bkg)
+dont store if id is undefined/null etc.
+ensure only stores playlistSetVideoId if has come from album page
 "javascript.suggestionActions.enabled": false
 popups: try to load one on top of other
+
+REWRITE MIDDLEWARE, HAVENT DONE THAT.
+fix mpad not having custom uploads, allow to remove from
+artist page, when auto sets to sort by date, do this before first load?
+
+DOING NOW: DEBUG MIDDLEwARE, MAKE SURE IT WORKS.
 
 install node.js to get npm and npx
 add this to settings.json:

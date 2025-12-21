@@ -36,8 +36,8 @@ export class InjectMyPaperItems {
 				subtitle.unshift({ text: cachedInfo.creator});
 
 			} else {
-				const len = musicFixer.GetTotalDurationOfList(this.storage, cachedInfo);
-				subtitle.push({ text: musicFixer.SecondsToWordyHMS(len) });
+				const len = ext.GetTotalDurationOfList(this.storage, cachedInfo);
+				subtitle.push({ text: ext.SecondsToWordyHMS(len) });
 
 			};
 
@@ -46,7 +46,7 @@ export class InjectMyPaperItems {
 
 		if (cachedInfo.type === "ALBUM") {
 			let subType = customMetadata.type;
-			if (musicFixer.IsEntryPrivateSingle(this.storage, cachedInfo.id)) subType = "Single";
+			if (ext.IsEntryPrivateSingle(this.storage, cachedInfo.id)) subType = "Single";
 			if (!subType) subType = cachedInfo.subType;
 
 			if (subType) subtitle.push({text: subType});
@@ -67,7 +67,7 @@ export class InjectMyPaperItems {
 
 					subtitle.push({
 						text: artistCustomisation.title || artistObj.name,
-						navigationEndpoint: musicFixer.BuildEndpoint({
+						navigationEndpoint: ext.BuildEndpoint({
 							navType: "browse",
 							id: artist,
 							browsePageType: "MUSIC_PAGE_TYPE_ARTIST",
@@ -93,7 +93,7 @@ export class InjectMyPaperItems {
 
 			subtitle.push(
 				{ text: "Artist" },
-				{ text: musicFixer.YT_DOT },
+				{ text: ext.YT_DOT },
 				{ text: `${songCount} song${(songCount === 1) ? "" : "s"}`}
 			);
 		};
@@ -103,7 +103,7 @@ export class InjectMyPaperItems {
 
 
 	GetUserAccountInfo() {
-		const juicyInfo = musicFixer.SafeDeepGet(polymerController, musicFixer.SafeDeepGetRoutes.userAccountInfoFromPC);
+		const juicyInfo = ext.SafeDeepGet(polymerController, ext.Structures.userAccountInfoFromPC);
 
 		return juicyInfo ? {
 			accountName: juicyInfo.accountName.runs[0].text,
@@ -123,7 +123,7 @@ export class InjectMyPaperItems {
 			if (item.parentElement.matches("a")) return; // ALREADY REPLACED. LEAVE.
 
 			const a = document.createElement("a");
-			musicFixer.AddToClass(a, "c-paper-wrapper");
+			ext.AddToClass(a, "c-paper-wrapper");
 			a.setAttribute("is-primary", "true");
 
 			// ONLY USE href FOR MIDDLE-CLICK NEW TAB.
@@ -139,7 +139,7 @@ export class InjectMyPaperItems {
 		this.ytLoadedPlaylists = {};
 
 		document.querySelectorAll("ytmusic-guide-section-renderer tp-yt-paper-item").forEach((paper) => {
-			const data = musicFixer.SafeDeepGet(paper, musicFixer.SafeDeepGetRoutes.dataFromElemDH) || {};
+			const data = ext.SafeDeepGet(paper, ext.Structures.dataFromElemDH) || {};
 
 			if (data.isPrimary) _EditSystemItem(paper, data);
 			else {
@@ -154,19 +154,19 @@ export class InjectMyPaperItems {
 	InitButtonContOnNavClick(cont) {
 		const statusIco = cont.querySelector(".c-paper-status-icon");
 
-		musicFixer.HideElem(cont.querySelector(".c-paper-shfl-btn"));
-		musicFixer.HideElem(cont.querySelector(".c-paper-play-btn"));
-		musicFixer.AddToClass(cont, "c-active");
+		ext.HideElem(cont.querySelector(".c-paper-shfl-btn"));
+		ext.HideElem(cont.querySelector(".c-paper-play-btn"));
+		ext.AddToClass(cont, "c-active");
 
-		musicFixer.UnhideElem(statusIco);
+		ext.UnhideElem(statusIco);
 
 		let icon = cont.querySelector(".icon");
 		let spinner = cont.querySelector("#spinnerContainer");
 
 		icon.textContent = ""; // CLEAR CHILDRENs
 
-		musicFixer.HideElem(icon);
-		musicFixer.UnhideElem(spinner);
+		ext.HideElem(icon);
+		ext.UnhideElem(spinner);
 	};
 
 
@@ -176,8 +176,8 @@ export class InjectMyPaperItems {
 			const spinner = cont.querySelector("#spinnerContainer");
 
 			icon.textContent = ""; // CLEAR CHILDREN
-			musicFixer.UnhideElem(icon);
-			musicFixer.HideElem(spinner);
+			ext.UnhideElem(icon);
+			ext.HideElem(spinner);
 
 			if (state === "playing") {
 				if (hoverDebounce) { // is hovering
@@ -198,9 +198,9 @@ export class InjectMyPaperItems {
 
 			} else if (state === "loading") {
 				// show spinner, hide ico (spinner always active)
-				musicFixer.HideElem(icon);
+				ext.HideElem(icon);
 
-				musicFixer.UnhideElem(spinner);
+				ext.UnhideElem(spinner);
 
 			} else if (state === "default") { // shouldn't happen? idk
 				_Reset(cont);
@@ -247,11 +247,11 @@ export class InjectMyPaperItems {
 
 			if (cont.matches(".c-active")) return; //done in this.InitLoadingWhatever
 
-			musicFixer.HideElem(cont.querySelector(".c-paper-shfl-btn"));
-			musicFixer.HideElem(cont.querySelector(".c-paper-play-btn"));
-			musicFixer.AddToClass(cont, "c-active");
+			ext.HideElem(cont.querySelector(".c-paper-shfl-btn"));
+			ext.HideElem(cont.querySelector(".c-paper-play-btn"));
+			ext.AddToClass(cont, "c-active");
 
-			musicFixer.UnhideElem(statusIco);
+			ext.UnhideElem(statusIco);
 
 			_SetState(cont, "loading");
 		};
@@ -264,11 +264,11 @@ export class InjectMyPaperItems {
 			const statusIco = cont.querySelector(".c-paper-status-icon");
 			const icon = cont.querySelector(".icon");
 
-			musicFixer.UnhideElem(cont.querySelector(".c-paper-shfl-btn"));
-			musicFixer.UnhideElem(cont.querySelector(".c-paper-play-btn"));
-			musicFixer.RemoveFromClass(cont, "c-active");
+			ext.UnhideElem(cont.querySelector(".c-paper-shfl-btn"));
+			ext.UnhideElem(cont.querySelector(".c-paper-play-btn"));
+			ext.RemoveFromClass(cont, "c-active");
 
-			musicFixer.HideElem(statusIco);
+			ext.HideElem(statusIco);
 
 			statusIco.removeEventListener("mouseover", __MouseOver);
 			statusIco.removeEventListener("mouseleave", __MouseOut);
@@ -288,7 +288,7 @@ export class InjectMyPaperItems {
 				
 				this.Close();
 
-				setTimeout(() => musicFixer.DispatchEventToEW({
+				setTimeout(() => ext.DispatchEventToEW({
 					func: "reinit-sidebar"
 				}), 3000);
 				return;
@@ -340,9 +340,9 @@ export class InjectMyPaperItems {
 		};
 
 		const svgs = {
-			"play": musicFixer.GetSVG("play"),
-			"playing": musicFixer.GetSVG("playing"),
-			"paused": musicFixer.GetSVG("paused")
+			"play": ext.GetSVG("play"),
+			"playing": ext.GetSVG("playing"),
+			"paused": ext.GetSVG("paused")
 		};
 
 		const playerBarBtn = document.querySelector("#play-pause-button.ytmusic-player-bar");
@@ -365,19 +365,19 @@ export class InjectMyPaperItems {
 		
 		if (
 			paperWrapper.matches(":has(.c-editing)") ||
-			paperWrapper.matches(musicFixer.HELPFUL_SELECTORS.sidebarFolderHasVisibleActiveChild)
+			paperWrapper.matches(ext.HELPFUL_SELECTORS.sidebarFolderHasVisibleActiveChild)
 		) {
-			musicFixer.AddToClass(paperWrapper, "open");
-			musicFixer.RemoveFromClass(paperWrapper, "closed");
+			ext.AddToClass(paperWrapper, "open");
+			ext.RemoveFromClass(paperWrapper, "closed");
 			return;
 		};
 
 		if (paperWrapper.getAttribute("class").indexOf("open") === -1) {
-			musicFixer.AddToClass(paperWrapper, "open");
-			musicFixer.RemoveFromClass(paperWrapper, "closed");
+			ext.AddToClass(paperWrapper, "open");
+			ext.RemoveFromClass(paperWrapper, "closed");
 		} else {
-			musicFixer.AddToClass(paperWrapper, "closed");
-			musicFixer.RemoveFromClass(paperWrapper, "open");
+			ext.AddToClass(paperWrapper, "closed");
+			ext.RemoveFromClass(paperWrapper, "open");
 		};
 	};
 
@@ -385,9 +385,9 @@ export class InjectMyPaperItems {
 	AddInteractionToPaperItem(elem, id, mfId) {
 		const navVerifyFunc = () => (!document.querySelector("#guide .c-editing, .c-popup-elem-overflow") && !elem.matches(".c-ovf-elem"));
 
-		musicFixer.NavigateOnClick({
+		ext.NavigateOnClick({
 			elem,
-			navEndpOuter: musicFixer.BuildEndpoint({
+			navEndpOuter: ext.BuildEndpoint({
 				navType: "browse",
 				id: id
 			}),
@@ -395,13 +395,13 @@ export class InjectMyPaperItems {
 		});
 
 		if (!mfId) return;
-		const browsePageType = musicFixer.GetBrowsePageTypeFromBrowseId(id, true, true);
+		const browsePageType = ext.GetBrowsePageTypeFromBrowseId(id, true, true);
 		const runAfterParams = [elem.querySelector(".c-paper-button-cont")];
 
 
-		musicFixer.NavigateOnClick({
+		ext.NavigateOnClick({
 			"elem": elem.querySelector(".c-paper-play-icon"),
-			navEndpOuter: musicFixer.BuildEndpoint({
+			navEndpOuter: ext.BuildEndpoint({
 				navType: "watch",
 				playlistId: mfId,
 				shuffle: false,
@@ -414,9 +414,9 @@ export class InjectMyPaperItems {
 		});
 	
 
-		musicFixer.NavigateOnClick({
+		ext.NavigateOnClick({
 			"elem": elem.querySelector(".c-paper-shfl-icon"),
-			navEndpOuter: musicFixer.BuildEndpoint({
+			navEndpOuter: ext.BuildEndpoint({
 				navType: "watch",
 				playlistId: mfId,
 				shuffle: true,
@@ -433,9 +433,9 @@ export class InjectMyPaperItems {
 		// backingPlaylistId DOES NOT CHANGE, SO WILL NOT GET "playing" STATUS.
 		// DON'T WANT TO SET THEM AS LOADING.
 
-		musicFixer.NavigateOnClick({
+		ext.NavigateOnClick({
 			"elem": elem.querySelector(".c-paper-queueadd-icon"),
-			navEndpOuter: musicFixer.BuildEndpoint({
+			navEndpOuter: ext.BuildEndpoint({
 				navType: "queueAdd",
 				playlistId: mfId,
 				position: "end",
@@ -446,9 +446,9 @@ export class InjectMyPaperItems {
 			preventPropagation: true
 		});
 
-		musicFixer.NavigateOnClick({
+		ext.NavigateOnClick({
 			"elem": elem.querySelector(".c-paper-queuenext-icon"),
-			navEndpOuter: musicFixer.BuildEndpoint({
+			navEndpOuter: ext.BuildEndpoint({
 				navType: "queueAdd",
 				playlistId: mfId,
 				position: "next",
@@ -464,7 +464,7 @@ export class InjectMyPaperItems {
 	CreatePaperElem(id, parent, insertBefore) {
 		if (!insertBefore) insertBefore = null;
 
-		const newElem = musicFixer.GetTemplateElem(this.templateNames.paperWrapper);
+		const newElem = ext.GetTemplateElem(this.templateNames.paperWrapper);
 
 		const cachedInfo = this.storage.cache[id] || {};
 		const overwriteInfo = this.storage.customisation.metadata[id];
@@ -483,7 +483,7 @@ export class InjectMyPaperItems {
 
 		};
 
-		if (!mfId) mfId = musicFixer.GetMicroformatIdFromBrowseId(id);
+		if (!mfId) mfId = ext.GetMicroformatIdFromBrowseId(id);
 
 		// TITLE HIERARCHY: OVERWRITE, CACHED, YT LOADED.
 		// USED TO PROPRITISE YT OVER CACHE, BUT IF YOU UPDATE PL
@@ -508,7 +508,7 @@ export class InjectMyPaperItems {
 		if (!subtitleRuns && ytLoadedInfo?.subtitleRuns) subtitleRuns = ytLoadedInfo.subtitleRuns;
 
 		newElem.querySelector(".c-paper-title").textContent = title;
-		musicFixer.CreateTextElemFromRuns(newElem.querySelector(".c-paper-subtitle"), subtitleRuns, cachedInfo.badges);
+		ext.CreateTextElemFromRuns(newElem.querySelector(".c-paper-subtitle"), subtitleRuns, cachedInfo.badges);
 
 
 		const iconElem = newElem.querySelector(".c-paper-icon");
@@ -524,7 +524,7 @@ export class InjectMyPaperItems {
 			if (title !== "?") iconElem.style.display = "none";
 		};
 
-		if (this.storage.sidebar.hidden.indexOf(id) !== -1) musicFixer.HideElem(newElem);	
+		if (this.storage.sidebar.hidden.indexOf(id) !== -1) ext.HideElem(newElem);	
 
 		newElem.setAttribute("href", `browse/${id}`); // FOR MIDDLE MOUSE/NEW TAB
 		newElem.setAttribute("plId", id);
@@ -574,18 +574,18 @@ export class InjectMyPaperItems {
 		if (folderInfo.type === "carousel") return this.CreateAndPopulateCarousel(id, parent, folderInfo, insertBefore);
 
 
-		const newElem = musicFixer.GetTemplateElem(this.templateNames.paperWrapper);
-		musicFixer.AddToClass(newElem, "c-paper-folder");
-		musicFixer.AddToClass(newElem, "closed");
+		const newElem = ext.GetTemplateElem(this.templateNames.paperWrapper);
+		ext.AddToClass(newElem, "c-paper-folder");
+		ext.AddToClass(newElem, "closed");
 
 		newElem.querySelector(".c-paper-title").textContent = folderInfo.title;
-		if (folderInfo.subtitle) musicFixer.CreateTextElemFromRuns(
+		if (folderInfo.subtitle) ext.CreateTextElemFromRuns(
 			newElem.querySelector(".c-paper-subtitle"),
 			[{text: folderInfo.subtitle}]
 		);
 
-		const folderIcon = musicFixer.GetSVG("folder");
-		musicFixer.AddToClass(folderIcon, "c-paper-icon");
+		const folderIcon = ext.GetSVG("folder");
+		ext.AddToClass(folderIcon, "c-paper-icon");
 
 		const oldImgElem = newElem.querySelector("img.c-paper-icon");
 		newElem.querySelector(".c-paper-icon-cont").insertBefore(folderIcon, oldImgElem);
@@ -598,18 +598,18 @@ export class InjectMyPaperItems {
 		this.instanceAddedElementsIds.push(id);
 		this.PopulateCont(folderInfo.contents, cont);
 
-		if (newElem.matches(musicFixer.HELPFUL_SELECTORS.sidebarFolderHasVisibleActiveChild)) {
-			musicFixer.AddToClass(newElem, "open");
-			musicFixer.RemoveFromClass(newElem, "closed");
+		if (newElem.matches(ext.HELPFUL_SELECTORS.sidebarFolderHasVisibleActiveChild)) {
+			ext.AddToClass(newElem, "open");
+			ext.RemoveFromClass(newElem, "closed");
 		};
 
 		newElem.firstElementChild.addEventListener("click", (e) => this.OnClickFolderEvent(newElem, e));
 
 		// HIDE BUTTON CONT. NO PLAY BUTTON.
 		// DON'T DELETE, NEED FOR EDIT!
-		musicFixer.HideElem(newElem.querySelector(".c-paper-button-cont"));
+		ext.HideElem(newElem.querySelector(".c-paper-button-cont"));
 
-		if (this.storage.sidebar.hidden.indexOf(id) !== -1) musicFixer.HideElem(newElem);
+		if (this.storage.sidebar.hidden.indexOf(id) !== -1) ext.HideElem(newElem);
 
 		newElem.setAttribute("plId", id);
 		newElem.setAttribute("draggable", "false");
@@ -634,7 +634,7 @@ export class InjectMyPaperItems {
 		};
 
 
-		const newElem = musicFixer.GetTemplateElem(this.templateNames.separator);
+		const newElem = ext.GetTemplateElem(this.templateNames.separator);
 		newElem.setAttribute("plId", id);
 
 		if (sepInfo) newElem.querySelector(".c-sep-title").textContent = sepInfo.title;
@@ -715,10 +715,10 @@ export class InjectMyPaperItems {
 
 
 	ListenForChanges() {
-		const madeFunctionId = musicFixer.RegisterEWFunction({
+		const madeFunctionId = ext.RegisterEWFunction({
 			detail: {
 				time: -1,
-				func: musicFixer.SIDEBAR_UPDATE_EVENT_FUNC
+				func: ext.SIDEBAR_UPDATE_EVENT_FUNC
 			},
 			resolve: this._OnChangeSentByEW,
 			scope: this,
@@ -735,7 +735,7 @@ export class InjectMyPaperItems {
 		};
 		
 		if (getNewStorage) {
-			musicFixer.StorageGet(true).then((storage) => {
+			ext.StorageGet(true).then((storage) => {
 				this.storage = storage || {};
 
 				this.RefreshCont(false);
@@ -756,18 +756,18 @@ export class InjectMyPaperItems {
 	};
 
 	RemoveAllCGuideEntries() {
-		document.querySelectorAll(musicFixer.HELPFUL_SELECTORS.allCGuideElements).forEach((elem) => elem.remove());
+		document.querySelectorAll(ext.HELPFUL_SELECTORS.allCGuideElements).forEach((elem) => elem.remove());
 	};
 
 	Close() {
-		musicFixer.RemoveRegisteredEWWaiter(this._onChangeListenerId);
+		ext.RemoveRegisteredEWWaiter(this._onChangeListenerId);
 		clearInterval(window.cMusicFixerPlayerBarInterval);
 	};
 
-	async MainTasks(startListening) {
-		await musicFixer.WaitForPolymerController();
+	async init(startListening) {
+		await ext.WaitForPolymerController();
 		
-		this.storage = await musicFixer.StorageGet(true) || {};
+		this.storage = await ext.StorageGet(true) || {};
 
 		this.accountInfo = this.GetUserAccountInfo();
 
@@ -789,7 +789,7 @@ export class InjectMyPaperItems {
 	constructor() {
 		this.ytLoadedPlaylists = {};
 
-		if (this.accountInfo) musicFixer.DispatchEventToEW({
+		if (this.accountInfo) ext.DispatchEventToEW({
 			func: "save-account-info",
 			accountInfo: this.accountInfo
 		});
