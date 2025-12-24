@@ -1786,14 +1786,14 @@ export class MWUtils {
 			let id = lir.playlistItemData?.videoId;
 			if (!id) return lir;
 
-			let cacheThis = storage.cache[id];
+			let cacheThis = storage.cache[id] || {};
 			if (!cacheThis.album || (cacheThis.artists || []).length === 0) return lir;
 
 			let customisationAlbum = storage.customisation.metadata[cacheThis.album] || {};
 			let artistId = customisationAlbum.artist || (cacheThis.type === "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK") ? (storage.cache[cacheThis.artists[0]].privateCounterparts[0]) : cacheThis.artists[0];
 			let customisationArtist = storage.customisation.metadata[artistId] || {};
 
-			let artistCache = storage.cache[artistId];
+			let artistCache = storage.cache[artistId] || {};
 
 			if (customisationAlbum.thumb) {
 				lir.thumbnail.musicThumbnailRenderer = {
