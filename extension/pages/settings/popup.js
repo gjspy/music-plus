@@ -204,6 +204,16 @@ async function setLightApi() {
 	document.querySelector("#error").innerHTML = "done";
 };
 
+async function setLightRoom() {
+	let content = document.querySelector("#run-code-input").value;
+
+	let storage = await utils.UStorageGetLocal();
+	storage.lightApi.autoMusicRoom = content;
+
+	await utils.UStorageSetLocal(storage);
+	document.querySelector("#error").innerHTML = "done";
+};
+
 async function setEntitiesToKeys() {
 	let content = document.querySelector("#run-code-input").value;
 
@@ -341,6 +351,7 @@ function activateButtons() {
 	document.getElementById("set-token").addEventListener("click", setTok);
 	document.getElementById("set-light-api").addEventListener("click", setLightApi);
 	document.getElementById("set-entities-api").addEventListener("click", setEntitiesToKeys);
+	document.getElementById("set-room-api").addEventListener("click", setLightRoom);
 	document.getElementById("goto-ls").addEventListener("click", gotoLS);
 	document.getElementById("ref-side").addEventListener("click", refSide);
 	document.getElementById("del-cache-entry").addEventListener("click", delEntry);

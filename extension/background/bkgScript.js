@@ -1066,7 +1066,7 @@ async function EWOMAutoLights(request) {
 			method: "POST",
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify({
-				room: "bedroom",
+				room: storage.lightApi.autoMusicRoom,
 				brightness: 0,
 				transition: request.transition
 			})
@@ -1077,7 +1077,7 @@ async function EWOMAutoLights(request) {
 			method: "POST",
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify({
-				room: "bedroom",
+				room: storage.lightApi.autoMusicRoom,
 				brightness: 255,
 				transition: request.transition
 			})

@@ -16,7 +16,8 @@ class Utils {
 			lightApi: {
 				endpoint: "",
 				enabled: false,
-				entitiesToKeys: {}
+				entitiesToKeys: {},
+				autoMusicRoom: ""
 			}
 		},
 		

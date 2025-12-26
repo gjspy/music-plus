@@ -19,6 +19,8 @@ RATINGS:
 SONGS:
 	- edit lyrics
 
+aotuLights need a revamp to make editing them easier.
+
 ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED TO SAME ALBUM (PRIVATE)
 hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 
