@@ -246,6 +246,8 @@ async function newFetch(resource, options) {
 	let request;
 	let resourceIsStr = typeof(resource) === "string";
 
+	if (options === undefined) options = {};
+
 	if (resourceIsStr) { // used for random stuff
 		request = {
 			"url": resource,

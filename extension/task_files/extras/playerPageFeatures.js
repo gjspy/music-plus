@@ -116,19 +116,26 @@ function NiceColours() {
 		dataNow.transition = time;
 	};
 
-	function _SetPlayingThumbnail(url) {
-		if (dataNow.playingThumbnail === url) return;
-
-		root.style.setProperty("--playing-thumbnail", `url(${url})`);
+	async function _PublishPlayingThumbnail(url) {
+		const resp = await fetch(url);
+		const buffer = await resp.arrayBuffer();
 
 		UDispatchEventToEW({
 			func: "auto-lights",
 			action: "setImg",
-			"url": url,
+			imgData: buffer,
+			imgType: resp.headers.get("content-type"),
 			autoMusic: true
 		});
+	};
 
+	function _SetPlayingThumbnail(url) {
+		if (dataNow.playingThumbnail === url) return;
+
+		root.style.setProperty("--playing-thumbnail", `url(${url})`);
 		dataNow.playingThumbnail = url;
+
+		_PublishPlayingThumbnail(url);		
 	};
 
 	function _SetBackgroundThumbnail(url) {
@@ -139,12 +146,12 @@ function NiceColours() {
 		if (dataNow.dimness === "dim") return;
 		root.style.setProperty("--c-player-bkg-opacity", 0);
 
-		UDispatchEventToEW({
+		/*UDispatchEventToEW({
 			func: "auto-lights",
 			action: "dim",
 			transition: dataNow.transition,
 			autoMusic: true
-		});
+		});*/
 
 		dataNow.dimness = "dim";
 	};
@@ -153,12 +160,12 @@ function NiceColours() {
 		if (dataNow.dimness === "undim") return;
 		root.style.setProperty("--c-player-bkg-opacity", 1);
 
-		setTimeout(() => UDispatchEventToEW({
+		/*setTimeout(() => UDispatchEventToEW({
 			func: "auto-lights",
 			action: "undim",
 			transition: dataNow.transition,
 			autoMusic: true
-		}), 100);
+		}), 100);*/
 
 		dataNow.dimness = "undim";
 	};

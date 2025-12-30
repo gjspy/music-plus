@@ -1061,40 +1061,37 @@ async function EWOMAutoLights(request) {
 	console.log(request, storage.lightApi.endpoint, storage.lightApi.enabled);
 	if (!storage.lightApi.endpoint || (!storage.lightApi.enabled && request.autoMusic)) return;
 
-	if (request.action === "dim") {
+	let brightness = request.action === "dim" ? 0 :
+		request.action === "undim" ? 255 : 
+		request.action === "brightness" ? request.value : undefined;
+
+
+
+	if (brightness) {
 		fetch(storage.lightApi.endpoint + "/api/brightness?auto_music=" + request.autoMusic, {
 			method: "POST",
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify({
 				room: storage.lightApi.autoMusicRoom,
-				brightness: 0,
+				brightness,
 				transition: request.transition
 			})
 		}).then(v => console.log(v));
 
-	} else if (request.action === "undim") {
-		fetch(storage.lightApi.endpoint + "/api/brightness?auto_music=" + request.autoMusic, {
-			method: "POST",
-			headers: {"Content-Type": "application/json"},
-			body: JSON.stringify({
-				room: storage.lightApi.autoMusicRoom,
-				brightness: 255,
-				transition: request.transition
-			})
-		}).then(v => console.log(v));
 
 	} else if (request.action === "setImg") {
-		let resp = await fetch(request.url);
-		let blob = await resp.blob();
-		let file = new File([blob], "image", {type: blob.type});
+		//let resp = await fetch(request.url);
+		//let blob = await resp.blob();
+		const blob = new Blob([request.imgData], {type: request.imgType});
 
 		let formData = new FormData();
-		formData.append("file", file);
+		formData.append("file", blob);
 
-		fetch(storage.lightApi.endpoint + "/api/set-by-img-file?auto_music=" + request.autoMusic, {
+		fetch(storage.lightApi.endpoint + `/api/set-by-img-file?auto_music=${request.autoMusic}&room=${storage.lightApi.autoMusicRoom}`, {
 			method: "POST",
 			body: formData
 		}).then(v => console.log(v));
+
 	};
 };
 

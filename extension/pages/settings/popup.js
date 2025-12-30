@@ -87,6 +87,15 @@ async function toggleLightControl(event) {
 	await utils.UStorageSetLocal(storage);
 };
 
+function setBrightness(event) {
+	browser.runtime.sendMessage({
+		func: "auto-lights",
+		action: "brightness",
+		value: event.target.value,
+		autoMusic: false
+	});
+} 
+
 async function init() {
 	utils = await import(browser.runtime.getURL("../utils.js"));
 	utils = utils.Utils;
@@ -105,7 +114,8 @@ async function init() {
 		document.querySelector("#lights").style.display = "";
 		document.querySelector("#lights input").checked = storage.lightApi.enabled;
 
-		document.querySelector("#lights input").onchange = toggleLightControl;
+		document.querySelector("#lights input[type=\"checkbox\"").onchange = toggleLightControl;
+		document.querySelector("#lights input[type=\"range\"").onchange = setBrightness;
 	};
 
 	let tabToggleBtn = document.querySelector("#tab-toggle");
