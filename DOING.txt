@@ -21,6 +21,8 @@ SONGS:
 
 aotuLights need a revamp to make editing them easier.
 
+MIDDLEWARE WHEN CHANGING ALBUM DOES NOT UPDATE "SAVE TO PLAYLIST" ENDPOINT, SO IT ADDS OLD THING. AUTUMN 2024 FOLKLORE STUFF.
+
 ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED TO SAME ALBUM (PRIVATE)
 hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 

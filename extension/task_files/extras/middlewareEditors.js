@@ -1483,7 +1483,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		};
 
 		if (customMetadata.title) headerRenderer.title.runs = [ { text: customMetadata.title } ];
-		else if (userOwnedHeaderRenderer) headerRenderer.title.runs[0].text = headerRenderer.title.runs[0].text.replace("^\[.*?\] ", "");
+		else if (userOwnedHeaderRenderer) headerRenderer.title.runs[0].text = headerRenderer.title.runs[0].text.replace(/^\[.*?\] /, "");
 
 		return response; // changed in place, still return so acknowledges change
 	};
