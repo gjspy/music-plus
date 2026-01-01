@@ -1239,7 +1239,7 @@ window.MiddlewareEditors = class MiddlewareEditors {
 		headerRenderer.secondSubtitle.runs[2].text = USecondsToLengthStr(totalSeconds, true, false);
 
 		if (skippedTime !== 0) headerRenderer.secondSubtitle.runs.push(
-			{text: U_YT_DOT},
+			{text: "<br>"},
 			{text: `${USecondsToLengthStr(totalSeconds - skippedTime, true, false)} unskipped`}
 		);
 
@@ -1481,6 +1481,9 @@ window.MiddlewareEditors = class MiddlewareEditors {
 			if (userOwnedHeaderRenderer) headerRenderer.subtitle.runs[4].text = customMetadata.year;
 			if (otherHeaderRenderer) headerRenderer.subtitle.runs[2].text = customMetadata.year;
 		};
+
+		if (customMetadata.title) headerRenderer.title.runs = [ { text: customMetadata.title } ];
+		else if (userOwnedHeaderRenderer) headerRenderer.title.runs[0].text = headerRenderer.title.runs[0].text.replace("^\[.*?\] ", "");
 
 		return response; // changed in place, still return so acknowledges change
 	};

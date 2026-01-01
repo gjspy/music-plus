@@ -2582,3 +2582,11 @@ ytmusic-browse-response[c-page-type="C_PAGE_TYPE_HOME"] ytmusic-section-list-ren
 svg.speed {
 	margin-top: 4px;
 }
+
+
+
+ytmusic-browse-response[page-type="MUSIC_PAGE_TYPE_ALBUM"] #primary ytmusic-responsive-header-renderer yt-formatted-string.second-subtitle {
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	max-height: calc(var(--ytmusic-responsive-font-size)*var(--ytmusic-title-line-height)*2);
+}

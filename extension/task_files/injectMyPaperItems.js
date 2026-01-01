@@ -491,6 +491,8 @@ export async function MWInjectMyPaperItems() {
 				title = "?";
 			};
 
+			title = title.replace("^\[.*?\] ", "");
+
 
 			// subtitle: prioritise cached.
 

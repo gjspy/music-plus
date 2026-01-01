@@ -688,10 +688,24 @@ PlaylistEditMode = class AlbumEditMode {
 	static async EditMetadata(state, browsePage, id) {
 		let popup = UCreatePopup({
 			title: {
-				text: "Edit Album Metadata",
+				text: "Edit Playlist Metadata",
 				icon: "album"
 			},
 			content: [
+				{
+					class: "c-text-input",
+					id: "title",
+					config: [
+						["label", "textContent", "Title"]
+					]
+				},
+				{
+					class: "c-check-input",
+					id: "def_title",
+					config: [
+						["label", "textContent", "Reset to default"]
+					]
+				},
 				{
 					class: "c-text-input",
 					id: "thumb",
