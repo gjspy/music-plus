@@ -3,7 +3,8 @@ export class MWUtils {
 		EWEventListener: {listening: false, idCount: 0, waiters: {}},
 		TemplateElems: {},
 		BrowseParamsByRequest: {},
-		networkEditingEnabled: true
+		networkEditingEnabled: true,
+		recentStorageResponse: {}
 	};
 	
 	static MAX_EXECUTION_TIMEOUT = 10000; // ms, used for script injection timeout
@@ -120,9 +121,11 @@ export class MWUtils {
 
 		listPageItemsSectionRenderer: ["contents", "twoColumnBrowseResultsRenderer", "secondaryContents", "sectionListRenderer"],
 		listPageItemsSectionRendererContents: () => [...this.Structures.listPageItemsSectionRenderer, "contents"],
-		albumListItems: () => [...this.Structures.listPageItemsSectionRendererContents(), 0, "musicShelfRenderer", "contents"],
+		albumListItems: () => [...this.Structures.albumMusicShelfRenderer(), "contents"],
 		playlistListItems: () => [...this.Structures.listPageItemsSectionRendererContents(), 0, "musicPlaylistShelfRenderer", "contents"],
 		privAlbumListItems: () => [...this.Structures.sectionListRendererFromSingleColumn, "contents", 0, "musicShelfRenderer", "contents"],
+
+		albumMusicShelfRenderer: () => [...this.Structures.listPageItemsSectionRendererContents(), 0, "musicShelfRenderer"],
 
 		listPageHeaderSectionRenderer: ["contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0],
 		listPageHeaderRenderer: () => [...this.Structures.listPageHeaderSectionRenderer, "musicResponsiveHeaderRenderer"], // ALBUM AND PLAYLIST
@@ -157,11 +160,12 @@ export class MWUtils {
 		thumbnailsFromThumbnail: () => ["thumbnail", ...this.Structures.thumbnailsFromMTR],
 		thumbnailsFromThumbnailRenderer: () => ["thumbnailRenderer", ...this.Structures.thumbnailsFromMTR],
 		thumbnailsFromCroppedSquare: ["thumbnail", "croppedSquareThumbnailRenderer", "thumbnail", "thumbnails"],
+		thumbnailsFromNextResponse: ["playerOverlays", "playerOverlayRenderer", "browserMediaSession", "browserMediaSessionRenderer", "thumbnailDetails", "thumbnails"],
 
 		badgeIconFromBadge: ["musicInlineBadgeRenderer", "icon", "iconType"],
 		creatorNameFromFacepile: ["facepile", "avatarStackViewModel", "text", "content"],
 		mfUrlFromResponse: ["microformat", "microformatDataRenderer", "urlCanonical"],
-		isSubscribedFromArtistHeaderRenderer: ["subscriptionButton", "subscribeButtonRenderer", "subscribed"]
+		isSubscribedFromArtistHeaderRenderer: ["subscriptionButton", "subscribeButtonRenderer", "subscribed"],
 	};
 
 	static BrowsePageTypes = {
@@ -182,6 +186,7 @@ export class MWUtils {
 		isPublicArtist: (v) => v === this.BrowsePageTypes.artist || v === this.BrowsePageTypes.unknownCreator,
 		isUnknown: (v) => v === this.BrowsePageTypes.unknown,
 		isChannel: (v) => v === this.BrowsePageTypes.channel,
+		isAnyAlbum: (v) => this.BrowsePageTypes.isRegularAlbum(v) || this.BrowsePageTypes.isPrivAlbum(v),
 		isRegularAlbum: (v) => v === this.BrowsePageTypes.album,
 		isPrivAlbum: (v) => v === this.BrowsePageTypes.privAlbumC,
 		isPlaylist: (v) => v === this.BrowsePageTypes.playlist,
@@ -335,10 +340,9 @@ export class MWUtils {
 				// ALREADY RESOLVED
 				if (!this.state.EWEventListener.waiters[listenerId]) return;
 
-				fconsole.error(["TIMEOUT WAITING FOR EW RESPONSE", detail]);
-				reject("TIMEOUT");
-
+				reject("TIMEOUT WAITING FOR EW RESPONSE");
 				this.RemoveRegisteredEWWaiter(listenerId);
+
 			}, this.MAX_EW_WAITFOR_TIMEOUT);
 		});
 	};
@@ -377,11 +381,15 @@ export class MWUtils {
 
 
 	static async StorageGet(forceRefresh, path) {
-		return (await this.DispatchFunctionToEW({
+		const storage = (await this.DispatchFunctionToEW({
 			func: "get-storage",
 			path: path,
 			forceRefresh: forceRefresh
 		})).storage;
+
+		//this.state.recentStorageResponse = storage;
+		
+		return storage;
 	};
 
 	static FilterStorageResults(storage, filterFunction) {
@@ -448,7 +456,7 @@ export class MWUtils {
 
 
 	static GenerateValueColsArr = (n, base) => Array.from(Array(Math.ceil(Math.log(n)/Math.log(base))).keys()).reverse().reduce((acc, pow) => ( acc.push(Math.floor(n / (base ** pow))), (n %= (base ** pow)), acc), []).filter((v, index) => !(v === 0 && index === 0));
-	static LengthStrToSeconds = (lengthStr) => (lengthStr || "").split(":").reverse().reduce((seg, tot, index) => tot += (Number(seg) * (60 ** index), 0));
+	static LengthStrToSeconds = (lengthStr) => (lengthStr || "").split(":").reverse().reduce((tot, seg, index) => tot + (Number(seg) * (60 ** index)), 0);
 	static SecondsToHMSArr = (seconds) => this.GenerateValueColsArr(seconds, 60);
 	static SecondsToHMSStr = (seconds, maxFigs) => this.SecondsToHMSArr(seconds).splice(0, maxFigs || 3).map(v => String(v).padStart(2, "0")).join(":");
 	static SecondsToWordyHMS = (seconds, maxFigs) => this.SecondsToHMSArr(seconds).reverse().map((v, index) => `${v} ` + this.HMS_REVWORDS[index] + ((v === 1) ? "" : "s")).reverse().splice(0, maxFigs || 3).join(", ");
@@ -727,9 +735,64 @@ export class MWUtils {
 	
 
 	
+	static AddLeftIconsToListItems(listItems) {
+		listItems.forEach(item => {
+			const isSkipped = item.getAttribute("c-skipped");
+			if (!isSkipped) return;
 
+			item.setAttribute("c-skipped", "true");
+			item.setAttribute("unplayable", "true");
 
+			const icon = this.GetSVG("no-circle");
+			this.AddToClass(icon, "c-skip-icon");
 
+			item.querySelector(".left-items").append(icon);
+		});
+	};
+
+	static AddTitleIconToListItem(listItem, svgName, elemClass, thisData) {
+		const appendAt = listItem.querySelector(".flex-columns .title-column yt-formatted-string.title");
+		
+		const svg = this.GetSVG(svgName);
+		this.AddToClass(svg, elemClass);
+
+		if (svgName === "tag") svg.style.fill = thisData.colour;
+		appendAt.append(svg);
+
+		svg.onmouseenter = () => {
+			listItem.querySelectorAll(".secondary-flex-columns yt-formatted-string").forEach(this.HideElem);
+
+			const newText = document.createElement("a");
+			const data = this.SafeDeepGet(listItem, this.Structures.cDataFromElem());
+
+			newText.textContent = (svgName === "note") ? data.customNote :
+				(svgName === "tag") ? thisData.text :
+				undefined;
+			
+			newText.setAttribute("class", "c-lir-subtitle");
+			listItem.querySelector(".secondary-flex-columns").append(newText);
+		};
+
+		svg.onmouseleave = () => {
+			listItem.querySelectorAll(".secondary-flex-columns yt-formatted-string").forEach(this.UnhideElem);
+			listItem.querySelector(".c-lir-subtitle").remove();
+		};
+	};
+
+	static AddTitleIconsToListItems(listItems) {
+		listItems.forEach(item => {
+			const data = this.SafeDeepGet(item, this.Structures.cDataFromElem());
+			if (!data) return;
+
+			if (data.customNote && !item.querySelector(".c-lir-title-note")) {
+				this.AddTitleIconToListItem(item, "note", "c-lir-title-note");
+			};
+
+			for (let tag of (data.tags || [])) {
+				this.AddTitleIconToListItem(item, "tag", "c-lir-title-tag", tag);
+			};
+		});
+	};
 
 
 

@@ -712,73 +712,11 @@ class Utils {
 		};
 	};
 
-	static UAddSkipIconsToListItems(listItems) {
-		for (let item of listItems) {
-			let isSkipped = item.getAttribute("c-skipped");
-			if (!isSkipped) continue;
+	
 
-			item.setAttribute("c-skipped", "true");
-			item.setAttribute("unplayable", "true");
+	
 
-			let icon = this.UGetSVGFromRaw("no-circle", true, false);
-			this.UAddToClass(icon, "c-skip-icon");
-
-			item.querySelector(".left-items").append(icon);
-		};
-	};
-
-	static UAddTitleIconToListItem(listItem, svgName, elemClass, thisData) {
-		console.log("TITLEICON LISTITEM", listItem);
-		let appendAt = listItem.querySelector(".flex-columns .title-column yt-formatted-string.title");
-		
-		let svg = this.UGetSVGFromRaw(svgName, false, false);
-		this.UAddToClass(svg, elemClass);
-
-		if (svgName === "tag") svg.style.fill = thisData.colour;
-		appendAt.append(svg);
-
-		svg.onmouseenter = function() {
-			for (let elem of listItem.querySelectorAll(".secondary-flex-columns yt-formatted-string")) {
-				UHideElem(elem);
-			};
-
-			let newText = document.createElement("a");
-			let cData = UDigDict(listItem, UDictGet.cDataFromElem);
-
-			newText.textContent = (svgName === "note") ? cData.customNote :
-				(svgName === "tag") ? thisData.text :
-				undefined;
-			
-			
-			
-			newText.setAttribute("class", "c-lir-subtitle");
-			listItem.querySelector(".secondary-flex-columns").append(newText);
-		};
-
-		svg.onmouseleave = function() {
-			for (let elem of listItem.querySelectorAll(".secondary-flex-columns yt-formatted-string")) {
-				UUnHideElem(elem);
-			};
-
-			listItem.querySelector(".c-lir-subtitle").remove();
-		};
-	};
-
-	static UAddTitleIconsToListItems(listItems) {
-		console.log("TITLEICON LISTITEMS", listItems);
-		for (let item of listItems) {
-			let data = UDigDict(item, this.UDictGet.cDataFromElem);
-			if (!data) continue;
-
-			if (data.customNote && !item.querySelector(".c-lir-title-note")) {
-				this.UAddTitleIconToListItem(item, "note", "c-lir-title-note");
-			};
-			
-			for (let tag of (data.tags || [])) {
-				this.UAddTitleIconToListItem(item, "tag", "c-lir-title-tag", tag);
-			};
-		};
-	};
+	
 
 
 	

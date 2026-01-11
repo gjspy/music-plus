@@ -490,17 +490,10 @@ export class InjectMyPaperItems {
 		// NAME, YT DOES NOT UPDATE AS PAPER IS DETACHED?
 
 		let title;
-		if (overwriteInfo && overwriteInfo.title) {
-			title = overwriteInfo.title;
-
-		} else if (cachedInfo && cachedInfo.name) {
-			title = cachedInfo.name;
-
-		} else if (ytLoadedInfo && ytLoadedInfo.title) {
-			title = ytLoadedInfo.title;
-		
-		} else title = "?";
-
+		if (overwriteInfo?.title) title = overwriteInfo.title;
+		else if (cachedInfo?.name) title = cachedInfo.name;
+		else if (ytLoadedInfo?.title) title = ytLoadedInfo.title;
+		else title = "?";
 
 		// SUBTITLE: PRIORITISE CACHE. BETTER DATA.
 		let subtitleRuns;
@@ -512,17 +505,16 @@ export class InjectMyPaperItems {
 
 
 		const iconElem = newElem.querySelector(".c-paper-icon");
-		if (overwriteInfo && overwriteInfo.thumb) {
-			iconElem.src = overwriteInfo.thumb;
+		const bkgCont = newElem.querySelector(".bkg-cont");
+		
+		let thumb = "";
+		if (overwriteInfo?.thumb) thumb = overwriteInfo.thumb;
+		else if (cachedInfo?.thumb) thumb = cachedInfo.thumb;
+		else iconElem.style.display = "none";
 
-		} else if (cachedInfo && cachedInfo.thumb) {
-			iconElem.src = cachedInfo.thumb;
-
-		} else {
-			iconElem.src = "";
-			
-			if (title !== "?") iconElem.style.display = "none";
-		};
+		iconElem.src = thumb;
+		if (thumb) bkgCont.style.backgroundImage = `url("${thumb}")`;
+		
 
 		if (this.storage.sidebar.hidden.indexOf(id) !== -1) ext.HideElem(newElem);	
 

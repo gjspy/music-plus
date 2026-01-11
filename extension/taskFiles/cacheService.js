@@ -140,7 +140,7 @@ export class CacheService {
 			id = ext.SafeDeepGet(menu?.[0], ext.Structures.serviceActionPlaylistEditEndpointFromMenuItem())?.removedVideoId;
 		
 		} else {
-			fconsole.log(`CANNOT GET DATA FOR ${lir} HAS DISPLAY POLICY AND NO MENU.`);
+			fconsole.log("CANNOT GET DATA FOR LIR, HAS DISPLAY POLICY AND NO MENU.", lir);
 			return;
 		};
 
@@ -182,7 +182,7 @@ export class CacheService {
 
 		if (navEndp.browseEndpoint) type = ext.SafeDeepGet(navEndp, ext.Structures.pageTypeFromOuterNavigationEndpoint());
 		else if (navEndp.watchEndpoint) type = ext.SafeDeepGet(navEndp, ext.Structures.videoTypeFromWatchEndpoint);
-		else fconsole.error(`WHAT IS THIS navEndp FOR TRIR cache ${navEndp}`);			
+		else fconsole.error("WHAT IS THIS navEndp FOR TRIR cache", navEndp);			
 
 		if (ext.BrowsePageTypes.isChannel(type)) return;
 		if (ext.BrowsePageTypes.isVideo(type)) return;
@@ -260,7 +260,7 @@ export class CacheService {
 			if (v.musicResponsiveListItemRenderer) gathered.items.push(this.GetInfoFromLIR(v));
 			else if (v.musicTwoRowItemRenderer) gathered.items.push(this.GetInfoFromTRIR(v, response.browsePageType));
 			else if (v.continuationItemRenderer) return;
-			else fconsole.log(`WHAT IS THIS item FOR CONTINUATIONDATA ${response.browseId} ${v}`);
+			else fconsole.log("WHAT IS THIS item FOR CONTINUATIONDATA", response.browseId, v);
 		});
 
 		return gathered;
@@ -481,7 +481,7 @@ export class CacheService {
 		else if (ext.BrowsePageTypes.isPrivAlbum(type)) gathered = this.CollectPAlbumData(response);
 		else if (ext.BrowsePageTypes.isPublicArtist(type)) gathered = this.CollectArtistData(response);
 		else if (ext.BrowsePageTypes.isGenericGrid(type)) gathered = this.CollectGenericGridOrShelfData(response);
-		else fconsole.warn(`What is this value of store.getState() browsePageType for cachePage ${response.browsePageType}`);
+		else fconsole.warn("What is this value of store.getState() browsePageType for cachePage", response.browsePageType);
 
 		fconsole.log("gathered", gathered);
 		if (!gathered) return;

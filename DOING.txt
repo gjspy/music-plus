@@ -13,11 +13,17 @@ ensure only stores playlistSetVideoId if has come from album page
 "javascript.suggestionActions.enabled": false
 popups: try to load one on top of other
 
+REWRITE SIDEBAR EDIT SERVICE, havent yet:
+allow more than 1 of each album/pl/paper item.
+sections; surrounded by separators, movable as one like a folder
 REWRITE MIDDLEWARE, HAVENT DONE THAT.
 fix mpad not having custom uploads, allow to remove from
 artist page, when auto sets to sort by date, do this before first load?
+make ALL CODE work so when clicking "reload" in remote debugging page, no issues arise. PERF for debugging.
+more popup: have settings page and tab-specific buttons on popup?
 
-DOING NOW: DEBUG MIDDLEwARE, MAKE SURE IT WORKS.
+CHANGING SIDEBAR ELEM DESIGN. NO LONGER TAKES COLOUR OF BKG, TAKE COLOUR OF ICON.
+SO BKG OF PLAY BUTTON IS BLURRED IMG OF PAPER ITEM.
 
 install node.js to get npm and npx
 add this to settings.json:

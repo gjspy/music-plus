@@ -261,6 +261,11 @@ export class SmallPOSTEditors {
 		// require cParams. declares that we want to edit this response.
 		// even if clicking a song from the real album (deluxe), it still declares
 		// to read the song from itself.
+		
+		// SET PLAYER PAGE COLOURS
+		const thumbs = ext.SafeDeepGet(response, ext.Structures.thumbnailsFromNextResponse);
+		fconsole.log(thumbs);
+		document.querySelector(":root").setProperty("--playing-thumbnail", ext.ChooseBestThumbnail(thumbs));
 
 		let browsePage = document.querySelector("ytmusic-browse-response");
 		if (browsePage && browsePage.getAttribute("c-edited") === false) {
@@ -280,7 +285,7 @@ export class SmallPOSTEditors {
 		console.log("originalPlaylistPanelcontents", structuredClone(playlistPanel.contents));
 		console.log(request.cParams, (request.cParams || {}), (request.cParams || {}).buildQueueFrom);
 
-		let [newContents, currentVideoWE] = MiddlewareEditors._EditQueueContentsFromResponse(
+		let [newContents, currentVideoWE] = middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(
 			storage,
 			playlistPanel.contents,
 			(request.cParams || {}).buildQueueFrom,
@@ -341,7 +346,7 @@ export class SmallPOSTEditors {
 		if (!queueDatas) return;
 		let buildFrom = request.cParams ? request.cParams.buildQueueFrom : undefined;
 
-		let [newContents, currentVideoWE] = MiddlewareEditors._EditQueueContentsFromResponse(storage, queueDatas, buildFrom, request.body.playlistId, undefined, false, true, request.body.videoIds);
+		let [newContents, currentVideoWE] = middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(storage, queueDatas, buildFrom, request.body.playlistId, undefined, false, true, request.body.videoIds);
 
 		if (newContents) response.queueDatas = newContents;
 		return response; // was changed in-place.
@@ -932,15 +937,14 @@ export class MainPOSTEditors {
 		// THIS CLEANS THE MESS FOR US, SO WE CAN ADD SONGS WHEREVER WE WANT!
 		for (let item of queueContents) {
 			let videoRenderer = ext.GetPPVR(item);
+			let we = videoRenderer?.navigationEndpoint?.watchEndpoint;
 
 			console.log(structuredClone(item), structuredClone(videoRenderer), "START OF EDIT ITERTAION(3)");
 
-			if (!videoRenderer) {
+			if (!videoRenderer || !we) {
 				newContents.push(item);
 				continue;
 			};
-
-			let we = videoRenderer.watchEndpoint;
 
 			if (
 				hiddenSongs.includes(we.videoId) &&
@@ -988,7 +992,7 @@ export class MainPOSTEditors {
 		let idsToReplace = ext.GetIdsToReplaceFromRealAlbum(storage, id, id) || {extraByIndex: {}};
 		console.log("replacements", structuredClone(idsToReplace));
 
-		let musicShelfRenderer = ext.SafeDeepGet(response, ext.Structures.listPageItemsSectionRenderer);
+		let musicShelfRenderer = ext.SafeDeepGet(response, ext.Structures.albumMusicShelfRenderer());
 		if (!musicShelfRenderer || !musicShelfRenderer.contents) return;
 
 		let cachedAlbum = storage.cache[id] || {};
