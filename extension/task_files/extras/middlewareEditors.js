@@ -66,6 +66,8 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 	}
 
 	static CacheVideoViews(request, response) {
+		throw Error("TEMP DISABLED. WANT TO CACHE WATCHTIME.");
+
 		let gathered = {
 			id: response.videoDetails.videoId,
 			views: Number(response.videoDetails.viewCount),
@@ -230,6 +232,7 @@ window.MiddlewareSmallTasks = class MiddlewareSmallTasks {
 
 
 	static CacheFromNextItems(request, response, lyricPanel) {
+		throw Error("TEMP DISABLED. WANT TO CACHE WATCHTIME.");
 		let lyricEndpoint = lyricPanel?.endpoint?.browseEndpoint?.browseId;
 
 		console.log("LYRIC", {lyricPanel, lyricEndpoint});

@@ -451,6 +451,16 @@ class Utils {
 		browser.storage.session.set({ fetchedThisSession: true });
 	};
 
+	static async UStorageWriteCache(storables) {
+		const response = await fetch(this.U_STORAGE_ENDPOINT + `/storage/cache/bulkset?user_id=${username}&token=${token}`, {
+			method: "POST",
+			body: JSON.stringify(storables),
+			headers: { "Content-Type": "application/json" }
+		});
+
+		
+	};
+
 
 	static UGetUserAccountInfo() {
 		if (!polymerController) this.UGetPolymerController();

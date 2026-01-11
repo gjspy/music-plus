@@ -923,6 +923,7 @@ async function EWCacheData(data) {
 	};
 	
 	let newStorage = await EWCacheUpdateWithData(storable);
+	//await utils.UStorageWriteCache(storable);
 
 	return newStorage;
 };
