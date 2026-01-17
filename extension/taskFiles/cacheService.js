@@ -83,12 +83,12 @@ export class CacheService {
 				let type = ext.SafeDeepGet(v.navigationEndpoint, ext.Structures.pageTypeFromOuterNavigationEndpoint());
 				const id = ext.SafeDeepGet(v.navigationEndpoint, ext.Structures.browseIdFromNavigationEndpoint);
 
-				if (ext.BrowsePageTypes.isUnknown(type)) type = ext.GetBrowsePageTypeFromBrowseId(id);
+				if (ext.BrowsePageTypes.isUnknown(type) || !type) type = ext.GetBrowsePageTypeFromBrowseId(id);
 				return {name: v.text, id, type};
 			});
 
 		navigables.forEach((v) => {
-			if (ext.BrowsePageTypes.isArtist(v.type)) (data.artists ??= []).push(v);
+			if (ext.BrowsePageTypes.isAnyArtist(v.type)) (data.artists ??= []).push(v);
 			else if (ext.BrowsePageTypes.isChannel(v.type)) data.creator = v.name;
 			else if (ext.BrowsePageTypes.isRegularAlbum(v.type)) data.album = v;
 		});
@@ -96,8 +96,8 @@ export class CacheService {
 		const subType = runs.filter((v) => (!v.navigationEndpoint) && v.text.toLowerCase().match(ext.RELEASE_SUBTYPES_REGEX));
 		data.subType = subType[0]?.text;
 
-		const yearStr = runs.filter((v) => !v.navigationEndpoint && !isNaN(Number(v.text)));
-		data.yearStr = yearStr[0]?.text;
+		const year = runs.filter((v) => !v.navigationEndpoint && !isNaN(Number(v.text)));
+		data.year = Number(year[0]?.text);
 
 		return data;
 	};
@@ -227,6 +227,11 @@ export class CacheService {
 	};
 
 
+	static GetStorablesFromItems(items, loadedPageType) {
+		
+	};
+
+
 
 
 	static CollectContinuationData(response) {
@@ -280,21 +285,55 @@ export class CacheService {
 		const name = ext.SafeDeepGet(headerRenderer, ext.Structures.titleText);
 		const creator = ext.SafeDeepGet(headerRenderer, ext.Structures.creatorNameFromFacepile);
 		
-		const subtitleData = this.GetDataFromSubtitleRuns(headerRenderer.subtitle.runs); // yearStr
+		const subtitleData = this.GetDataFromSubtitleRuns(headerRenderer.subtitle.runs); // year
 
 		const saved = response.browseId === "VLLM" || this.GetListIsSavedFromHeaderRenderer(headerRenderer);
 		const hasContinuation = !!(ext.ArrayNLast(allListItems)?.continuationItemRenderer);
 
-		return {
-			name, creator, thumb, saved, items,
-			type: ext.BrowsePageTypes.playlist,
-			id: response.browseId,
-			_ContinuationData: {
-				itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
-				itemsHasContinuation: hasContinuation
+		const otherStorables = items.map( v => {
+			const these = [];
+
+			const album = structuredClone(v.album);
+			if (album) {
+				album.artists = v.artists?.map(v => v.id);
+				album.thumb = v.thumb;
+				these.push(album);
+			};
+			
+			v.artists?.forEach(artist => {
+				if (album?.id) artist.discography = [album.id];
+				these.push(artist);
+			});
+
+			v.album = album?.id;
+			v.artists = v.artists?.map( v => v.id );
+			
+			if (v.lengthStr) {
+				v.lengthSec = ext.LengthStrToSeconds(v.lengthStr);
+				delete v.lengthStr;
+			};
+			
+			delete v.playlistSetVideoId;
+			
+			these.push(v);
+			return these;
+
+		}).flat();
+
+		return [
+			{
+				name, creator, thumb, saved,
+				"items": items.map( v => v.id ),
+				type: ext.BrowsePageTypes.playlist,
+				id: response.browseId,
+				_ContinuationData: {
+					itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
+					itemsHasContinuation: hasContinuation
+				},
+				...subtitleData
 			},
-			...subtitleData
-		};
+			...otherStorables
+		];
 	};
 
 
@@ -337,19 +376,52 @@ export class CacheService {
 
 		const mfId = (ext.SafeDeepGet(response, ext.Structures.mfUrlFromResponse) || "").replace("https://music.youtube.com/playlist?list=", "");
 		const continuation = ext.SafeDeepGet(response, ext.Structures.continuationsFromListPage());
+
+		const artistIds = artists.map( v => v.id );
+		const altIds = alternate.map( v => v.id );
+		artists.forEach(artist => artist.discography = [response.browseId, ...altIds]);
+
+		const itemsStorable = items.map( v => {
+			v.album = response.browseId;
+			v.artists = artistIds;
+
+			if (v.lengthStr) {
+				v.lengthSec = ext.LengthStrToSeconds(v.lengthStr);
+				delete v.lengthStr;
+			};
+
+			v.albumPlSetVideoId = v.playlistSetVideoId;
+			delete v.playlistSetVideoId;
+			
+			return v;
+		});
+
+		const altStorable = alternate.map( v => {
+			v.artists = v.artists?.map( v => v.id );
+			return v;
+		});
 		
-		return {
-			name, artists, thumb, saved,
-			items, badges, mfId, alternate,
-			type: response.browsePageType,
-			id: ext.BrowsePageTypes.album,
-			private: false,
-			_ContinuationData: {
-				itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
-				itemsHasContinuation: (continuation || []).length !== 0
+		return [
+			{
+				name,
+				"artists": artistIds,
+				thumb, saved,
+				"items": items.map( v => v.id ),
+				badges, mfId,
+				"alternate": altIds,
+				type: ext.BrowsePageTypes.album,
+				id: response.browseId,
+				private: false,
+				_ContinuationData: {
+					itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
+					itemsHasContinuation: (continuation || []).length !== 0
+				},
+				...subtitleData
 			},
-			...subtitleData
-		};
+			...artists,
+			...itemsStorable,
+			...altStorable
+		];
 	};
 
 
@@ -363,24 +435,48 @@ export class CacheService {
 		const thumbnails = ext.SafeDeepGet(headerRenderer, ext.Structures.thumbnailsFromCroppedSquare);
 		const thumb = ext.ChooseBestThumbnail(thumbnails);
 
-		const subtitleData = this.GetDataFromSubtitleRuns(headerRenderer.subtitle.runs); // artists, subType, yearStr
 		const name = ext.SafeDeepGet(headerRenderer, ext.Structures.titleText);
+
+		const subtitleData = this.GetDataFromSubtitleRuns(headerRenderer.subtitle.runs); // artists, subType, yearStr
+		const artists = subtitleData?.artists || [];
+
+		artists.forEach( v => v.discography = [response.browseId]);
+		subtitleData.artists = artists.map( v => v.id );
+
+		const otherStorables = items.map( v => {
+			v.album = response.browseId;
+			v.artists = subtitleData.artists;
+			
+			if (v.lengthStr) {
+				v.lengthSec = ext.LengthStrToSeconds(v.lengthStr);
+				delete v.lengthStr;
+			};
+			
+			delete v.playlistSetVideoId; // NOT PROVIDED BY PRIV.
+	
+			return v;
+		});
 		
-		return {
-			name, thumb, items,
-			type: ext.BrowsePageTypes.album,
-			id: response.browseId,
-			private: true,
-			saved: true,			
-			_ContinuationData: {
-				itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
-				itemsHasContinuation: false
+		return [
+			{
+				name, thumb,
+				"items": items.map( v => v.id ),
+				type: ext.BrowsePageTypes.album,
+				id: response.browseId,
+				private: true,
+				saved: true,			
+				_ContinuationData: {
+					itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
+					itemsHasContinuation: false
+				},
+				...subtitleData
 			},
-			...subtitleData
-		};
+			...otherStorables,
+			...artists
+		];
 	};
 
-	
+
 	static CollectArtistData(response) {
 		const headerRenderer = response.header?.musicImmersiveHeaderRenderer;
 		const loadedPageType = response.browsePageType;
@@ -400,7 +496,7 @@ export class CacheService {
 		const artistsShelf = this.GetShelfFromTitle(shelves, "Fans might also like");
 
 		const items = [
-			...(songsShelf?.contents || []).map( v => this.GetInfoFromLIR(v) ),
+		//	...(songsShelf?.contents || []).map( v => this.GetInfoFromLIR(v) ),
 			...(albumsShelf?.contents || []).map( v => this.GetInfoFromTRIR(v, loadedPageType) ),
 			...(singlesShelf?.contents || []).map( v => this.GetInfoFromTRIR(v, loadedPageType) ),
 			...(libraryShelf?.contents || []).map( v => this.GetInfoFromTRIR(v, loadedPageType) ),
@@ -412,22 +508,32 @@ export class CacheService {
 
 		const name = ext.SafeDeepGet(headerRenderer, ext.Structures.titleText);
 		const saved = ext.SafeDeepGet(headerRenderer, ext.Structures.isSubscribedFromArtistHeaderRenderer);
+
+		const otherStorables = items.map(v => {
+			if (ext.BrowsePageTypes.isAnyAlbum(v.type) && (v.artists?.length === 0 || !v.artists)) v.artists = [response.browseId];
+
+			return v;
+		});
 		
-		return {
-			name, wideThumb, items, saved,
-			radios: {
-				allSongsRadio: headerRenderer.playButton?.buttonRenderer.navigationEndpoint.watchEndpoint.playlistId,
-				allSongsPlId: (songsShelf) ? songsShelf.title.runs[0].navigationEndpoint.browseEndpoint.browseId : null,
-				radioRadio: headerRenderer.startRadioButton?.buttonRenderer.navigationEndpoint.watchEndpoint.playlistId,
+		return [
+			{
+				name, wideThumb, saved,
+				radios: {
+					allSongsRadio: headerRenderer.playButton?.buttonRenderer.navigationEndpoint.watchEndpoint.playlistId,
+					allSongsPlId: (songsShelf) ? songsShelf.title.runs[0].navigationEndpoint.browseEndpoint.browseId : null,
+					radioRadio: headerRenderer.startRadioButton?.buttonRenderer.navigationEndpoint.watchEndpoint.playlistId,
+				},
+				type: ext.BrowsePageTypes.artist,
+				id: response.browseId,
+				private: false,
+				_ContinuationData: {
+					itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
+					itemsHasContinuation: false
+				}
+
 			},
-			type: ext.BrowsePageTypes.artist,
-			id: response.browseId,
-			private: false,
-			_ContinuationData: {
-				itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
-				itemsHasContinuation: false
-			}
-		};
+			...otherStorables
+		];
 	};
 
 	static CollectGenericGridOrShelfData(response) {

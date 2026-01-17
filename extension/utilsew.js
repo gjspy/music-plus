@@ -68,10 +68,9 @@ export class EWUtils {
 		},
 		ALBUM: {
 			name: "",
-			artist: "",
+			artists: [],
 			thumb: "",
 			saved: null,
-			features: [],
 			items: [],
 			id: "",
 			mfId: "",

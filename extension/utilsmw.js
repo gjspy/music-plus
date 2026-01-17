@@ -184,6 +184,7 @@ export class MWUtils {
 
 		isArtist: (v) => v === this.BrowsePageTypes.artist || v === this.BrowsePageTypes.privArtistC,
 		isPublicArtist: (v) => v === this.BrowsePageTypes.artist || v === this.BrowsePageTypes.unknownCreator,
+		isAnyArtist: (v) => v === this.BrowsePageTypes.artist || v === this.BrowsePageTypes.privArtistC || v === this.BrowsePageTypes.unknownCreator,
 		isUnknown: (v) => v === this.BrowsePageTypes.unknown,
 		isChannel: (v) => v === this.BrowsePageTypes.channel,
 		isAnyAlbum: (v) => this.BrowsePageTypes.isRegularAlbum(v) || this.BrowsePageTypes.isPrivAlbum(v),

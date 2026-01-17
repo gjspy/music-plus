@@ -63,6 +63,9 @@ on select lyric (css:select) in lyrics pane,, popup window like spotify thing th
 FIX PLAYER PAGE SIZING
 UPGRADE QUALITY OF FULLSCREEN VIDEO?
 
+**UPCOMING ALBUM subType NOW SHOWS UGH
+**storables for grid / continuation cache
+
 ARTISTS:
 	- custom discog order (or just in album metadata set exact date!!)
 	- custom names (twenty one pilots)
