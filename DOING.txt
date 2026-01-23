@@ -41,16 +41,43 @@ add this to settings.json:
     "eslint.run": "onType", // Run ESLint as you type
     "eslint.format.enable": true // Enable ESLint as a formatter
 }
+
+!!!! "source.fixAll.eslint": true SET TO "NEVER" ?
 npm install --save @types/firefox-webext-browser
 npm install globals --save-dev
 npx eslint .
 install eslint vs code extension
 
+TODO: auto add tag when playlist cache comes in (make sure only happens once, duplicate tags bad)
+TODO: auto link private counterparts
+TODO: mfIdMap (indexes)
+TODO: caching continuation
+TODO: make it completely fine to reload, eventDriven runs twice when reloaded, old listener not cancelled
+TODO: sidebar no longer has creator for playlist, may filter out on cient if want it back
+TODO: offset for linked albums
+TODO: **** file name max lengths. need psuedonyms for priv releases. ***
+TODO: extraSongs for listItem editor. only have album overwrites right now.
+TODO: eat the acid style editing easy, playingFrom is same as loadFrom. how to click folklore and lay from folklore (deluxe)?
+TODO: *** MENU ITEMS  OF EDITED LIRS NEED UPDATING ENDPOINTS.
+TODO: shuffle!
+TODO: LIR menuRender items arent edited?
+TODO: make buildFrom and loadFrom different. allow play from original, default updated (so can click TRIR buttons)
+validate user account, so if switch to other yt channel doesnt show all elems from old one?
+
+make paperItems appear incrementally to not lag the page, like do 10 per frame or whatever
 
 FEELS SNAPPY STILL AFTER ADDING PAPERITEMS!
 
 
+removing last child of folder does not work (inc carousel)
+sections that are draggable, another variant of folder
+titles for sidebar, variant for separators
+spacing elements for sidebar, instead of putting carousels everywhere
+something for dfining "Related" albums for playlists
+carousels as folder children don't work too well
+// IN CACHING: IF cMusicFixerChanged THEN DON'T DO IT.. IF EXT REFRESHES, IT CACHES MODIFIED AS IF ITS TRUE
 
+middleware grid pages, cache sort option so can edit before getting first resp!
 
 playerBar -> musicApp (already done? see fixer.getPolymerControll)
 TAB IGNORING DOES NOT WORK :(
@@ -172,3 +199,79 @@ song metadata editing - name, explicit, LYRICS, PLAY SECTION! SEE ABOVE! DO NOW!
 
 *** NEW BACKUPS SYSTEM: ***
 make it so it saves not literally EVERY time, but one every hour for the past 24 hours, then 1 a day for the past week/month?
+
+
+
+
+
+
+
+
+CURRENT:
+FIGURE OUT playingFrom -> album page clicking on list item. never works? clicking on one from the priv album? we need cParams. (AUTOPLAY.)
+playerPage background
+autoLights
+
+MUSIC_PAGE_TYPE_PLAYLIST
+editMode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+	TOPIC CHANNELS COUNTED AS SAME, BUT DIFFERENT IDS..
+	request does not have the browsed to id of the channel.
+	eg, cage the elephant, endpoint = UCOk9wZlQNsWjb7gJhnvmbkQ but
+		browsed to UCU3rXoHt2bCYbpV3s_sJlgw.
+	static CacheSubscribe(request, response) {
+		let gathered = request.body.channelIds.map( v => {
+			return { id: v, saved: true, type: "C_PAGE_TYPE_CHANNEL_OR_ARTIST" };
+		});
+
+		if (!gathered) return;
+
+		UDispatchEventToEW({
+			func: "cache-data",
+			data: gathered
+		});
+
+		return;
+	},
+
+	static CacheUnsubscribe(request, response) {
+		let gathered = request.body.channelIds.map( v => {
+			return { id: v, saved: false, type: "C_PAGE_TYPE_CHANNEL_OR_ARTIST" };
+		});
+
+		if (!gathered) return;
+
+		UDispatchEventToEW({
+			func: "cache-data",
+			data: gathered
+		});
+
+		return;
+	}*/

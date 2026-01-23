@@ -22,8 +22,7 @@ export class EWUtils {
 			},
 	
 			sidebar: {
-				paperItemOrder: [], // [PL123, PL456, ...]
-				hidden: [],
+				paperItemOrder: [],
 				idCounter: 0,
 				folders: {
 					folders:{
@@ -55,70 +54,14 @@ export class EWUtils {
 		}
 	};
 
-	static CACHE_FORMATS = {
-		PLAYLIST: {
-			name: "",
-			creator: "",
-			thumb: "",
-			saved: null,
-			items: [],
-			id: "",
-			type: "PLAYLIST",
-			year: -1,
-		},
-		ALBUM: {
-			name: "",
-			artists: [],
-			thumb: "",
-			saved: null,
-			items: [],
-			id: "",
-			mfId: "",
-			year: -1,
-			type: "ALBUM",
-			subType: "",
-			badges: [],
-			privateCounterparts: [],
-			alternate: [],
-			private: null
-		},
-		ARTIST: {
-			name: "",
-			thumb: "",
-			wideThumb: "",
-			radios: {},
-			saved: null,
-			discography: [],
-			id: "",
-			type: "ARTIST",
-			private: null,
-			privateCounterparts: []
-		},
-		SONG: {
-			name: "",
-			album: "",
-			index: "",
-			artists: [],
-			liked: "",
-			lengthSec: -1,
-			id: "",
-			badges: [],
-			type: "",
-			views: 0,
-			albumPlSetVideoId: "",
-			lyricEndpoint: ""
-		},
-		USER_CHANNEL: {
-			name: "",
-			id: "",
-			type: "USER_CHANNEL"
-		},
-		UNKNOWN: {
-
-		}
-	};
-
-	static STORAGE_ENDPOINT = "https://music.gtweb.dev/api";
+	static API_ENDPOINT = "https://music.gtweb.dev/v2/";
+	static STORAGE_API = this.API_ENDPOINT + "storage/music/";
+	static SIDEBAR_API = this.API_ENDPOINT + "music/sidebar/";
+	static EDITOR_API = this.API_ENDPOINT + "music/edit/";
+	static STORAGE_GET = "bulkget";
+	static STORAGE_GETPOPULATED = "getpopulated";
+	static STORAGE_GETWITHCACHE = "getwithcache";
+	static STORAGE_SET = "set";
 
 	// RECURSIVELY CHECK EACH DIR HAS KEYS IT REQUIRES.
 	static CheckHasKeys(cont, shouldHave) {
@@ -151,53 +94,31 @@ export class EWUtils {
 		return this.CheckHasKeys(storage, this.DEFAULT_STORAGE.local);
 	};
 
-	static StorageGetExternal(fetchNew, localStorage) {
-		const Get = async (resolve, reject) => {
+	static async StorageGetExternal({route, localStorage = undefined, body = undefined}) {
 			if (!localStorage) localStorage = await this.StorageGetLocal();
-
-			let allowUsingCachedResponse = true;
-			if (!fetchNew && localStorage.cachedLastResponse) {
-				const sessionStorage = await browser.storage.session.get() || {};
-				allowUsingCachedResponse = sessionStorage.fetchedThisSession;
-			};
-
-			if ((!fetchNew) && localStorage.cachedLastResponse && allowUsingCachedResponse) {
-				resolve(this.CheckHasKeys(localStorage.cachedLastResponse, this.DEFAULT_STORAGE.external));
-				return;
-			};
-
-			fconsole.log(
-				"getting new extstorage because [fetchNew, noCached, cacheOldDontAllow]",
-				fetchNew, !localStorage.cachedLastResponse, !allowUsingCachedResponse
-			);
 
 			const username = localStorage.username;
 			const token = localStorage.token;
 
 			if (!username || !token) {
-				reject("no credentials");
-				return;
+				throw Error("No credentials");
 			};
 
-			const fetched = await fetch(this.STORAGE_ENDPOINT + `/storage/get?user_id=${username}&token=${token}`);
+			let response;
+			const fullRoute = `${route}?user_id=${username}&token=${token}`;
+
+			if (body) {
+				response = await fetch(fullRoute, {method: "POST", body});
+			} else {
+				response = await fetch(fullRoute);
+			};
 			
-			if (fetched.status !== 200) {
-				fconsole.error(fetched);
-				reject(`External response was ${fetched.status} for GET.`);
+			if (response.status !== 200) {
+				fconsole.error(response);
+				throw Error(`External response was ${response.status} for ${route}.`);
 			};
 
-			let json = JSON.parse(await fetched.text());
-			json = this.CheckHasKeys(json, this.DEFAULT_STORAGE.external);
-
-			resolve(json);
-
-			localStorage.cachedLastResponse = json;
-			this.StorageSetLocal(localStorage);
-
-			browser.storage.session.set({ fetchedThisSession: true });
-		};
-
-		return new Promise(Get);
+			return await response.json();
 	};
 
 	static async StorageSetLocal(toStore) {
@@ -213,7 +134,7 @@ export class EWUtils {
 		await browser.storage.local.set(toStore);
 	};
 
-	static async StorageSetExternal(toStore, localStorage) {
+	static async StorageSetExternal({route, data, localStorage = undefined}) {
 		if (!localStorage) {
 			localStorage = await this.StorageGetLocal();
 		};
@@ -225,37 +146,19 @@ export class EWUtils {
 			throw Error("No credentials");
 		};
 
-		const defaultData = this.DEFAULT_STORAGE.external;
-		const storageExt = {};
+		const fullRoute = `${route}?user_id=${username}&token=${token}`;
 
-		for (const key of Object.keys(defaultData)) {
-			const val = toStore[key];
-			
-			storageExt[key] = (val) ? val : defaultData[key];
-		};
-
-		// even though errors could happen, do this before, to stop
-		// a spam of requests being misaligned, eg request 1 then 2 then 3,
-		// if 2 took longer for whatever reason, cachedLastResponse would be 2 and not 3.
-		localStorage.cachedLastResponse = storageExt;
-
-		// DO THIS BEFORE. SO WHILE WAITING FOR RESP FROM
-		// SERVER, IF ANOTHER EDIT HAPPENS, IT IS ADDED TO THESE CHANGES.
-		// BEFORE, THAT CHANGE WOULD BE ADDED TO THE OLD STORAGE VER, AND
-		// THIS WOULD BE LOST.
-		this.StorageSetLocal(localStorage);
-
-		let response = await fetch(this.STORAGE_ENDPOINT + `/storage/set?user_id=${username}&token=${token}`, {
+		const response = await fetch(fullRoute, {
 			method: "POST",
-			body: JSON.stringify(storageExt),
+			body: JSON.stringify(data),
 			headers: {"Content-Type": "application/json"}
 		});
 
 		if (response.status !== 200) {
 			fconsole.error(response);
-			throw Error(`External response was ${response.status} for POST.`);
+			throw Error(`External response was ${response.status} for ${route}].`);
 		};
 		
-		browser.storage.session.set({ fetchedThisSession: true });
+		//browser.storage.session.set({ fetchedThisSession: true });
 	};
 };

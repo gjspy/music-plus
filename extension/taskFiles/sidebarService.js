@@ -18,90 +18,6 @@ export class InjectMyPaperItems {
 	};
 
 
-	GetMetadataFromCachedInfo(cachedInfo) {
-		const customMetadata = this.storage.customisation.metadata[cachedInfo.id] || {};
-		const subtitle = [];
-
-		if (cachedInfo.type === "PLAYLIST") {
-			if (!cachedInfo.items || cachedInfo.items.length === 0) return subtitle;
-
-			const hiddenSongs = this.storage.customisation.hiddenSongs[cachedInfo.id] || [];
-			const nTracks = cachedInfo.items.length - hiddenSongs.length;
-
-			subtitle.push({
-				text: String(nTracks) + " track" + (nTracks === 1 ? "" : "s")
-			});
-
-			if (((cachedInfo.creator) && (!this.accountInfo)) || (cachedInfo.creator !== this.accountInfo.accountName)) {
-				subtitle.unshift({ text: cachedInfo.creator});
-
-			} else {
-				const len = ext.GetTotalDurationOfList(this.storage, cachedInfo);
-				subtitle.push({ text: ext.SecondsToWordyHMS(len) });
-
-			};
-
-			return subtitle;
-		};
-
-		if (cachedInfo.type === "ALBUM") {
-			let subType = customMetadata.type;
-			if (ext.IsEntryPrivateSingle(this.storage, cachedInfo.id)) subType = "Single";
-			if (!subType) subType = cachedInfo.subType;
-
-			if (subType) subtitle.push({text: subType});
-			
-			const artist = customMetadata.artist || cachedInfo.artist;
-			const year = customMetadata.year || cachedInfo.year;
-
-			if (artist) {
-				let artistObj = this.storage.cache[artist];
-
-				if (!artistObj.private && (artistObj.privateCounterparts || []).length > 0) {
-					const c = artistObj.privateCounterparts[0];
-					if (c && this.storage.cache[c]) artistObj = this.storage.cache[c];
-				};
-
-				if (artistObj && artistObj.name) {
-					const artistCustomisation = this.storage.customisation.metadata[artistObj.id] || {};
-
-					subtitle.push({
-						text: artistCustomisation.title || artistObj.name,
-						navigationEndpoint: ext.BuildEndpoint({
-							navType: "browse",
-							id: artist,
-							browsePageType: "MUSIC_PAGE_TYPE_ARTIST",
-							cParams: { stopPropagation: true }
-						})
-					});
-				};
-			};
-
-			if (year && year !== -1) subtitle.push({ text: year });
-			return subtitle;
-		};
-
-		if (cachedInfo.type === "ARTIST") {
-			let songCount = 0;
-
-			for (let album of cachedInfo.discography) {
-				if (!album.startsWith("MPREb")) continue;
-
-				const albumInfo = this.storage.cache[album];
-				songCount += albumInfo.items.length;
-			};
-
-			subtitle.push(
-				{ text: "Artist" },
-				{ text: ext.YT_DOT },
-				{ text: `${songCount} song${(songCount === 1) ? "" : "s"}`}
-			);
-		};
-
-		return subtitle;
-	};
-
-
 	GetUserAccountInfo() {
 		const juicyInfo = ext.SafeDeepGet(polymerController, ext.Structures.userAccountInfoFromPC);
 
@@ -461,119 +377,92 @@ export class InjectMyPaperItems {
 	};
 
 
-	CreatePaperElem(id, parent, insertBefore) {
+	CreatePaperElem(item, parent, insertBefore) {
 		if (!insertBefore) insertBefore = null;
 
 		const newElem = ext.GetTemplateElem(this.templateNames.paperWrapper);
 
-		const cachedInfo = this.storage.cache[id] || {};
-		const overwriteInfo = this.storage.customisation.metadata[id];
-		let ytLoadedInfo = this.ytLoadedPlaylists[id];
+		let ytLoadedInfo = this.ytLoadedPlaylists[item.id] || {};
 
-		let mfId = "";
-		if (ytLoadedInfo) mfId = ytLoadedInfo.mfId;
-		else if (cachedInfo) {
-
-			if (cachedInfo.type === "ARTIST" && cachedInfo.radios.allSongsPlId) {
-				mfId = cachedInfo.radios.allSongsPlId.replace(/^VL/, "");
-				
-			} else if (cachedInfo.type === "ALBUM" && !!cachedInfo.mfId) {
-				mfId = cachedInfo.mfId;
-			};
-
-		};
-
-		if (!mfId) mfId = ext.GetMicroformatIdFromBrowseId(id);
+		let mfId = ytLoadedInfo.mfId || item.mfId;
+		if (!mfId) mfId = ext.GetMicroformatIdFromBrowseId(item.id);
 
 		// TITLE HIERARCHY: OVERWRITE, CACHED, YT LOADED.
 		// USED TO PROPRITISE YT OVER CACHE, BUT IF YOU UPDATE PL
 		// NAME, YT DOES NOT UPDATE AS PAPER IS DETACHED?
 
-		let title;
-		if (overwriteInfo?.title) title = overwriteInfo.title;
-		else if (cachedInfo?.name) title = cachedInfo.name;
-		else if (ytLoadedInfo?.title) title = ytLoadedInfo.title;
-		else title = "?";
+		let title = item.name || "?";
+		if (title === "?" && ytLoadedInfo?.title) title = ytLoadedInfo?.title;
 
 		// SUBTITLE: PRIORITISE CACHE. BETTER DATA.
-		let subtitleRuns;
-		if (cachedInfo) subtitleRuns = this.GetMetadataFromCachedInfo(cachedInfo);		
+		let subtitleRuns = item.subtitle;	
 		if (!subtitleRuns && ytLoadedInfo?.subtitleRuns) subtitleRuns = ytLoadedInfo.subtitleRuns;
 
 		newElem.querySelector(".c-paper-title").textContent = title;
-		ext.CreateTextElemFromRuns(newElem.querySelector(".c-paper-subtitle"), subtitleRuns, cachedInfo.badges);
+		ext.CreateTextElemFromRuns(newElem.querySelector(".c-paper-subtitle"), subtitleRuns, item.badges);
 
 
 		const iconElem = newElem.querySelector(".c-paper-icon");
 		const bkgCont = newElem.querySelector(".bkg-cont");
 		
-		let thumb = "";
-		if (overwriteInfo?.thumb) thumb = overwriteInfo.thumb;
-		else if (cachedInfo?.thumb) thumb = cachedInfo.thumb;
-		else iconElem.style.display = "none";
+		let thumb = item.thumb === undefined ? "" : item.thumb;
+		if (!thumb) iconElem.style.display = "none";
 
 		iconElem.src = thumb;
 		if (thumb) bkgCont.style.backgroundImage = `url("${thumb}")`;
-		
 
-		if (this.storage.sidebar.hidden.indexOf(id) !== -1) ext.HideElem(newElem);	
+		if (item.hidden) ext.HideElem(newElem);	
 
-		newElem.setAttribute("href", `browse/${id}`); // FOR MIDDLE MOUSE/NEW TAB
-		newElem.setAttribute("plId", id);
+		newElem.setAttribute("href", `browse/${item.id}`); // FOR MIDDLE MOUSE/NEW TAB
+		newElem.setAttribute("plId", item.id);
 		newElem.setAttribute("mfId", mfId);
 		newElem.setAttribute("draggable", "false");
 		newElem.setAttribute("c-clickable", "true");
 
-		this.AddInteractionToPaperItem(newElem, id, mfId);
+		this.AddInteractionToPaperItem(newElem, item.id, mfId);
 
 		if (parent) {
 			parent.insertBefore(newElem, insertBefore);
-			this.instanceAddedElementsIds.push(id);
+			this.instanceAddedElementsIds.push(item.id);
 		};			
 
 		return newElem;
 	};
 
 
-	CreateAndPopulateCarousel(id, parent, folderInfo, insertBefore) {
+	CreateAndPopulateCarousel(item, parent, insertBefore) {
 		if (!insertBefore) insertBefore = null;
-
-		if (!folderInfo) folderInfo = this.storage.sidebar.folders.folders[id];
-		if (!folderInfo) throw Error(`No folder info for paper item ${id}`);
 
 		const cont = document.createElement("div");
 		cont.setAttribute("class", "c-carousel");
-		cont.setAttribute("plId", folderInfo.id);
+		cont.setAttribute("plId", item.id);
 
 		parent.insertBefore(cont, insertBefore);
-		this.PopulateCont(folderInfo.contents, cont);
+		this.PopulateCont(item.contents, cont);
 
-		this.instanceAddedElementsIds.push(id);
+		this.instanceAddedElementsIds.push(item.id);
 		return cont;
 	};
 
 
-	CreateAndPopulateFolderPaperItem(id, parent, insertBefore) {
+	CreateAndPopulateFolderPaperItem(item, parent, insertBefore) {
 		if (!insertBefore) insertBefore = null;
 
-		const folderInfo = this.storage.sidebar.folders.folders[id];
-		if (!folderInfo) throw Error(`No folder info for paper item ${id}`);
-
-		if (this.instanceAddedElementsIds.indexOf(id) !== -1) {
-			throw Error(`Attempted to create the same folder twice. Cannot due to risk of recursion. (${id})`);
+		if (this.instanceAddedElementsIds.indexOf(item.id) !== -1) {
+			throw Error(`Attempted to create the same folder twice. Cannot due to risk of inf recursion. (${item.id})`);
 		};
 
-		if (folderInfo.type === "carousel") return this.CreateAndPopulateCarousel(id, parent, folderInfo, insertBefore);
+		if (item.folderType === "carousel") return this.CreateAndPopulateCarousel(item, parent, insertBefore);
 
 
 		const newElem = ext.GetTemplateElem(this.templateNames.paperWrapper);
 		ext.AddToClass(newElem, "c-paper-folder");
 		ext.AddToClass(newElem, "closed");
 
-		newElem.querySelector(".c-paper-title").textContent = folderInfo.title;
-		if (folderInfo.subtitle) ext.CreateTextElemFromRuns(
+		newElem.querySelector(".c-paper-title").textContent = item.name;
+		if (item.subtitle) ext.CreateTextElemFromRuns(
 			newElem.querySelector(".c-paper-subtitle"),
-			[{text: folderInfo.subtitle}]
+			[{text: item.subtitle}]
 		);
 
 		const folderIcon = ext.GetSVG("folder");
@@ -587,8 +476,8 @@ export class InjectMyPaperItems {
 		cont.setAttribute("class", "c-paper-folder-cont");
 		newElem.append(cont);
 
-		this.instanceAddedElementsIds.push(id);
-		this.PopulateCont(folderInfo.contents, cont);
+		this.instanceAddedElementsIds.push(item.id);
+		this.PopulateCont(item.contents, cont);
 
 		if (newElem.matches(ext.HELPFUL_SELECTORS.sidebarFolderHasVisibleActiveChild)) {
 			ext.AddToClass(newElem, "open");
@@ -601,73 +490,77 @@ export class InjectMyPaperItems {
 		// DON'T DELETE, NEED FOR EDIT!
 		ext.HideElem(newElem.querySelector(".c-paper-button-cont"));
 
-		if (this.storage.sidebar.hidden.indexOf(id) !== -1) ext.HideElem(newElem);
+		if (item.hidden) ext.HideElem(newElem);
 
-		newElem.setAttribute("plId", id);
+		newElem.setAttribute("plId", item.id);
 		newElem.setAttribute("draggable", "false");
 		newElem.setAttribute("c-clickable", "true");
 		parent.insertBefore(newElem, insertBefore);
 
 		// FAKE A CLICK TO OPEN THE FOLDER.
-		if (this._foldersToOpen.indexOf(id) !== -1) this.OnClickFolderEvent(newElem);
+		if (this._foldersToOpen.indexOf(item.id) !== -1) this.OnClickFolderEvent(newElem);
 
 		return newElem;
 	};
 
 
-	CreateSeparatorItem(id, parent, insertBefore) {
+	CreateSeparatorItem(item, parent, insertBefore) {
 		if (!insertBefore) insertBefore = null;
 
-		const sepInfo = this.storage.sidebar.separators.separators[id];
-		if (!sepInfo) fconsole.warn(`No info for sidebar sep #${id}`);
-
-		if (this.instanceAddedElementsIds.indexOf(id) !== -1) {
-			throw Error(`Attempted to create the same separator twice. Cannot due to quirks when deleting. (${id})`);
+		if (this.instanceAddedElementsIds.indexOf(item.id) !== -1) {
+			throw Error(`Attempted to create the same separator twice. Cannot due to quirks when deleting. (${item.id})`);
 		};
 
 
 		const newElem = ext.GetTemplateElem(this.templateNames.separator);
-		newElem.setAttribute("plId", id);
+		newElem.setAttribute("plId", item.id);
 
-		if (sepInfo) newElem.querySelector(".c-sep-title").textContent = sepInfo.title;
+		newElem.querySelector(".c-sep-title").textContent = item.name;
 		
 		parent.insertBefore(newElem, insertBefore);
-		this.instanceAddedElementsIds.push(id);
+		this.instanceAddedElementsIds.push(item.id);
 
 		return newElem;
 	};
 
 
-	CreateItemOfId(id, cont) {
-		if (id.match(/^CF/))	  this.CreateAndPopulateFolderPaperItem(id, cont);
-		else if (id.match(/^CS/)) this.CreateSeparatorItem(id, cont);
-		else 					  this.CreatePaperElem(id, cont);
+	CreateItem(item, cont) {
+		if (item.type === "folder") this.CreateAndPopulateFolderPaperItem(item, cont);
+		else if (item.type === "separator") this.CreateSeparatorItem(item, cont);
+		else this.CreatePaperElem(item, cont);
 	};
 
 
-	PopulateCont(ids, cont) {
-		ids.forEach((id) => {
-			try { this.CreateItemOfId(id, cont); }
+	PopulateCont(items, cont) {
+		items.forEach((item) => {
+			try { this.CreateItem(item, cont); }
 			catch (err) {
 				const contId = cont.getAttribute("id");
-				fconsole.error(`ERROR ADDING PLID ${id} TO CONT #${contId}:`, err);
+				fconsole.error(`ERROR ADDING PL ${item.id} TO CONT #${contId}:`, item, err);
 			};
 		});
+	};
+
+	GetAllItemsInCont(contIdList) {
+		return contIdList.map( v => v.type === "folder" ? this.GetAllItemsInCont(v.contents) : v.id ).flat();
 	};
 
 
 	InsertAllPaperItemsInOrder() {
 		const ytLoadedIds = Array.from(Object.keys(this.ytLoadedPlaylists));
 
-		const paperItemOrder = this.storage.sidebar.paperItemOrder;
-		const folders = this.storage.sidebar.folders.folders;
+		const paperItemOrder = this.sidebarData;
 
-		const allPlaylistsWithSavedPosition = paperItemOrder.concat(
-			Object.values(folders).map( v => v.contents ).flat()
-		);
+		const allItemsWithSavedPosition = this.GetAllItemsInCont(paperItemOrder);
 
 		// PREPEND YOUTUBE LOADED PAPERS WHICH DON'T HAVE USER-ASSIGNED POSITION.
-		const prependNewItems = ytLoadedIds.filter( v => allPlaylistsWithSavedPosition.indexOf(v) === -1 );
+		const prependNewItems = ytLoadedIds.filter( v => allItemsWithSavedPosition.indexOf(v) === -1 ).map(v => {
+			return {
+				title: "?",
+				type: "paperItem",
+				id: v
+			}
+		});
 		const orderToInsert = prependNewItems.concat(paperItemOrder);
 		
 		// THIS IS RECURSIVE!
@@ -676,7 +569,7 @@ export class InjectMyPaperItems {
 
 
 	_OnChangeSentByEW(eventData) {
-		if (!eventData.storage) {
+		/*if (!eventData.storage) {
 			if (eventData.action === "refreshCont") {
 				this.RefreshCont(true);
 				fconsole.warn("ONLY RUNNING onChange AS ACTION = refreshCont. NO STORAGE PROVIDED.");
@@ -702,7 +595,7 @@ export class InjectMyPaperItems {
 
 		} else {
 			fconsole.error("What is this eventData action from EW for sidebar update", eventData.action, "?");
-		};
+		};*/
 	};
 
 
@@ -756,16 +649,23 @@ export class InjectMyPaperItems {
 		clearInterval(window.cMusicFixerPlayerBarInterval);
 	};
 
+	async RefreshStorage() {
+		await Promise.all([
+			(async () => { this.localStorage = await ext.StorageGet({"storageFunc": "getlocal"}) || {}; })(),
+			(async () => { this.sidebarData = await ext.StorageGet({"storageFunc": "getsidebar"}); })()
+		]);
+	};
+
 	async init(startListening) {
 		await ext.WaitForPolymerController();
-		
-		this.storage = await ext.StorageGet(true) || {};
 
 		this.accountInfo = this.GetUserAccountInfo();
 
-		if (!this.accountInfo && this.storage.accountInfo) {
-			this.accountInfo = this.storage.accountInfo;
+		if (!this.accountInfo && this.localStorage.accountInfo) {
+			this.accountInfo = this.localStorage.accountInfo;
 		};
+
+		await this.RefreshStorage();
 
 		this.ProcessYTDefaultPaperItems();
 
@@ -775,16 +675,16 @@ export class InjectMyPaperItems {
 		this.RespondToPlayerBar();
 
 		if (startListening) this.ListenForChanges();
-	};
-
-
-	constructor() {
-		this.ytLoadedPlaylists = {};
 
 		if (this.accountInfo) ext.DispatchEventToEW({
 			func: "save-account-info",
 			accountInfo: this.accountInfo
 		});
+	};
+
+
+	constructor() {
+		this.ytLoadedPlaylists = {};
 
 		this.masterCont = document.querySelector("#sections>:not([is-primary])>#items");
 		this.templateNames = {

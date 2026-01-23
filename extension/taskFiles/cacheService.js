@@ -126,6 +126,7 @@ export class CacheService {
 
 		const name = ext.SafeDeepGet(lir, ext.Structures.titleTextFromLIR);
 		const lengthStr = ext.SafeDeepGet(lir, ext.Structures.lengthStrFromLIRData);
+		const lengthSec = ext.LengthStrToSeconds(lengthStr);
 		const liked = ext.SafeDeepGet(lir, ext.Structures.isLikedFromMenu);
 		const index = ext.SafeDeepGet(lir, ext.Structures.indexFromLIR);
 
@@ -166,7 +167,7 @@ export class CacheService {
 		};
 
 		return {
-			name, lengthStr, artists, index, badges,
+			name, lengthSec, artists, index, badges,
 			album, thumb, id, type, liked, playlistSetVideoId,
 			_displayPolicy: lir.musicItemRendererDisplayPolicy
 		};
@@ -255,10 +256,8 @@ export class CacheService {
 			id: response.browseId,
 			type: response.browsePageType,
 			items: [],
-			_ContinuationData: {
-				itemsIsContinuation: true, // WE KNOW WE ARE. "CollectContinuationData"
-				itemsHasContinuation: hasContinuation
-			}
+			_itemsIsContinuation: true, // WE KNOW WE ARE. "CollectContinuationData"
+			_itemsHasContinuation: hasContinuation
 		};
 
 		items.forEach((v) => {
@@ -273,7 +272,8 @@ export class CacheService {
 
 
 	static CollectPlaylistData(response) {
-		const headerRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer()) || ext.SafeDeepGet(response, ext.Structures.listPageHeaderRendererUserOwned());
+		const editableHeader = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRendererUserOwned());
+		const headerRenderer = editableHeader || ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer());
 		if (!headerRenderer) return;
 		
 		const allListItems = (ext.SafeDeepGet(response, ext.Structures.playlistListItems()) || []);
@@ -324,12 +324,11 @@ export class CacheService {
 			{
 				name, creator, thumb, saved,
 				"items": items.map( v => v.id ),
-				type: ext.BrowsePageTypes.playlist,
+				type: "PLAYLIST",
 				id: response.browseId,
-				_ContinuationData: {
-					itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
-					itemsHasContinuation: hasContinuation
-				},
+				_saveBackup: !!editableHeader,
+				_itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
+				_itemsHasContinuation: hasContinuation,
 				...subtitleData
 			},
 			...otherStorables
@@ -409,13 +408,11 @@ export class CacheService {
 				"items": items.map( v => v.id ),
 				badges, mfId,
 				"alternate": altIds,
-				type: ext.BrowsePageTypes.album,
+				type: "ALBUM",
 				id: response.browseId,
 				private: false,
-				_ContinuationData: {
-					itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
-					itemsHasContinuation: (continuation || []).length !== 0
-				},
+				_itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
+				_itemsHasContinuation: (continuation || []).length !== 0,
 				...subtitleData
 			},
 			...artists,
@@ -426,7 +423,7 @@ export class CacheService {
 
 
 	static CollectPAlbumData(response) {
-		const headerRenderer = response.header?.musicDetailHeaderRenderer;
+		const headerRenderer = response.contents.header?.musicDetailHeaderRenderer;
 		if (!headerRenderer) return;
 
 		const allListItems = ext.SafeDeepGet(response, ext.Structures.privAlbumListItems());
@@ -461,14 +458,12 @@ export class CacheService {
 			{
 				name, thumb,
 				"items": items.map( v => v.id ),
-				type: ext.BrowsePageTypes.album,
+				type: "ALBUM",
 				id: response.browseId,
 				private: true,
 				saved: true,			
-				_ContinuationData: {
-					itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
-					itemsHasContinuation: false
-				},
+				_itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
+				_itemsHasContinuation: false,
 				...subtitleData
 			},
 			...otherStorables,
@@ -478,7 +473,7 @@ export class CacheService {
 
 
 	static CollectArtistData(response) {
-		const headerRenderer = response.header?.musicImmersiveHeaderRenderer;
+		const headerRenderer = response.contents.header?.musicImmersiveHeaderRenderer;
 		const loadedPageType = response.browsePageType;
 
 		if (!headerRenderer) return;
@@ -523,17 +518,35 @@ export class CacheService {
 					allSongsPlId: (songsShelf) ? songsShelf.title.runs[0].navigationEndpoint.browseEndpoint.browseId : null,
 					radioRadio: headerRenderer.startRadioButton?.buttonRenderer.navigationEndpoint.watchEndpoint.playlistId,
 				},
-				type: ext.BrowsePageTypes.artist,
+				type: "ARTIST",
 				id: response.browseId,
 				private: false,
-				_ContinuationData: {
-					itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
-					itemsHasContinuation: false
-				}
-
+				_itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
+				_itemsHasContinuation: false
 			},
 			...otherStorables
 		];
+	};
+
+	static ConvertGenericCollectedItemsToStorables(items) {
+		const storables = [];
+
+		items.forEach((v) => {
+			if (!v) return;
+
+			if (v.artists) {
+				storables.push(...v.artists);
+				v.artists = v.artists.map(v => v.id);
+			};
+
+			storables.push(v);
+		});
+
+		const unique = Array.from(
+			new Set(storables.map((item) => JSON.stringify(item)))
+		).map((item) => JSON.parse(item));
+
+		return unique;
 	};
 
 	static CollectGenericGridOrShelfData(response) {
@@ -551,8 +564,8 @@ export class CacheService {
 		if (gridRenderer) items = gridRenderer.map( r => this.GetInfoFromTRIR(r, response.browsePageType) );
 		else if (shelfRenderer) items = shelfRenderer.map( r => this.GetInfoFromLibraryShelfLIR(r) );
 
-		items = items.filter( v => v !== undefined);
-		return { type: response.browsePageType, items };
+		items = this.ConvertGenericCollectedItemsToStorables(items);
+		return items;
 	};
 
 
@@ -568,6 +581,11 @@ export class CacheService {
 			const browseId = ext.SafeDeepGet(response, ext.Structures.browseIdFromPolymerState());
 			const mainContentResponse = ext.SafeDeepGet(response, ext.Structures.mainContentFromPolymerState);
 			const browsePageType = ext.GetBrowsePageType(response);
+
+			if (mainContentResponse.cMusicFixerExtChangedResponse) {
+				fconsole.log("cannot cache contents that ext has edited.");
+				return;
+			};
 
 			response = {
 				browseId, browsePageType,
@@ -592,8 +610,11 @@ export class CacheService {
 		fconsole.log("gathered", gathered);
 		if (!gathered) return;
 
+		gathered = gathered.map( v => {  return { data: v, _saveBackup: v._saveBackup } });
+
 		ext.DispatchEventToEW({
-			func: "cache-data",
+			func: "storage",
+			storageFunc: "set-cache",
 			data: gathered
 		});
 	};

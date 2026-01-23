@@ -18,10 +18,10 @@ export class GETEditors {
 		//if (!validWatch) return; want to cache when was skipped! don't return :)
 
 		ext.DispatchEventToEW({
-			func: "video-watched",
+			func: "add-watchtime",
 			videoId: request.urlObj.searchParams.get("docid"),
 			playingFrom: request.urlObj.searchParams.get("list"),
-			completeWatch: validWatch
+			completeWatch: validWatch // TODO: add to bkgScript
 		});
 	};
 
@@ -34,7 +34,7 @@ export class GETEditors {
 
 export class SmallPOSTEditors {
 
-	static PlaylistCreateCommand(request, response) {
+	/*static PlaylistCreateCommand(request, response) {
 		let gathered = { // doesnt actually cache.
 			name: request.body.title,
 			type: "MUSIC_PAGE_TYPE_PLAYLIST",
@@ -63,9 +63,9 @@ export class SmallPOSTEditors {
 		});
 
 		return;
-	};
+	}; PUT IN WHEN SIDEBAR EDITABLE AGAIN. */
 
-	static CacheVideoViews(request, response) {
+	static async CacheVideoViews(request, response) {
 		let gathered = {
 			id: response.videoDetails.videoId,
 			views: Number(response.videoDetails.viewCount),
@@ -73,14 +73,14 @@ export class SmallPOSTEditors {
 		};
 
 		ext.DispatchEventToEW({
-			func: "cache-data",
-			data: gathered
+			func: "set-cache",
+			data: [{"data": gathered}]
 		});
 
 		return;
 	};
 
-	static CacheDislike(request, reponse) {
+	static async CacheDislike(request, reponse) {
 		let gathered = {
 			id: request.body.target.videoId,
 			liked: "DISLIKE",
@@ -90,14 +90,81 @@ export class SmallPOSTEditors {
 		if (!gathered) return;
 
 		ext.DispatchEventToEW({
-			func: "cache-data",
-			data: gathered
+			func: "set-cache",
+			data: [{"data": gathered}]
 		});
 
 		return;
 	};
 
-	static OnPlaylistEdit(request, response) {
+
+	static async CacheLike(request, response) {//, storage) {
+		let gathered;
+		
+		if (request.body.target.videoId) {
+			gathered = {
+				id: request.body.target.videoId,
+				liked: "LIKE",
+				type: "SONG"
+			};
+		};
+
+		/*if (request.body.target.playlistId) {
+			let type = ext.GetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
+			let id = (type === "MUSIC_PAGE_TYPE_ALBUM") ? storage.cache.mfIdMap[request.body.target.playlistId]
+				: "VL" + request.body.target.playlistId;
+			
+			gathered = {
+				"id": id,
+				saved: true,
+				"type": type
+			};
+		};*/
+
+		if (!gathered || !gathered.id) return;
+
+		ext.DispatchEventToEW({
+			func: "set-cache",
+			data: [{"data": gathered}]
+		});
+
+		return;
+	};
+
+	static async CacheUnlike(request, response) {//, storage) {
+		let gathered;
+		
+		if (request.body.target.videoId) {
+			gathered = {
+				id: request.body.target.videoId,
+				liked: "INDIFFERENT",
+				type: "SONG"
+			};
+		};
+
+		/*if (request.body.target.playlistId) {
+			let type = ext.GetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
+			let id = (type === "MUSIC_PAGE_TYPE_ALBUM") ? storage.cache.mfIdMap[request.body.target.playlistId]
+				: "VL" + request.body.target.playlistId;
+			
+			gathered = {
+				"id": id,
+				saved: false,
+				"type": type
+			};
+		}; WANT THIS! TODO! */
+
+		if (!gathered || !gathered.id) return;
+
+		ext.DispatchEventToEW({
+			func: "set-cache",
+			data: [{"data": gathered}]
+		});
+
+		return;
+	}; // TODO
+
+	static async OnPlaylistEdit(request, response) {
 		let currentState = polymerController.store.getState();
 		let browsedToId = ext.SafeDeepGet(currentState, ext.Structures.browseIdFromPolymerState());
 		if (!browsedToId) return;
@@ -126,118 +193,12 @@ export class SmallPOSTEditors {
 		};
 	};
 
-	/*
-	TOPIC CHANNELS COUNTED AS SAME, BUT DIFFERENT IDS..
-	request does not have the browsed to id of the channel.
-	eg, cage the elephant, endpoint = UCOk9wZlQNsWjb7gJhnvmbkQ but
-		browsed to UCU3rXoHt2bCYbpV3s_sJlgw.
-	static CacheSubscribe(request, response) {
-		let gathered = request.body.channelIds.map( v => {
-			return { id: v, saved: true, type: "C_PAGE_TYPE_CHANNEL_OR_ARTIST" };
-		});
 
-		if (!gathered) return;
-
-		UDispatchEventToEW({
-			func: "cache-data",
-			data: gathered
-		});
-
-		return;
-	},
-
-	static CacheUnsubscribe(request, response) {
-		let gathered = request.body.channelIds.map( v => {
-			return { id: v, saved: false, type: "C_PAGE_TYPE_CHANNEL_OR_ARTIST" };
-		});
-
-		if (!gathered) return;
-
-		UDispatchEventToEW({
-			func: "cache-data",
-			data: gathered
-		});
-
-		return;
-	}*/
-
-
-	static CacheLike(request, response, storage) {
-		let gathered;
-		
-		if (request.body.target.videoId) {
-			gathered = {
-				id: request.body.target.videoId,
-				liked: "LIKE",
-				type: "SONG"
-			};
-		};
-
-		if (request.body.target.playlistId) {
-			let type = ext.GetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
-			let id = (type === "MUSIC_PAGE_TYPE_ALBUM") ? storage.cache.mfIdMap[request.body.target.playlistId]
-				: "VL" + request.body.target.playlistId;
-			
-			gathered = {
-				"id": id,
-				saved: true,
-				"type": type
-			};
-		};
-
-		if (!gathered || !gathered.id) return;
-
-		ext.DispatchEventToEW({
-			func: "cache-data",
-			data: gathered
-		});
-
-		return;
-	};
-
-	static CacheUnlike(request, response, storage) {
-		let gathered;
-		
-		if (request.body.target.videoId) {
-			gathered = {
-				id: request.body.target.videoId,
-				liked: "INDIFFERENT",
-				type: "SONG"
-			};
-		};
-
-		if (request.body.target.playlistId) {
-			let type = ext.GetBrowsePageTypeFromBrowseId(request.body.target.playlistId, true, true);
-			let id = (type === "MUSIC_PAGE_TYPE_ALBUM") ? storage.cache.mfIdMap[request.body.target.playlistId]
-				: "VL" + request.body.target.playlistId;
-			
-			gathered = {
-				"id": id,
-				saved: false,
-				"type": type
-			};
-		};
-
-		if (!gathered || !gathered.id) return;
-
-		ext.DispatchEventToEW({
-			func: "cache-data",
-			data: gathered
-		});
-
-		return;
-	};
-
-
-	static CacheFromNextItems(request, response, lyricPanel) {
+	static async CacheFromNextItems(request, response, lyricPanel) {
 		let lyricEndpoint = lyricPanel?.endpoint?.browseEndpoint?.browseId;
-
-		console.log("LYRIC", {lyricPanel, lyricEndpoint});
-
 		if (!lyricEndpoint) return;
 
 		let playingVideoId = response.currentVideoEndpoint?.watchEndpoint?.videoId;
-		console.log("LYRIC", {playingVideoId});
 		if (!playingVideoId) return;
 
 		let gathered = {
@@ -248,24 +209,16 @@ export class SmallPOSTEditors {
 		console.log("GATHERED", gathered);
 
 		ext.DispatchEventToEW({
-			func: "cache-data",
-			data: gathered
+			func: "set-cache",
+			data: [{"data": gathered}]
 		});
 	};
 
 
-	static TidyQueueNextItems(request, response, storage) {
-		// if user clicks "revert" on album page, it will play original, because no buildQueueFrom.
-		// and, clicking a main song will now include the extras.
-
-		// require cParams. declares that we want to edit this response.
-		// even if clicking a song from the real album (deluxe), it still declares
-		// to read the song from itself.
-		
+	static async TidyQueueNextItems(request, response) {		
 		// SET PLAYER PAGE COLOURS
 		const thumbs = ext.SafeDeepGet(response, ext.Structures.thumbnailsFromNextResponse);
-		fconsole.log(thumbs);
-		document.querySelector(":root").setProperty("--playing-thumbnail", ext.ChooseBestThumbnail(thumbs));
+		document.querySelector(":root").style.setProperty("--playing-thumbnail", ext.ChooseBestThumbnail(thumbs));
 
 		let browsePage = document.querySelector("ytmusic-browse-response");
 		if (browsePage && browsePage.getAttribute("c-edited") === false) {
@@ -285,13 +238,10 @@ export class SmallPOSTEditors {
 		console.log("originalPlaylistPanelcontents", structuredClone(playlistPanel.contents));
 		console.log(request.cParams, (request.cParams || {}), (request.cParams || {}).buildQueueFrom);
 
-		let [newContents, currentVideoWE] = middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(
-			storage,
+		let [newContents, currentVideoWE, currentData] = await middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(
 			playlistPanel.contents,
 			(request.cParams || {}).buildQueueFrom,
-			request.body.playlistId,
 			request.body.videoId,
-			isShuffle,
 			false
 		);
 
@@ -300,7 +250,7 @@ export class SmallPOSTEditors {
 		if (!currentVideoWE) return response; // changed in place (and leaving early)
 		response.currentVideoEndpoint.watchEndpoint = currentVideoWE;
 
-		let currentVideoCache = storage.cache[currentVideoWE.videoId];
+		/*let currentVideoCache = storage.cache[currentVideoWE.videoId];
 		if (!currentVideoCache) return response; // changed in place
 
 		// LYRIC EDITING
@@ -318,14 +268,14 @@ export class SmallPOSTEditors {
 			};
 		};
 
-		lyricPanel && (lyricPanel.unselectable = false);
+		lyricPanel && (lyricPanel.unselectable = false);*/
 
 
 		let overlayButtons = ext.SafeDeepGet(response, ext.Structures.overlayButtonsFromNextResponse);
 		if (!overlayButtons) return response; // changed in place
 
 		let like = ext.GetEndpointByNameFromArray(overlayButtons, "likeButtonRenderer");
-		like.likeStatus = currentVideoCache.liked;
+		like.likeStatus = currentData.newData.liked;
 		like.target.videoId = currentVideoWE.videoId;
 		like.serviceEndpoints[0].likeEndpoint.target.videoId = currentVideoWE.videoId;
 		like.serviceEndpoints[1].likeEndpoint.target.videoId = currentVideoWE.videoId;
@@ -337,7 +287,7 @@ export class SmallPOSTEditors {
 	};
 
 
-	static TidyGetQueueItems(request, response, storage) {
+	static async TidyGetQueueItems(request, response) {
 		//if (!request.cParams || !request.cParams.buildQueueFrom) return;
 		// so now if user clicks "revert" on album page, it will play original.
 		// and, clicking a main song will now include the extras.
@@ -346,7 +296,7 @@ export class SmallPOSTEditors {
 		if (!queueDatas) return;
 		let buildFrom = request.cParams ? request.cParams.buildQueueFrom : undefined;
 
-		let [newContents, currentVideoWE] = middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(storage, queueDatas, buildFrom, request.body.playlistId, undefined, false, true, request.body.videoIds);
+		let [newContents, currentVideoWE, currentData] = await middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(queueDatas, buildFrom, undefined, true, request.body.videoIds);
 
 		if (newContents) response.queueDatas = newContents;
 		return response; // was changed in-place.
@@ -354,20 +304,19 @@ export class SmallPOSTEditors {
 
 
 	static endpointToTask = {
-		"/youtubei/v1/playlist/create": this.PlaylistCreateCommand,
-		"/youtubei/v1/playlist/delete": this.PlaylistDeleteCommand,
+//		"/youtubei/v1/playlist/create": this.PlaylistCreateCommand,
+//		"/youtubei/v1/playlist/delete": this.PlaylistDeleteCommand,
 		"/youtubei/v1/player": this.CacheVideoViews,
 		"/youtubei/v1/like/dislike": this.CacheDislike,
-		"/youtubei/v1/browse/edit_playlist": this.OnPlaylistEdit
+		"/youtubei/v1/browse/edit_playlist": this.OnPlaylistEdit,
 		//"/youtubei/v1/subscription/subscribe"
 		//"/youtubei/v1/subscription/unsubscribe"
-	};
+		"/youtubei/v1/next": this.TidyQueueNextItems,
+		"/youtubei/v1/music/get_queue": this.TidyGetQueueItems,
 
-	static endpointToTaskCache = {
 		"/youtubei/v1/like/like": this.CacheLike,
 		"/youtubei/v1/like/removelike": this.CacheUnlike,
-		"/youtubei/v1/next": this.TidyQueueNextItems,
-		"/youtubei/v1/music/get_queue": this.TidyGetQueueItems
+		
 	};
 };
 
@@ -408,7 +357,7 @@ export class MainPOSTEditors {
 		return buttons;
 	};
 
-	static _ConvertOldAlbumPageToNew(response, id, cache) {
+	static _ConvertOldAlbumPageToNew(response, id, data) {
 		let thumbnailRenderer = {
 			thumbnail: {
 				thumbnails: response.header.musicDetailHeaderRenderer.thumbnail.croppedSquareThumbnailRenderer.thumbnail.thumbnails
@@ -421,37 +370,25 @@ export class MainPOSTEditors {
 		let subtitleOneData = cacheService.GetDataFromSubtitleRuns(response.header.musicDetailHeaderRenderer.subtitle);
 		let subtitleOneRuns = [];
 
-		if (subtitleOneData.subType && subtitleOneData.yearStr) {
+		if (subtitleOneData.subType && subtitleOneData.year) {
 			subtitleOneRuns = [
 				{text: subtitleOneData.subType},
 				{text: ext.YT_DOT},
-				{text: subtitleOneData.yearStr}
+				{text: subtitleOneData.year}
 			];
 
 		} else if (subtitleOneData.subType) {
-			subtitleOneRuns = [subtitleOneData.subType];
+			subtitleOneRuns = [{text: subtitleOneData.subType}];
 
-		} else if (subtitleOneData.yearStr) {
-			subtitleOneRuns = [subtitleOneData.yearStr];
+		} else if (subtitleOneData.year) {
+			subtitleOneRuns = [{test: subtitleOneData.yrar}]; // TODO had to chane fom yearStr, check elsewhere
 
 		};
 
 		let creator = ((subtitleOneData.artists) ? subtitleOneData.artists[0] : undefined) || subtitleOneData.creator;
-		let cachedCreator = cache[creator.id] || {};
+		let cachedCreator = data.privateCounterpart || (data.artists || [])[0];
 
-		// DOING COUNTERPART STUFF, LINK TO MAIN ARTIST PAGE
-		if (cachedCreator.privateCounterparts && cachedCreator.privateCounterparts.length > 0) {
-
-			for (let counterpart of cachedCreator.privateCounterparts) {
-				if (!cache[counterpart]) continue;
-
-				cachedCreator = cache[counterpart];
-				break;
-			};
-
-		};
-
-		let cachedCreatorThumb = (cachedCreator) ? cachedCreator.thumb : undefined;
+		let cachedCreatorThumb = cachedCreator?.thumb;
 
 		let straplineTextOne = {};
 		let straplineThumbnail = {};
@@ -469,7 +406,7 @@ export class MainPOSTEditors {
 			if (creator.id !== ext.VARIOUS_ARTISTS_ID) {
 				straplineTextOne.runs[0].navigationEndpoint = ext.BuildEndpoint({
 					navType: "browse",
-					id: cachedCreator.id
+					id: cachedCreator.id || creator.id
 				});
 			};
 
@@ -666,7 +603,7 @@ export class MainPOSTEditors {
 			let videoId = ext.SafeDeepGet(listItem, ext.Structures.videoIdFromLIRData);
 			if (!videoId) continue;
 
-			let cachedVideo = cache[videoId];
+			let cachedVideo = (data.items.filter( v => v.id === videoId) || [])[0];
 			if (!cachedVideo) continue;
 
 			listItem.flexColumns.push({
@@ -808,373 +745,160 @@ export class MainPOSTEditors {
 		};
 	};
 
-	static _EditQueueContentsFromResponse(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas, queueDataRequestIds) {
-		let buildFromAlbum = (buildQueueFromBId) ? storage.cache[buildQueueFromBId] || {} : {}; // cache[undefined] may exist. do ternary.
-		let loadedFromAlbum = ext.GetObjFromMfId(storage.cache, loadedQueueFromMfId) || {};
-		console.log(buildQueueFromBId, loadedQueueFromMfId, buildFromAlbum, loadedFromAlbum);
+	//static async _EditQueueContentsFromRespon(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas, queueDataRequestIds) {
+	static async _EditQueueContentsFromResponse(queueContents, id, videoIdToSelect, areQueueDatas, queueDataRequestIds) {
+		if (id === undefined) return [undefined, undefined, undefined];
+		if (!queueDataRequestIds) queueDataRequestIds = [];
+		
+		const newList = await ext.StorageGet({ storageFunc: "edit-list", id });
 
-		let idsToReplace = ext.GetIdsToReplaceFromRealAlbum(storage, buildQueueFromBId, loadedFromAlbum.id) || {extraByIndex: {}, indexToVideoIdOfThis: {}};
-		console.log("replacements", idsToReplace);
-		console.log("queueContentsBefore", structuredClone(queueContents));
-
-		let indexToVideoIdOfThis = idsToReplace.indexToVideoIdOfThis;
-
-		let cachedArtist = (buildFromAlbum.artist) ? storage.cache[buildFromAlbum.artist] : undefined;
-		let hiddenSongs = storage.customisation.hiddenSongs[buildQueueFromBId] || [];
-		let skippedSongs = storage.customisation.skippedSongs[buildQueueFromBId] || [];
-
-		//hiddenSongs.push(...skippedSongs);
-
-		let backingPlaylistId; // for use later. get it in this loop from anything we can!
-		let videoRenderersData = queueContents.map((v) => {
-			let vr = ext.GetPPVR(v);
-
-			if (!backingPlaylistId) backingPlaylistId = ext.SafeDeepGet(vr, ext.Structures.backingPlaylistIdFromVideoRenderer);
-
-			return (vr) ? [vr.videoId, [v,vr]] : [undefined, undefined];
-		});
-		let videoRenderersByVideoId = Object.fromEntries(videoRenderersData);
-
-
-		// ITER 1: NORMAL STUFF
-		for (let [videoId, data] of videoRenderersData) {
-			if (!data) continue;
-			let [item, vr] = data;
-
-			let replacement = idsToReplace[videoId];
-
-			console.log(structuredClone({videoId, data, item, vr, replacement}));
-
-			if (replacement) ext.ModifyPlaylistPanelRendererFromData(vr, replacement, buildFromAlbum, cachedArtist);
-			else if (vr) {
-				let cachedVideo = this._EditLongBylineOfPlaylistPanelVideoRenderer(storage, vr, buildFromAlbum);
-				vr.cData = { video: cachedVideo, from: buildFromAlbum };// why did we set cData here? dont think it worked?
-				console.log("ADD NotReplacemtn");
-				this._DeleteRemoveFromPlaylistButtonFromPPVR(vr);
-			};
-
-			if (videoIdToSelect) vr.selected = vr.videoId === videoIdToSelect;
-		};
-
-
-		// USER HAS CLICKED TO LOAD FROM A PLAYLIST, OR
-		// AN ALBUM ENDPOINT WITHOUT buildFrom CPARAM.
-		// ONLY WANTED TO DO FIRST ITERATION, TO EDIT LONGBYLINE + BUTTONS.
-		if (!buildQueueFromBId || buildFromAlbum?.type !== "ALBUM") {
-			console.log("leaving early!");
-			return [undefined, undefined];
-		};
-
-
-		let lastItem; // REMOVE AUTOMIX ITEM, ADD BACK LATER.
-		if (queueContents[queueContents.length - 1].automixPreviewVideoRenderer) {
-			lastItem = queueContents.pop();
-		};
-
-		let byIndex = idsToReplace.extraByIndex || {};
-		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
-		let maxIndex = Math.max(...Object.keys(indexToVideoIdOfThis).map(v => Number(v)));
-
-		let gappy = [];
-		for (let i = 0; i <= maxIndex + orderedExtraIndexes.length; i++) {
-			gappy[i] = videoRenderersByVideoId[indexToVideoIdOfThis[String(i)]] || [undefined, undefined];
-		};
-
-		let shuffleItemsToAdd = [];
-
-		console.log(structuredClone({videoRenderersByVideoId, byIndex, gappy}));
-
-		// ITER 2: CREATE NEW AND ADD IN PLACE, USING GAPS.
-		let i_ = -1;
-		for (let [item, vr] of gappy) { // NOT STRUCUTREDCLONE, IF IS THEN NO EDIT!
-			i_ ++;
-
-			console.log("ITER 1", structuredClone(item), structuredClone(vr));
-			let createNew = byIndex[String(i_)];
-
-			if (createNew) {
-				let newItem = ext.BuildPlaylistPanelRendererFromData(createNew, buildFromAlbum, cachedArtist, backingPlaylistId);
-				if (areQueueDatas) newItem = { content: newItem };
-
-				// INSERT IN RANDOM POSITION FOR SHUFFLE!
-				if (isShuffle) {
-					shuffleItemsToAdd.push(newItem);
-					continue;
-				};
-
-				vr = ext.GetPPVR(newItem);
-				gappy[i_] = [newItem, vr];
-			};
-
-			if (videoIdToSelect && vr) vr.selected = vr.videoId === videoIdToSelect;
-		};
-
-		console.log("GAPPY AFTER", structuredClone(gappy));
-		queueContents = gappy.filter((v) => v[0] !== undefined && v[1] !== undefined).map((v) => v[0]);
-
-		for (let v of shuffleItemsToAdd) {
-			queueContents.splice(ext.RandInt(1, queueContents.length), 0, v);
-		};
-
-		if (lastItem) queueContents.push(lastItem);
+		const newItemOrder = [];
+		let currentWatchEndpoint;
+		let currentData;
+		let indexOffset = newList.minIndex;
 
 		console.log("queueContents now", structuredClone(queueContents));
 
-		let newContents = [];
-		let currentVideoWE;
-		let indexCount = 0;
+		const vrByIndex = {};
+		let backingPlaylistId;
 
-		if (hiddenSongs.includes(videoIdToSelect)) {
-			videoIdToSelect = undefined;
+		for (const item of queueContents) {
+			const vr = ext.GetPPVR(item);
+			if (!vr) continue; // AUTOPLAY
+
+			const thisIndex = vr.navigationEndpoint?.watchEndpoint?.index; // ALWAYS ZERO-BASED, NUMBER.
+
+			vrByIndex[thisIndex] = item; // NOT vr
+
+			if (!backingPlaylistId) backingPlaylistId = ext.SafeDeepGet(vr, ext.Structures.backingPlaylistIdFromVideoRenderer);
 		};
-		// videoIdToSelect ONLY PROVIDED WHEN WE CLICK THEIR PLAY BUTTON ON ALBUM PAGE
-		// OR USER PICKS AN INDIVIDUAL SONG.
-		// SKIPPED SONGS: DON'T SKIP IF IS videoIdToSelect.
 
-		// get_queue REQUEST HAS videoIds IF USER SELECTED, OR playlistId TO DO ALL.
-
-		// LAST ITERATION. HIDE ANY WE NEED TO, AND UPDATE ENDPOINT INDEXES.
-		// THIS CLEANS THE MESS FOR US, SO WE CAN ADD SONGS WHEREVER WE WANT!
-		for (let item of queueContents) {
-			let videoRenderer = ext.GetPPVR(item);
-			let we = videoRenderer?.navigationEndpoint?.watchEndpoint;
-
-			console.log(structuredClone(item), structuredClone(videoRenderer), "START OF EDIT ITERTAION(3)");
-
-			if (!videoRenderer || !we) {
-				newContents.push(item);
+		for (const newData of newList.listItems) {
+			if (!newData.id) continue; // PLACEHOLDERS OF {}
+			if ((newData.hidden || newData.skipped) && (id !== newData.id) && (queueDataRequestIds.indexOf(newData.id) === -1)) {
+				indexOffset ++;
 				continue;
+			}; // DON'T CREATE SKIPPED. ADD INDEX OFFSET. TODO: USE INDEXOFFSET TO SET watchEndpoint indexes.
+
+			let item = vrByIndex[newData.displayIndex - newList.minIndex];
+			let vr;
+
+			if (item && newData.changed) item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId, newList.minIndex);// ext.AddPlaylistPanelRendererReplacements(item, newData, newList.albumData, newList.artistData, backingPlaylistId, newList.minIndex);
+			else if (item) {
+				vr = ext.GetPPVR(item);
+				vr.longBylineText.runs = ext.CreateLongBylineForPlaylistPanel(newList.albumData, newList.albumData, newList.artistData);
+				// TODO: metadata thumb, name.
+				// old method ModifyPlaylistPanelRendererNotReplacement
+
+			} else item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId, newList.minIndex);
+
+			
+			if (!vr) vr = ext.GetPPVR(item);
+			vr.cData = {
+				albumData: newList.albumData,
+				artistData: newList.artistData,
+				thisData: newData
 			};
 
-			if (
-				hiddenSongs.includes(we.videoId) &&
-				(!videoRenderer.cData || 
-					(videoRenderer.cData && videoRenderer.cData.from.id === loadedFromAlbum.id)
-				)
-			) continue; // dont add to new list
+			this._DeleteRemoveFromPlaylistButtonFromPPVR(vr);
 
-			if (
-				skippedSongs.includes(we.videoId) && // SONG SHOULD BE SKIPPED
-				videoIdToSelect !== we.videoId && // USER HASN'T CLICKED THIS SONG SPECIFICALLY
-				!(queueDataRequestIds || []).includes(we.videoId) // USER HASNT SPECIFICALLY ADDED TO QUEUE
-			) continue;
-
-			if (we.index !== 0) we.index = indexCount;
-			newContents.push(item);
-
-			if (videoIdToSelect === undefined) { // if first item in playlist deleted.
-				videoIdToSelect = we.videoId;
+			const isCurrent = vr.videoId === videoIdToSelect;
+			if (videoIdToSelect) vr.selected = isCurrent;
+			if (isCurrent) {
+				currentWatchEndpoint = vr.navigationEndpoint.watchEndpoint;
+				currentData = newData;
 			};
 
-			if (videoIdToSelect) videoRenderer.selected = videoRenderer.videoId === videoIdToSelect;
-			if (we.videoId === videoIdToSelect) currentVideoWE = we;
-
-			indexCount ++; // do after, to match yt queue starting at 0
+			newItemOrder.push((areQueueDatas) ? { content: item } : item);
 		};
 
-		console.log("newContents", newContents, hiddenSongs);
+		console.log("newContents", newItemOrder);
 
-		return [newContents, currentVideoWE];
+		return [newItemOrder, currentWatchEndpoint, currentData];
 	};
 
 
-	static C_PAGE_TYPE_PRIVATE_ALBUM(response, id, storage) {
-		let albumLike = this._ConvertOldAlbumPageToNew(response, id, storage.cache);
-		let newResp = this.MUSIC_PAGE_TYPE_ALBUM(albumLike, id, storage);
+	static async C_PAGE_TYPE_PRIVATE_ALBUM(response, id) {
+		const data = await ext.StorageGet({storageFunc: "get-populated", id });
+		let albumLike = this._ConvertOldAlbumPageToNew(response, id, data);
+		let newResp = this.MUSIC_PAGE_TYPE_ALBUM(albumLike, id);
 
 		return newResp || albumLike;
 	};
 
-	static MUSIC_PAGE_TYPE_ALBUM(response, id, storage) {
+	static async MUSIC_PAGE_TYPE_ALBUM(response, id) {
 		// caching stuff
 		// need to edit album subtitleTwo total minutes based on contents.
 
-		let idsToReplace = ext.GetIdsToReplaceFromRealAlbum(storage, id, id) || {extraByIndex: {}};
-		console.log("replacements", structuredClone(idsToReplace));
+		const newList = await ext.StorageGet({ storageFunc: "edit-list", id });
 
 		let musicShelfRenderer = ext.SafeDeepGet(response, ext.Structures.albumMusicShelfRenderer());
-		if (!musicShelfRenderer || !musicShelfRenderer.contents) return;
+		if (!musicShelfRenderer?.contents) return;
 
-		let cachedAlbum = storage.cache[id] || {};
-		let hiddenSongs = storage.customisation.hiddenSongs[id] || [];
-		let skippedSongs = storage.customisation.skippedSongs[id] || [];
+		const lirByIndex = {};
+		let originalLengthSec = 0;
 
-		ext.state.BrowseParamsByRequest.pageSpecific[cachedAlbum.mfId] = { buildQueueFrom: cachedAlbum.id };
+		for (const item of musicShelfRenderer.contents) {
+			const lir = item.musicResponsiveListItemRenderer;
+			const thisIndex = Number(lir?.index?.runs?.[0].text);
+
+			lirByIndex[thisIndex] = item; // NOT lir
+
+			const thisLenStr = ext.SafeDeepGet(lir, ext.Structures.lengthStrFromLIRData);
+			if (thisLenStr) originalLengthSec += ext.LengthStrToSeconds(thisLenStr);
+		};
+
 		console.log("listitems before", structuredClone(musicShelfRenderer.contents));
 
-		// iter thru each existing item, modify if necessary
-		let newContents = [];
-		let maxIndex = 0; // Number
-		let lirsByIndex = {}; // Number: object
+		const newItemOrder = [];
+		let newLengthSec = 0;
+		let playableSongs = 0;
 
-		for (let item of structuredClone(musicShelfRenderer.contents)) { // structuredClone, so wont edit ref of original!
-			let data = cacheService.GetInfoFromLIR(item);
-			let replacement = idsToReplace[data.id];
+		for (const newData of newList.listItems) {
+			if (!newData.id) continue; // PLACEHOLDERS OF {}
 
-			let listItemRenderer = item.musicResponsiveListItemRenderer;
-			let thisIndex = Number(listItemRenderer?.index?.runs[0].text);
-			if (thisIndex > maxIndex) maxIndex = thisIndex;
+			let lir = lirByIndex[newData.displayIndex];
+
+			if (lir) ext.AddListItemReplacements(lir, newData, newList.albumData, newList.artistData, newList.minIndex);
+			else lir = ext.BuildListItemRendererFromDataForAlbumPage(newData, newList.albumData, newList.artistData, newList.minIndex);
+
+			const thisCData = {
+				albumData: newList.albumData,
+				artistData: newList.artistData,
+				thisData: newData
+			};
+
+			if (lir.musicResponsiveListItemRenderer) lir.musicResponsiveListItemRenderer.cData = thisCData
+			else lir.cData = thisCData;
+
+			ext.ModifyListItemRendererForAnyPage(lir, newList.albumData, newList.artistData, "MUSIC_PAGE_TYPE_ALBUM");
+
+			newItemOrder.push(lir);
+			newLengthSec += newData.newData.lengthSec;
+			if (!(newData.hidden || newData.skipped)) playableSongs ++;
 			
-			console.log(data.id, replacement, listItemRenderer);
-
-			// should remove base version of song.
-			// (use this to force building listitem instead of modify)
-			let delBaseVideo = hiddenSongs.includes(data.id);
-
-			if (delBaseVideo) {
-				
-
-				if (!replacement) { // can delete base video, but have replacement. do this for custom view count.
-					ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
-					ext.FillCDataOfListItem(storage, item, data);
-					listItemRenderer.cData.changedByDeletion = { isDeleted: true };
-					lirsByIndex[thisIndex] = item;
-					
-					newContents.push(item);
-					continue;
-				};
-
-				let newListItem = ext.BuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
-				ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
-				ext.FillCDataOfListItem(storage, newListItem, replacement.video);
-				lirsByIndex[thisIndex] = newListItem; // !! NEWlistItem
-
-				newContents.push(newListItem); // as if overwritten
-				continue;
-			};
-
-			if (!replacement) {
-				ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
-				ext.FillCDataOfListItem(storage, item, data);
-				lirsByIndex[thisIndex] = item;
-
-				newContents.push(item);
-				continue;
-			};
-
-			ext.ModifyListItemRendererFromDataForAlbumPage(replacement, cachedAlbum, item);
-			ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", item);
-			ext.FillCDataOfListItem(storage, item, replacement.video);
-			lirsByIndex[thisIndex] = item;
-
-			newContents.push(item);
+			// AddListItemReplacements sets lir.cData = newData, has hidden and skipped in it.
 		};
+
 		
-		musicShelfRenderer.contents = newContents;
-
-		// ADD EXTRA ITEMS TO START/END
-		let byIndex = idsToReplace.extraByIndex || {};
-		let orderedExtraIndexes = Object.keys(byIndex).sort((a, b) => Number(a) - Number(b));
-
-		// NEED TO MAKE IT WITH GAPS THEN REMOVE AT THE END
-		let gappy = [];
-		for (let i = 0; i <= maxIndex + orderedExtraIndexes.length; i++) gappy[i] = lirsByIndex[i] || undefined;
-
-		// GAPPY WORKS PERFECTLY! CREATES AN ARR WITH GAPS, LENGTH UP TO MAX FOUND INDEX + ALL EXTRA INDEXES
-		// FILL IN WITH GAPS, THEN REMOVE GAPS, AND UPDAT EINDEX TEXTS.
-		for (let i = 0; i < gappy.length; i++) {
-			let replacement = byIndex[String(i)];
-			if (!replacement) continue;
-
-			// use cachedAlbum from before, to keep public playlistIds etc.
-			let newListItem = ext.BuildListItemRendererFromDataForAlbumPage(replacement, cachedAlbum);
-			ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_ALBUM", newListItem);
-			ext.FillCDataOfListItem(storage, newListItem, replacement.video);
-			newListItem.musicResponsiveListItemRenderer.index.runs[0].text = String(i_);
-
-			gappy[i] = newListItem;
-		};
-
-		musicShelfRenderer.contents = gappy.filter((v) => v !== undefined);
-
-	
-		// ALL REPLACEMENT NOW DONE, NOW UPDATE DELETION ATTRIBUTES AND FILL GAPS OF INDEXES.
-		let indexCount = 0;
-		let totalSeconds = 0;
-		let songCount = 0;
-		let skippedTime = 0;
-
-		console.log("listItems now", musicShelfRenderer.contents);
-
-		for (let lir of musicShelfRenderer.contents) {
-			let subLir = lir.musicResponsiveListItemRenderer;
-			if (subLir) lir = subLir;
-			let lirId = lir.playlistItemData.videoId;
-
-			// add per video id. used to do "all", but if clicked play from sidebar, would replace
-			// whatever with this. dont want.
-			ext.state.BrowseParamsByRequest.pageSpecific[lirId] = { buildQueueFrom: cachedAlbum.id };
-			
-			// hiding song stuff. dont delete, just give hidden attr, so can readd in edit mode.
-			let hideThis = hiddenSongs.includes(lirId);
-			let thisIndex = Number(lir.index.runs[0].text);
-
-			let thisLenStr = ext.SafeDeepGet(lir, ext.Structures.lengthStrFromLIRData);
-
-			let skipThis = skippedSongs.includes(lirId);
-			if (skipThis) {
-				if (!lir.cData) lir.cData = {};
-				lir.cData.skip = true;
-				skippedTime += ext.LengthStrToSeconds(thisLenStr);
-			};
-
-			if (hideThis && (!lir.cData || !lir.cData.changedByDeletion)) {
-				if (!lir.cData) lir.cData = { changedByDeletion: {} };
-				if (!lir.cData.changedByDeletion) lir.cData.changedByDeletion = {};
-
-				lir.cData.changedByDeletion.isDeleted = true;
-				continue; // DONT increment, will fill the gap
-			};
-
-			// INDEX CORRECTION. FILLS GAPS, AND ACCOMMODATES FOR DELETED ITEMS.
-			// continue if is deleted dont want to increment.
-			if (ext.SafeDeepGet(lir, ext.Structures.cIsDeletedFromLIRData)) continue;
-
-			
-
-			
-			totalSeconds += ext.LengthStrToSeconds(thisLenStr);
-			songCount ++;
-
-			// EDIT INDEXES IF INCORRECT.
-			if ((thisIndex !== 0 && thisIndex !== indexCount) || isNaN(thisIndex)) {
-				lir.index.runs[0].text = String(indexCount+1);
-
-				if (!lir.cData) lir.cData = { changedByDeletion: {} };
-				if (!lir.cData.changedByDeletion) lir.cData.changedByDeletion = {};
-
-				lir.cData.changedByDeletion.originalIndex = thisIndex;
-				lir.cData.changedByDeletion.updatedIndex = indexCount;
-
-				let we = ext.SafeDeepGet(lir, ext.Structures.watchEndpointFromLIRDataPlayButton());
-				if (we) we.index = indexCount;
-
-				let titleEndpoint = ext.SafeDeepGet(lir, ext.Structures.watchEndpointFromLIRDataTitle);
-				if (titleEndpoint) titleEndpoint.index = indexCount;
-			};
-
-			indexCount ++; // do after, as if playing priv album (tloas deluxe), yt starts at 0
-
-		};
-
+		if (newItemOrder.length !== 0) musicShelfRenderer.contents = newItemOrder;
+		if (playableSongs === 0) playableSongs = musicShelfRenderer.contents.length;
 
 		// EDIT HEADER DETAILS, AUTOMATICALLY, BASED ON NEW CONTENTS.
-		let customMetadata = storage.customisation.metadata[id] || {};
+		const headerRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer());
 
-		let headerRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer());
-
-		if (customMetadata.title) headerRenderer.title.runs = [ { text: customMetadata.title } ];
-		if (customMetadata.desc) {
+		if (newList.albumData.title) headerRenderer.title.runs = [ { text: newList.albumData.title } ];
+		if (newList.albumData.desc) {
 			headerRenderer.description.musicDescriptionShelfRenderer.description.runs = [
-				{ text: customMetadata.desc }
+				{ text: newList.albumData.desc }
 			];
 		};
 
-		let coolBkg = customMetadata.bkg;
+		const coolBkg = newList.albumData.bkg;
 
-		if (coolBkg || customMetadata.thumb) {
-			let thumbnails = [
-				{ url: coolBkg || customMetadata.thumb, width: ext.IMG_HEIGHT, height: ext.IMG_HEIGHT }
+		if (coolBkg || newList.albumData.thumb) {
+			const thumbnails = [
+				{ url: coolBkg || newList.albumData.thumb, width: ext.IMG_HEIGHT, height: ext.IMG_HEIGHT }
 			];
 
 			headerRenderer.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails = thumbnails;
@@ -1183,66 +907,63 @@ export class MainPOSTEditors {
 			if (coolBkg) response.cMusicFixerExtCoolBkg = true;
 		};
 
-		let albumType = customMetadata.type;
-		if (!albumType && ext.IsEntryPrivateSingle(storage, cachedAlbum.id)) albumType = "Single";
+		let albumType = newList.albumData.subType;
+		if (!albumType && newList.albumData.private && playableSongs === 1) albumType = "Single";
 		
 		if (albumType) headerRenderer.subtitle.runs[0].text = albumType;
-		if (customMetadata.year) headerRenderer.subtitle.runs[2].text = customMetadata.year;
+		if (newList.albumData.year) headerRenderer.subtitle.runs[2].text = newList.albumData.year;
 
-		if (customMetadata.artist) {
-			let cacheOfNewArtist = storage.cache[customMetadata.artist];
 
-			if (cacheOfNewArtist) {
-				headerRenderer.straplineTextOne = {
-					runs: [{
-						text: cacheOfNewArtist.name,
-						navigationEndpoint: ext.BuildEndpoint({
-							navType: "browse",
-							browseId: customMetadata.id
-						})
-					}]
-				};
-			};
-			
-			headerRenderer.straplineThumbnail = {
-				musicThumbnailRenderer: {
-					thumbnail: {
-						thumbnailCrop: "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
-						thumbnailScale: "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED",
-						thumbnails: [{
-							url: cacheOfNewArtist.thumb,
-							width: ext.IMG_HEIGHT,
-							height: ext.IMG_HEIGHT
-						}]
-					}
-				}
-			};
+		if (newList.artistData.name) headerRenderer.straplineTextOne = {
+			runs: [{
+				text: newList.artistData.name,
+				navigationEndpoint: ext.BuildEndpoint({
+					navType: "browse",
+					browseId: newList.artistData.id
+				})
+			}]
 		};
 
-		headerRenderer.secondSubtitle.runs[0].text = `${songCount} songs`;
-		headerRenderer.secondSubtitle.runs[2].text = ext.SecondsToWordyHMS(totalSeconds);
+	
+		headerRenderer.straplineThumbnail = {
+			musicThumbnailRenderer: {
+				thumbnail: {
+					thumbnailCrop: "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+					thumbnailScale: "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED",
+					thumbnails: [{
+						url: newList.artistData.thumb,
+						width: ext.IMG_HEIGHT,
+						height: ext.IMG_HEIGHT
+					}]
+				}
+			}
+		};
 
-		if (skippedTime !== 0) headerRenderer.secondSubtitle.runs.push(
+
+		headerRenderer.secondSubtitle.runs[0].text = `${playableSongs} songs`;
+		headerRenderer.secondSubtitle.runs[2].text = ext.SecondsToWordyHMS(originalLengthSec);
+
+		if (originalLengthSec !== newLengthSec && newLengthSec) headerRenderer.secondSubtitle.runs.push(
 			{text: ext.YT_DOT},
-			{text: `${ext.SecondsToWordyHMS(totalSeconds - skippedTime)} unskipped`}
+			{text: `${ext.SecondsToWordyHMS(newLengthSec)} edited`}
 		);
 
-		let playButton = ext.GetEndpointByNameFromArray(headerRenderer.buttons, "musicPlayButtonRenderer");
-		let firstLIR = musicShelfRenderer.contents[0].musicResponsiveListItemRenderer;
-		let firstWE = ext.SafeDeepGet(firstLIR, ext.Structures.watchEndpointFromLIRDataPlayButton());
+		const playButton = ext.GetEndpointByNameFromArray(headerRenderer.buttons, "musicPlayButtonRenderer");
+		const firstLIR = musicShelfRenderer.contents[0].musicResponsiveListItemRenderer;
+		const firstWE = ext.SafeDeepGet(firstLIR, ext.Structures.watchEndpointFromLIRDataPlayButton());
 
 		playButton.playNavigationEndpoint.watchEndpoint = structuredClone(firstWE);
 		delete playButton.playNavigationEndpoint.watchEndpoint.videoId;
 		delete playButton.playNavigationEndpoint.watchEndpoint.playlistSetVideoId;
 		delete playButton.playNavigationEndpoint.watchEndpoint.index;
 
-		console.log("listitems after", structuredClone(musicShelfRenderer.contents));
+		console.log("listitems after", musicShelfRenderer.contents);
 
 		return response; // was changed in-place
 	};
 
 
-	static MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id) {
+	/*static async MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id) {
 		// THIS ONLY HAPPENS THE FIRST TIME. NAVIGATION = THROUGH CONTINUATIONS
 		// SO ADDING OUR CUSTOM ELEMS IS IN THE CONTINUATION!
 
@@ -1289,7 +1010,8 @@ export class MainPOSTEditors {
 		return response; // was changed in-place
 	};
 
-	static CONT_MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id, cache) {
+	static async CONT_MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY(response, id, cache) {
+		// THIS DOES NOT WORK ANYWAY TODO
 		let artist = id.replace("MPAD", "");
 
 		let cachedArtist = cache[artist];
@@ -1351,10 +1073,10 @@ export class MainPOSTEditors {
 
 		gridRenderer.items = newItems;
 		return newItems;
-	};
+	};*/
 
 
-	static MUSIC_PAGE_TYPE_ARTIST(response, id) {
+	static async MUSIC_PAGE_TYPE_ARTIST(response, id) {
 		let sectionList = ext.SafeDeepGet(response, ext.Structures.sectionListRendererFromSingleColumn);
 		if (!sectionList || !sectionList.contents) return;
 
@@ -1387,11 +1109,11 @@ export class MainPOSTEditors {
 		return response; // changed in-place
 	};
 
-	static C_PAGE_TYPE_CHANNEL_OR_ARTIST(response, id) {
+	static async C_PAGE_TYPE_CHANNEL_OR_ARTIST(response, id) {
 		return this.MUSIC_PAGE_TYPE_ARTIST.apply(this, arguments);
 	};
 
-	static MUSIC_PAGE_TYPE_PLAYLIST(response, id, storage) {
+	/*static async MUSIC_PAGE_TYPE_PLAYLIST(response, id, storage) {
 		const listItems = ext.SafeDeepGet(response, ext.Structures.playlistListItems()) || [];
 
 		for (let lir of listItems) {
@@ -1467,13 +1189,12 @@ export class MainPOSTEditors {
 		};
 
 		return response; // changed in place, still return so acknowledges change
-	};
+	};*/
 };
 
 export const urlsToEdit = [
 	"/youtubei/v1/browse",
-	...Object.keys(SmallPOSTEditors.endpointToTask),
-	...Object.keys(SmallPOSTEditors.endpointToTaskCache)
+	...Object.keys(SmallPOSTEditors.endpointToTask)
 ];
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = a class, non clonable, so throws err in bkgScript.)

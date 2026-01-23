@@ -23,6 +23,7 @@ export class EventDriven {
 
 	// PAGE MODIFIERS
 	async AlbumAndPlaylist(state) {
+		console.log("both");
 		if (ext.SafeDeepGet(state, ext.Structures.cExtCoolBkg())) {
 			this.browsePage.setAttribute("c-fancy-page", "list");
 		};
@@ -32,6 +33,7 @@ export class EventDriven {
 	};
 
 	async Album(state) {
+		console.log("ALBUM");
 		const listItems = await ext.WaitForBySelector(ext.HELPFUL_SELECTORS.listItemRenderersOfCurrentBrowseResponse);
 		
 		listItems.forEach(listItem => {
@@ -45,13 +47,13 @@ export class EventDriven {
 			const data = ext.SafeDeepGet(listItem, ext.Structures.cDataFromElem());
 			if (!data) return;
 
-			if (data.from) {
-				let thisTitle = ((data.video) ? data.video.name : title) + " - " + data.from.name;
+			if (data.albumData.id !== data.thisData.cameFrom.id) {
+				let thisTitle = ((data.thisData.newData?.name) ? data.thisData.newData.name : title) + " - " + data.thisData.cameFrom.name;
 				nameText.setAttribute("title", thisTitle);
 			};
 
-			if (data.changedByDeletion?.isDeleted) listItem.setAttribute("c-hidden", true);
-			if (data.skip) listItem.setAttribute("c-skipped", "true");
+			if (data.thisData.hidden) listItem.setAttribute("c-hidden", true);
+			if (data.thisData.skipped) listItem.setAttribute("c-skipped", "true");
 		});
 
 		ext.AddLeftIconsToListItems(listItems);
@@ -91,6 +93,8 @@ export class EventDriven {
 			this.AlbumAndPlaylist(state);
 			this.Album(state);
 		};
+
+		console.log("MODIFIED", browsePageType);
 
 		const isEdited = ext.SafeDeepGet(state, ext.Structures.cDidExtChangeResponse());
 		this.browsePage.setAttribute("c-edited", Boolean(isEdited));
@@ -142,11 +146,11 @@ export class EventDriven {
 
 	async LoadNavProgressObserver() {
 		this.browsePage = (await ext.WaitForBySelector("ytmusic-browse-response"))[0];
-		this.navProgressBar = (await ext.WaitForBySelector("yt-page-navigation-progresss"))[0];
+		this.navProgressBar = (await ext.WaitForBySelector("yt-page-navigation-progress"))[0];
 
-		this.observers.navProgress = new MutationObserver(this.OnProgressBarValueChange);
+		this.observers.navProgress = new MutationObserver(this.OnProgressBarValueChange.bind(this));
 
-		this.observers.navProgress.observe(this.browsePage, {
+		this.observers.navProgress.observe(this.navProgressBar, {
 			childList: false,
 			subtree: false,
 			attributes: true,
@@ -156,9 +160,10 @@ export class EventDriven {
 	};
 
 	async LoadDropdownObserver() {
+		// WAITS FOR A WHILE. popup-cont CREATED FIRST TIME IT'S NEEDED.
 		this.dropdown = (await ext.WaitForBySelector("ytmusic-popup-container tp-yt-iron-dropdown"))[0];
 
-		this.observers.dropdown = new MutationObserver(this.OnDropdownFocusChange);
+		this.observers.dropdown = new MutationObserver(this.OnDropdownFocusChange.bind(this));
 
 		this.observers.dropdown.observe(this.dropdown, {
 			childList: false,
@@ -180,9 +185,10 @@ export class EventDriven {
 	async init() {
 		await ext.WaitForPolymerController();
 
-		this.LoadNavProgressObserver();
 		this.LoadDropdownObserver();
-		
+
+		// WAIT FOR browsePage BEFORE INIT.
+		await this.LoadNavProgressObserver();
 		this.ModifyPage(); // INITIAL
 	};
 

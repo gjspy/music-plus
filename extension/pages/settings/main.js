@@ -85,8 +85,9 @@ function GetHumanJSONOfId(storage, id, _depth) {
 
 async function Processor(func, {content = "", needExtStorage = false}) {
 	let lclStorage = await EWUtils.StorageGetLocal();
-	let extStorage = needExtStorage ? await EWUtils.StorageGetExternal(true, lclStorage) : {};
+	//let extStorage = needExtStorage ? await EWUtils.StorageGetExternal({"localStorage": lclStorage}) : {};
 	fconsole.log(content, needExtStorage);
+	let extStorage = {};
 
 	const lclBefore = structuredClone(lclStorage);
 	const extBefore = structuredClone(extStorage);
@@ -100,11 +101,11 @@ async function Processor(func, {content = "", needExtStorage = false}) {
 	else if (func === "light-api") lclStorage.lightApi.endpoint = content;
 	else if (func === "light-entities") lclStorage.lightApi.entitiesToKeys = JSON.parse(content);
 	else if (func === "light-enabled") lclStorage.lightApi.enabled = content;
-	else if (func === "clr-lcl") lclStorage = {};
+	else if (func === "clr-lcl") lclStorage = {}; // TODO: DOES NOT WORK. USE browser.storage.local.clear()
 	else if (func === "clr-ext") extStorage.cache = {};
 
 	if (lclStorage !== lclBefore) await EWUtils.StorageSetLocal(lclStorage);
-	if (extStorage !== extBefore) await EWUtils.StorageSetExternal(extStorage, lclStorage);
+	//if (needExtStorage && extStorage !== extBefore) await EWUtils.StorageSetExternal(extStorage, lclStorage);
 
 	showLog(`done ${func}`);
 };
@@ -169,8 +170,8 @@ async function init() {
 			};
 
 			const strg = (strgType === "l") ? await EWUtils.StorageGetLocal() :
-				(strgType === "e") ? await EWUtils.StorageGetExternal(false) :
-				(strgType === "er") ? await EWUtils.StorageGetExternal(true) :
+//				(strgType === "e") ? await EWUtils.StorageGetExternal(false) :
+//				(strgType === "er") ? await EWUtils.StorageGetExternal(true) :
 				(strgType === "s") ? await browser.storage.session.get() : {};
 			
 			dump(strg);
@@ -185,11 +186,11 @@ async function init() {
 window.fconsole = class fconsole {
 	static kw = "MFIXER:";
 
-	static debug = (...data) => console.debug(this.kw, ...data);
-	static log = (...data) => console.log(this.kw, ...data);
-	static info = (...data) => console.info(this.kw, ...data);
-	static warn = (...data) => console.warn(this.kw, ...data);
-	static error = (...data) => console.error(this.kw, ...data);
+	static debug = (...data) => console.debug(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
+	static log = (...data) => console.log(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
+	static info = (...data) => console.info(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
+	static warn = (...data) => console.warn(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
+	static error = (...data) => console.error(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
 };
 
 init();

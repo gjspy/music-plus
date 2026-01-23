@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "YTMUSIC Fixer",
-	"version": "3.5.73",
+	"version": "4.0.01",
 
 	"description": "Provides additional features to the Youtube Music site.",
 
@@ -29,7 +29,7 @@
 
 	"web_accessible_resources": [{
 		"matches": ["*://music.youtube.com/*"],
-		"resources": ["utils.js"]
+		"resources": ["utilsmw.js", "taskFiles/*"]
 	}],
 
 	"host_permissions": [

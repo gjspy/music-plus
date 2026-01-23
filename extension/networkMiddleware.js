@@ -126,16 +126,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	let newBody;
 
 	let smallTask = middlewareEditors.SmallPOSTEditors.endpointToTask[pathname];
-	if (smallTask) newBody = smallTask.apply(middlewareEditors.SmallPOSTEditors, [request, respBody]);
-
-
-	let smallTaskWithCache = middlewareEditors.SmallPOSTEditors.endpointToTaskCache[pathname];
-	if (smallTaskWithCache) {
-		let storage = await ext.StorageGet();
-
-		newBody = smallTaskWithCache.apply(middlewareEditors.SmallPOSTEditors, [request, respBody, storage]);
-	};
-
+	if (smallTask) newBody = await smallTask.apply(middlewareEditors.SmallPOSTEditors, [request, respBody]);
 
 	let pageType = ext.GetBrowsePageTypeFromBrowseId(browseId);
 
@@ -151,19 +142,10 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		if (!pageType) return oldResp;
 		if (responseIsContinuation) pageType = "CONT_" + pageType;
 
-		let f = middlewareEditors.MainPOSTEditors[pageType];
+		const mainTask = middlewareEditors.MainPOSTEditors[pageType];
 
-		if (!f) return oldResp;
-
-		// functions MUST take response, browseId. MAY take cache, that's the only change.
-		if (f.length === 3) { // only get cache for functions that need it.
-			let storage = await ext.StorageGet();
-
-			newBody = f.apply(middlewareEditors.MainPOSTEditors, [respBody, browseId, storage]);
-
-		} else {
-			newBody = f.apply(middlewareEditors.MainPOSTEditors, [respBody, browseId]);
-		};
+		if (!mainTask) return oldResp;
+		newBody = await mainTask.apply(middlewareEditors.MainPOSTEditors, [respBody, browseId]);
 
 		if (newBody) {
 			respBody = newBody;
@@ -369,5 +351,7 @@ XMLHttpRequest.prototype.send = function(body) { // used for player/next/atr/qoe
 
 	return originalXHRSend.apply(this, arguments);
 };
+
+fconsole.log("middleware initialised successfully");
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = window.fetch, non clonable.)

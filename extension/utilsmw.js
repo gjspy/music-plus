@@ -1,7 +1,7 @@
 export class MWUtils {
 	static state = {
 		EWEventListener: {listening: false, idCount: 0, waiters: {}},
-		TemplateElems: {},
+		TemplateElements: {},
 		BrowseParamsByRequest: {},
 		networkEditingEnabled: true,
 		recentStorageResponse: {}
@@ -166,6 +166,7 @@ export class MWUtils {
 		creatorNameFromFacepile: ["facepile", "avatarStackViewModel", "text", "content"],
 		mfUrlFromResponse: ["microformat", "microformatDataRenderer", "urlCanonical"],
 		isSubscribedFromArtistHeaderRenderer: ["subscriptionButton", "subscribeButtonRenderer", "subscribed"],
+
 	};
 
 	static BrowsePageTypes = {
@@ -381,14 +382,11 @@ export class MWUtils {
 	static RemoveRegisteredEWWaiter = (id) => delete this.state.EWEventListener.waiters[id];
 
 
-	static async StorageGet(forceRefresh, path) {
+	static async StorageGet({path = undefined, storageFunc = undefined, id = undefined}) {
 		const storage = (await this.DispatchFunctionToEW({
-			func: "get-storage",
-			path: path,
-			forceRefresh: forceRefresh
+			func: "storage",
+			path, storageFunc, id
 		})).storage;
-
-		//this.state.recentStorageResponse = storage;
 		
 		return storage;
 	};
@@ -458,8 +456,8 @@ export class MWUtils {
 
 	static GenerateValueColsArr = (n, base) => Array.from(Array(Math.ceil(Math.log(n)/Math.log(base))).keys()).reverse().reduce((acc, pow) => ( acc.push(Math.floor(n / (base ** pow))), (n %= (base ** pow)), acc), []).filter((v, index) => !(v === 0 && index === 0));
 	static LengthStrToSeconds = (lengthStr) => (lengthStr || "").split(":").reverse().reduce((tot, seg, index) => tot + (Number(seg) * (60 ** index)), 0);
-	static SecondsToHMSArr = (seconds) => this.GenerateValueColsArr(seconds, 60);
-	static SecondsToHMSStr = (seconds, maxFigs) => this.SecondsToHMSArr(seconds).splice(0, maxFigs || 3).map(v => String(v).padStart(2, "0")).join(":");
+	static SecondsToHMSArr = (seconds) => seconds <= 0 ? [] : this.GenerateValueColsArr(seconds, 60);
+	static SecondsToHMSStr = (seconds, maxFigs) => this.SecondsToHMSArr(seconds).splice(0, maxFigs || 3).map((v, index) => (index === 0) ? String(v) : String(v).padStart(2, "0")).join(":");
 	static SecondsToWordyHMS = (seconds, maxFigs) => this.SecondsToHMSArr(seconds).reverse().map((v, index) => `${v} ` + this.HMS_REVWORDS[index] + ((v === 1) ? "" : "s")).reverse().splice(0, maxFigs || 3).join(", ");
 	static BigNumToStr(n) {
 		if (!n || isNaN(n)) return "0";
@@ -545,15 +543,23 @@ export class MWUtils {
 	/**
 	 * options: {navType}
 	 * 
-	 * 	navType: browse - id, browsePageType?
-	 * 			 watch - playlistId, firstVideo, playlistSetVideoid, index, shuffle
-	 * 			 queueAdd - position["next", "end"], playlistId, listPageType
-	 * 			 toast - successTextRuns
-	 * 			 menuNavItemRenderer - icon, text, endpoint
-	 * 			 confirmDialog - title, prompt, confirmText, endpoint, cParamsOnConfirm?
-	 * 			 confirmButton - text, endpoint
-	 * 			 cancelButton - /
-	 * 			 createPlaylist - title, privacyStatus[?], videoIds, sourcePlaylistId, description
+	 * 	navType: browse: id, browsePageType?
+	 * 
+	 * 			 watch: playlistId, firstVideo{id:.., type:..}, playlistSetVideoId, index, shuffle
+	 * 
+	 * 			 queueAdd: position["next", "end"], playlistId, listPageType
+	 * 
+	 * 			 toast: successTextRuns
+	 * 
+	 * 			 menuNavItemRenderer: icon, text, endpoint
+	 * 
+	 * 			 confirmDialog: title, prompt, confirmText, endpoint, cParamsOnConfirm?
+	 * 
+	 * 			 confirmButton: text, endpoint
+	 * 
+	 * 			 cancelButton: /
+	 * 
+	 * 			 createPlaylist: title, privacyStatus[?], videoIds, sourcePlaylistId, description
 	 * 
 	 */
 	static BuildEndpoint(opts) {
@@ -785,11 +791,11 @@ export class MWUtils {
 			const data = this.SafeDeepGet(item, this.Structures.cDataFromElem());
 			if (!data) return;
 
-			if (data.customNote && !item.querySelector(".c-lir-title-note")) {
+			if (data.thisData.note && !item.querySelector(".c-lir-title-note")) {
 				this.AddTitleIconToListItem(item, "note", "c-lir-title-note");
 			};
 
-			for (let tag of (data.tags || [])) {
+			for (let tag of (data.thisData.tags || [])) {
 				this.AddTitleIconToListItem(item, "tag", "c-lir-title-tag", tag);
 			};
 		});
@@ -938,155 +944,26 @@ export class MWUtils {
 
 
 
-	static GetIdsToReplaceFromRealAlbum(storage, buildQueueFrom, loadedBulkFrom) {
-		// buildQueueFrom is the real nav playlist. (deluxe)
-		// loadedBulkFrom is the perspective, playlist of song that was clicked. (could be non-deluxe) 
-		if (buildQueueFrom === undefined || loadedBulkFrom === undefined) return;
 
-		let cache = storage.cache;
-		let buildingFromAlbum = cache[buildQueueFrom];
-		let loadedFromAlbum = cache[loadedBulkFrom];
-		let indexToVideoIdOfThis = {}; // list of indexes to videoIds in REAL ALBUM (loadedFrom) only.
-
-		if (!buildingFromAlbum || !loadedFromAlbum) return;
-		//TESTING WITHOUT THIS. WORKS OK! if (buildingFromAlbum.private) return;
-
-		// MAP INDEX TO VIDEO OF ALBUM WE HAVE LOADED.
-		// DO ALL BASED ON CACHE NOW, SO SHUFFLING DOESNT MATTER.
-		console.log("LOADEDFROMALBUM", {loadedFromAlbum});
-
-		for (let video of (loadedFromAlbum.items || [])) {
-			video = cache[video] || {};
-			indexToVideoIdOfThis[video.index] = video.id;
-		};
-		console.log(structuredClone({indexToVideoIdOfThis}), "FIRST TIME");
-
-		let albumsToUse = [];
-		let primaryVersions = this.GetPrimaryVersions(storage, buildQueueFrom) || [];
-		let linkedAlbums = storage.customisation.albumLinks[buildQueueFrom] || [];
-		let counterparts = buildingFromAlbum.privateCounterparts || [];
-
-		let extraSongs = storage.customisation.extraSongs[buildQueueFrom] || [];
-		
-		// priority order (later overwrite earlier)
-		if (primaryVersions) albumsToUse.push(...primaryVersions);
-		if (linkedAlbums) {
-			linkedAlbums = linkedAlbums
-				.map( v => { return { obj: cache[typeof(v) === "string" ? v : v.linkedId], off: v.offsetIndex }} ) // docs: "a and b will never be undefined", so no placeholder.
-				.sort( (a, b) => (a.obj.private && !b.obj.private) ? 1 : (!a.obj.private && b.obj.private) ? -1 : b.obj.items.length - a.obj.items.length )
-				.map( v => {return { id: v.obj.id, off: v.off }} );
-
-			// sort: (a,b): negative = a before b, positive = a after b, 0 or NaN = equal
-			// a is private and b is not: put a after always
-			// a is not and b is private: put b after always
-			// privacy is same (both are or both arent): do based on items length.
-
-			albumsToUse.push(...linkedAlbums);
-		};
-		if (counterparts) albumsToUse.push(...counterparts);
-
-		// if loading from smaller (eg original), need to add extra from deluxe.
-		// add to start of list, so is low priority.
-		if (buildingFromAlbum.id !== loadedFromAlbum.id) {
-			albumsToUse.unshift(buildingFromAlbum.id);
-		};
-
-		console.log(albumsToUse);
-
-		let changesByIndex = {};
-
-		for (let data of albumsToUse) {
-			let dataDatatype = typeof(data);
-			let album = (dataDatatype === "string") ? data : data.id;
-			let offsetIndex = (dataDatatype === "string") ? undefined : data.off;
-
-			album = cache[album];
-			if (!album || album.items.length === 0) continue;
-
-			for (let item of album.items) {
-				item = cache[item];
-				if (!item) continue;
-
-				let index = (offsetIndex) ? String(Number(item.index) + Number(offsetIndex)) : item.index;
-
-				let alreadyChanging = changesByIndex[index];
-				if (alreadyChanging) {
-					if (alreadyChanging.from.private === true) continue;
-					// removed this. instead, made priority of albumsToUse correct. most important last.
-					// if (album.private === false) continue; 
-				};
-
-				// why change if its the same?
-				// because midnights. queue built from original, replaced by 3am. 
-				// need to bring back to original.
-
-				changesByIndex[index] = {
-					video: item,
-					from: album
-				};
-			};
-		};
-
-		let changesByOriginalId = {extraByIndex: {}, "indexToVideoIdOfThis": indexToVideoIdOfThis};
-
-		console.log("indexToVideoIdOfThis", indexToVideoIdOfThis);
-		console.log("changesByIndex", structuredClone(changesByIndex));
-
-		for (let [k,v] of Object.entries(changesByIndex)) {
-			let originalId = indexToVideoIdOfThis[k];
-
-			if (originalId) changesByOriginalId[originalId] = v;
-			else changesByOriginalId.extraByIndex[k] = v;
-		};
-
-		// ADD EXTRA SONGS
-		for (let song of extraSongs) {
-			let item = cache[song.videoId];
-			if (!item) continue;
-
-			let fromAlbum = cache[item.album];
-			if (!fromAlbum) continue;
-
-			// WON'T HAVE AN originalId AS IS NEW TO ALBUM
-			//let existingHere = changesByOriginalId[song.index];
-			//if (existingHere && song.overwrite) {
-			//	changesByOriginalId[song.index]
-			//}
-			changesByOriginalId.extraByIndex[song.index] = {
-				video: item,
-				from: fromAlbum,
-				manualExtra: true,
-				overwrite: song.overwrite
-			};
-		};
-
-		return changesByOriginalId;
-	};
-
-
-
-
-
-
-	static CreateLongBylineForPlaylistPanel(replacement, buildingFromAlbum, artist) {
+	static CreateLongBylineForPlaylistPanel(cameFrom, albumData, artistData) {
 		return [
 			{
-				text: artist.name,
+				text: artistData.name,
 				navigationEndpoint: this.BuildEndpoint({
 					navType: "browse",
-					id: artist.id
+					id: artistData.id
 				})
 			},
 			{ text: this.YT_DOT },
 			{
-				text: replacement.from.name,
+				text: cameFrom.name,
 				navigationEndpoint: this.BuildEndpoint({
 					navType: "browse",
-					id: buildingFromAlbum.id
+					id: albumData.id
 				})
 			},
 			{ text: this.YT_DOT },
-			{ text: buildingFromAlbum.year }
+			{ text: albumData.year }
 		];
 	};
 
@@ -1178,7 +1055,7 @@ export class MWUtils {
 			};
 		};
 
-		if (this.UCacheItemIsSong(cacheItem)) {
+		if (cacheItem.type === "SONG" || cacheItem.type.match("VIDEO_TYPE")) {
 			if (cacheItem.liked === "LIKE") return {
 				"toggleMenuServiceItemRenderer": {
 					"defaultText": {
@@ -1308,18 +1185,6 @@ export class MWUtils {
 				}
 			}
 		};
-	};
-
-
-
-	static FillCDataOfListItem(storage, lir, data) {
-		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
-
-		if (!lir.cData) lir.cData = {};
-		
-		lir.cData.customNote = storage.customisation.notes[data.id];
-		lir.cData.tags = (storage.customisation.tags.videos[data.id] || []).map(v => storage.customisation.tags.tags[v]);
-
 	};
 
 
@@ -1634,35 +1499,49 @@ export class MWUtils {
 		};
 	};
 
-	static ModifyListItemRendererFromDataForAlbumPage(replacement, realAlbum, current) {
-		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
-		// eg, realAlbum = deluxe, replacement.from = original.
+	static AddListItemReplacements(lir, newData, albumData, artistData, minIndex) {
+		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
+		const playButton = this.SafeDeepGet(lir, this.Structures.playButtonFromLIRData());
 
-		if (current.musicResponsiveListItemRenderer) current = current.musicResponsiveListItemRenderer;
-		let playButton = this.SafeDeepGet(current, this.Structures.playButtonFromLIRData());
+		const vId = newData.id;
+		const plSetId = newData.newData.albumPlSetVideoId;
 
-		let vId = replacement.video.id;
-		let setPlId = replacement.video.albumPlSetVideoId;
+		playButton.playNavigationEndpoint = this.BuildEndpoint({
+			navType: "watch",
+			playlistId: albumData.mfId,
+			firstVideo: {
+				id: newData.id,
+				type: (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
+			},
+			playlistSetVideoId: plSetId,
+			index: newData.displayIndex - minIndex
+		});
 
-		// want to make play button work with playlistId being base, then adding extra from deluze version.
-		// different relationship, dont want deluxe to be overwriting.
+		playButton.accessibilityPlayData.accessibilityData.label = "Play " + newData.newData.name;
+		playButton.accessibilityPauseData.accessibilityData.label = "Pause " + newData.newData.name;
 
-		playButton.playNavigationEndpoint.watchEndpoint.videoId = vId;
-		if (setPlId) playButton.playNavigationEndpoint.watchEndpoint.playlistSetVideoId = setPlId;
+		lir.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = newData.newData.name;
+		lir.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint = playButton.playNavigationEndpoint;
 
-		if (replacement.from.private === true) playButton.playNavigationEndpoint.watchEndpoint.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK";
-		else playButton.playNavigationEndpoint.watchEndpoint.playlistId = replacement.from.mfId; // keep this, want to play from the main versions!!
+		lir.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text = this.SecondsToHMSStr(newData.newData.lengthSec);
+		lir.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.accessibility.accessibilityData.label = this.SecondsToWordyHMS(newData.newData.lengthSec);
 
-		playButton.accessibilityPlayData.accessibilityData.label = "Play " + replacement.video.name;
-		playButton.accessibilityPauseData.accessibilityData.label = "Pause " + replacement.video.name;
+		let l = lir.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer;
 
-		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = replacement.video.name;
-		current.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint.watchEndpoint = playButton.playNavigationEndpoint.watchEndpoint;
+		if (l && l.likesAllowed) {
+			l.likeStatus = newData.newData.liked;
+			l.target.videoId = vId;
+			l.serviceEndpoints[0].likeEndpoint.target.videoId = vId;
+			l.serviceEndpoints[1].likeEndpoint.target.videoId = vId;
+			l.serviceEndpoints[2].likeEndpoint.target.videoId = vId;
+		};
 
-		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.runs[0].text = this.SecondsToHMSStr(replacement.video.lengthSec);
-		current.fixedColumns[0].musicResponsiveListItemFixedColumnRenderer.text.accessibility.accessibilityData.label = this.SecondsToWordyHMS(replacement.video.lengthSec);
+		lir.playlistItemData = {
+			videoId: vId,
+			playlistSetVideoId: plSetId
+		};
 
-		current.menu.menuRenderer.items = [
+		lir.menu.menuRenderer.items = [
 			{
 				"menuServiceItemRenderer": {
 					"text": {
@@ -1799,7 +1678,7 @@ export class MWUtils {
 					},
 					"navigationEndpoint": this.BuildEndpoint({
 						navType: "browse",
-						id: replacement.from.id
+						id: newData.cameFrom.id
 					})
 				}
 			},
@@ -1817,106 +1696,63 @@ export class MWUtils {
 					},
 					"navigationEndpoint": this.BuildEndpoint({
 						navType: "browse",
-						id: realAlbum.artist
+						id: artistData.id
 					})
 				}
 			}
 		];
 
-		let l = current.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer;
-
-		if (l && l.likesAllowed) {
-			l.likeStatus = replacement.video.liked;
-			l.target.videoId = vId;
-			l.serviceEndpoints[0].likeEndpoint.target.videoId = vId;
-			l.serviceEndpoints[1].likeEndpoint.target.videoId = vId;
-			l.serviceEndpoints[2].likeEndpoint.target.videoId = vId;
-		};
-
-		current.playlistItemData.videoId = vId;
-
-		current.cData = replacement;
-
-		return current;
-	};
-
-	static ModifyListItemRendererForAnyPage(storage, browsePageType, lir) {
-		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
-
-		lir.menu.menuRenderer.items.push(this.CreateWriteNoteMenuItemRenderer(lir.playlistItemData.videoId));
-		lir.menu.menuRenderer.items.push(this.CreateAddTagMenuItemRenderer(lir.playlistItemData.videoId));
-
-		if (browsePageType === "MUSIC_PAGE_TYPE_PLAYLIST") {
-			let id = lir.playlistItemData?.videoId;
-			if (!id) return lir;
-
-			let cacheThis = storage.cache[id] || {};
-			if (!cacheThis.album || (cacheThis.artists || []).length === 0) return lir;
-
-			let customisationAlbum = storage.customisation.metadata[cacheThis.album] || {};
-			let artistId = customisationAlbum.artist || (cacheThis.type === "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK") ? (storage.cache[cacheThis.artists[0]].privateCounterparts[0]) : cacheThis.artists[0];
-			let customisationArtist = storage.customisation.metadata[artistId] || {};
-
-			let artistCache = storage.cache[artistId] || {};
-
-			if (customisationAlbum.thumb) {
-				lir.thumbnail.musicThumbnailRenderer = {
-					"thumbnail": {
-						"thumbnails": [
-							{
-								"url": customisationAlbum.thumb,
-								"width": this.IMG_HEIGHT,
-								"height": this.IMG_HEIGHT
-							}
-						]
-					},
-					"thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
-					"thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
-				};
-			};
-
-			if (customisationAlbum.title) lir.flexColumns[2].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = customisationAlbum.title;
-
-			lir.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs = [{
-				text: customisationArtist.name || artistCache.name,
-				navigationEndpoint: this.BuildEndpoint({navType: "browse", id: artistId})
-			}];
-
-			// TODO: CHECK THESE WORK WHEN ADDING ARTIST CUSTOMISATIOn
-			// TODO: ADD DEFINING EXPLICIT SONGS
-			// TODO customisationSong FOR SONG NAME ETCs
-		};
+		// TODO: menu items omg
 
 		return lir;
 	};
 
-	static ModifyPlaylistPanelRendererFromData(current, replacement, realAlbum, artist) {
-		let vId = replacement.video.id;
-		let plSetId = replacement.video.albumPlSetVideoId;
+	static AddPlaylistPanelRendererReplacements(vr, newData, albumData, artistData, backingQueuePlaylistId, minIndex) {
+		if (!vr.queueNavigationEndpoint) vr = this.GetPPVR(vr);
 
-		current.title.runs[0].text = replacement.video.name;
+		const vId = newData.id;
+		const plSetId = newData.newData.albumPlSetVideoId || vr.playlistSetVideoId;
 
-		// no longer run editlongbyline, so do here
-		current.longBylineText.runs = this.CreateLongBylineForPlaylistPanel(replacement, realAlbum, artist);
+		vr.navigationEndpoint.watchEndpoint = this.BuildEndpoint({
+			navType: "watch",
+			playlistId: albumData.mfId,
+			firstVideo: {
+				id: newData.id,
+				type: (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
+			},
+			playlistSetVideoId: plSetId ,
+			index: newData.displayIndex - minIndex
+		}).watchEndpoint; // KEEP CLICK PARAMS?
 
-		current.thumbnail = {
-			thumbnails: [
-				{ url: replacement.from.thumb, width: this.IMG_HEIGHT, height: this.IMG_HEIGHT }
-			]
+		/*let we = vr.navigationEndpoint.watchEndpoint;
+		we.videoId = vId;
+		we.index = newData.displayIndex - minIndex;
+		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
+		if (plSetId) we.playlistSetVideoId = plSetId;*/
+
+		vr.title.runs[0].text = newData.newData.name;
+		vr.longBylineText.runs = this.CreateLongBylineForPlaylistPanel(newData.cameFrom, albumData, artistData);
+
+		vr.thumbnail = {
+			thumbnails: [{ 
+				url: this.UpscaleImgQuality(newData.cameFrom.thumb),
+				width: this.IMG_HEIGHT, 
+				height: this.IMG_HEIGHT
+			}]
 		};
 		
-		current.lengthText.runs[0].text = this.SecondsToHMSStr(replacement.video.lengthSec);
-		current.lengthText.accessibility.accessibilityData.label = this.SecondsToWordyHMS(replacement.video.lengthSec);
+		vr.lengthText.runs[0].text = this.SecondsToHMSStr(newData.newData.lengthSec);
+		vr.lengthText.accessibility.accessibilityData.label = this.SecondsToWordyHMS(newData.newData.lengthSec);
 
-		let we = current.navigationEndpoint.watchEndpoint;
-		we.videoId = vId;
-		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (realAlbum.private === true) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
-		if (plSetId) we.playlistSetVideoId = plSetId;
 
-		current.videoId = vId;
-		current.queueNavigationEndpoint.queueAddEndpoint.videoId = vId;
+		vr.videoId = vId;
+		vr.playlistSetVideoId = plSetId;
+		vr.queueNavigationEndpoint.queueAddEndpoint.queueTarget.videoId = vId;
 
-		current.menu.menuRenderer.items = [
+		// TODO: menu items better omg
+		// TODO: clear queue by editing backingQueuePlaylist to remove all except playing
+
+		vr.menu.menuRenderer.items = [
 			{
 				"menuServiceItemRenderer": {
 					"text": {
@@ -1938,7 +1774,7 @@ export class MWUtils {
 										"videoId": vId
 									}
 								},
-								"backingQueuePlaylistId": current.queueNavigationEndpoint.queueAddEndpoint.queueTarget.backingQueuePlaylistId
+								"backingQueuePlaylistId": backingQueuePlaylistId
 							},
 							"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
 							"commands": [
@@ -1983,7 +1819,7 @@ export class MWUtils {
 										"videoId": vId
 									}
 								},
-								"backingQueuePlaylistId": current.queueNavigationEndpoint.queueAddEndpoint.queueTarget.backingQueuePlaylistId
+								"backingQueuePlaylistId": backingQueuePlaylistId
 							},
 							"queueInsertPosition": "INSERT_AT_END",
 							"commands": [
@@ -2007,7 +1843,7 @@ export class MWUtils {
 					}
 				}
 			},
-			this.CreateToggleMenuItemForLikeButton(replacement.video),
+			this.CreateToggleMenuItemForLikeButton(newData.newData),
 			{
 				"menuServiceItemDownloadRenderer": {
 					"serviceEndpoint": {
@@ -2092,7 +1928,7 @@ export class MWUtils {
 					},
 					"navigationEndpoint": this.BuildEndpoint({
 						navType: "browse",
-						id: replacement.from.id
+						id: albumData.id
 					})
 				}
 			},
@@ -2110,7 +1946,7 @@ export class MWUtils {
 					},
 					"navigationEndpoint": this.BuildEndpoint({
 						navType: "browse",
-						id: artist.id
+						id: artistData.id
 					})
 				}
 			},
@@ -2128,7 +1964,7 @@ export class MWUtils {
 					},
 					"serviceEndpoint": {
 						"deletePlaylistEndpoint": {
-							"playlistId": current.queueNavigationEndpoint.queueAddEndpoint.queueTarget.backingQueuePlaylistId,
+							"playlistId": backingQueuePlaylistId,
 							"command": {
 								"dismissQueueCommand": {}
 							}
@@ -2138,22 +1974,73 @@ export class MWUtils {
 			}
 		];
 
-		return current;
+		return vr;
 	};
 
+	
 
-	static BuildListItemRendererFromDataForAlbumPage(replacement, realAlbum) {
-		let video = replacement.video;
+	/**
+	 * Designed for generic editing.
+	 * Use specific func for replacements.
+	 */
+	static ModifyListItemRendererForAnyPage(lir, albumData, artistData, browsePageType) {
+		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
 
-		let index = Number(video.index);
-		if (index !== 0) index --;
+		const id = lir.playlistItemData?.videoId;
+		if (!id) return lir;
 
-		let playEndp = this.BuildEndpoint({
+		lir.menu.menuRenderer.items.push(this.CreateWriteNoteMenuItemRenderer(id));
+		lir.menu.menuRenderer.items.push(this.CreateAddTagMenuItemRenderer(id));
+
+		if (browsePageType === "MUSIC_PAGE_TYPE_PLAYLIST") {
+
+			if (albumData.thumb) {
+				lir.thumbnail.musicThumbnailRenderer = {
+					"thumbnail": {
+						"thumbnails": [
+							{
+								"url": albumData.thumb,
+								"width": this.IMG_HEIGHT,
+								"height": this.IMG_HEIGHT
+							}
+						]
+					},
+					"thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+					"thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+				};
+			};
+
+			lir.flexColumns[2].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text = albumData.title;
+
+			lir.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs = [{
+				text: artistData.name,
+				navigationEndpoint: this.BuildEndpoint({navType: "browse", id: artistData.id})
+			}];
+
+			// TODO: CHECK THESE WORK WHEN ADDING ARTIST CUSTOMISATIOn
+			// TODO: ADD DEFINING EXPLICIT SONGS
+			// TODO customisationSong FOR SONG NAME ETCs
+		};
+
+		return lir;
+	};
+
+	
+
+
+	static BuildListItemRendererFromDataForAlbumPage(newData, albumData, artistData, minIndex) {
+		const video = newData.newData
+		const index = newData.displayIndex - minIndex;
+
+		const playEndp = this.BuildEndpoint({
 			navType: "watch",
-			playlistId: realAlbum.mfId,
-			firstVideo: video,
-			index: index, // zero base index. TODO IS THIS THE ISSUE
-			playlistSetVideoId: video.albumPlSetVideoId
+			playlistId: albumData.mfId,
+			firstVideo: {
+				id: video,
+				type: (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
+			},
+			index: index,
+			playlistSetVideoId: newData.newData.albumPlSetVideoId
 		});
 
 		return {
@@ -2374,24 +2261,6 @@ export class MWUtils {
 									"text": {
 										"runs": [
 											{
-												"text": "Go to album"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ALBUM"
-									},
-									"navigationEndpoint": this.BuildEndpoint({
-										navType: "browse",
-										id: replacement.from.id
-									})
-								}
-							},
-							{
-								"menuNavigationItemRenderer": {
-									"text": {
-										"runs": [
-											{
 												"text": "Go to artist"
 											}
 										]
@@ -2401,7 +2270,7 @@ export class MWUtils {
 									},
 									"navigationEndpoint": this.BuildEndpoint({
 										navType: "browse",
-										id: realAlbum.artist
+										id: artistData.id
 									})
 								}
 							}
@@ -2456,19 +2325,15 @@ export class MWUtils {
 				},
 				itemHeight: "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_MEDIUM",
 				index: {
-					runs: [ { text: String(video.index) } ]
+					runs: [ { text: String(index) } ]
 				}
 			}
 		};
 	};
 
-	static BuildPlaylistPanelRendererFromData(replacement, realAlbum, artist, queuePlaylistId) {
-		// realAlbum is the album we've navigated to. replacement.from is where the replacement came from (duh)
-
-		let video = replacement.video;
-
-		let index = Number(video.index);
-		if (index !== 0) index --;
+	static BuildPlaylistPanelRendererFromData(newData, albumData, artistData, queuePlaylistId, minIndex) {
+		const video = newData.newData;
+		const index = newData.displayIndex - minIndex;
 
 		return {
 			"playlistPanelVideoRenderer": {
@@ -2480,12 +2345,12 @@ export class MWUtils {
 					]
 				},
 				"longBylineText": {
-					"runs": this.CreateLongBylineForPlaylistPanel(replacement, realAlbum, artist)
+					"runs": this.CreateLongBylineForPlaylistPanel(newData.cameFrom, albumData, artistData)
 				},
 				"thumbnail": {
 					"thumbnails": [
 						{
-							"url": this.UpscaleImgQuality(replacement.from.thumb),
+							"url": this.UpscaleImgQuality(newData.cameFrom.thumb),
 							"width": this.IMG_HEIGHT,
 							"height": this.IMG_HEIGHT
 						}
@@ -2507,13 +2372,13 @@ export class MWUtils {
 				"navigationEndpoint": {
 					"watchEndpoint": {
 						"videoId": video.id,
-						"playlistId": realAlbum.mfId,
+						"playlistId": albumData.mfId,
 						"index": index,
 						"playlistSetVideoId": video.albumPlSetVideoId,
 						"watchEndpointMusicSupportedConfigs": {
 							"watchEndpointMusicConfig": {
 								"hasPersistentPlaylistPanel": true,
-								"musicVideoType": (realAlbum.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
+								"musicVideoType": (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
 							}
 						}
 					}
@@ -2522,7 +2387,7 @@ export class MWUtils {
 				"shortBylineText": {
 					"runs": [
 						{
-							"text": artist.name
+							"text": artistData.name
 						}
 					]
 				},
@@ -2704,7 +2569,7 @@ export class MWUtils {
 									},
 									"navigationEndpoint": this.BuildEndpoint({
 										navType: "browse",
-										id: replacement.from.id
+										id: albumData.id
 									}),
 								}
 							},
@@ -2722,7 +2587,7 @@ export class MWUtils {
 									},
 									"navigationEndpoint": this.BuildEndpoint({
 										navType: "browse",
-										id: artist.id
+										id: artistData.id
 									})
 								}
 							},
@@ -2766,8 +2631,7 @@ export class MWUtils {
 						},
 						"queueInsertPosition": "INSERT_AT_END"
 					}
-				},
-				cData: replacement
+				}
 			}
 		};
 	};
