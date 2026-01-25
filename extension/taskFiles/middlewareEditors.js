@@ -1,8 +1,6 @@
 export class GETEditors {
 	static WatchtimeStore(request, response) {
 		// final = video has ended, full play.
-		let isFinal = request.urlObj.searchParams.get("final");
-		if (!isFinal) return;
 
 		// pe = playbackEnding. 1 = autoplay, 0 (or omitted) = skip
 		let pe = Number(request.urlObj.searchParams.get("pe"));
@@ -11,6 +9,9 @@ export class GETEditors {
 		// len = total media length
 		let len = Number(request.urlObj.searchParams.get("len"));
 
+		let isFinal = request.urlObj.searchParams.get("final");
+		if (!isFinal && cmt !== len) return; // "final" call not made for last item in playlist/album.
+
 		// ALLOW IF CONFIRMED AUTOPLAY (NOT SKIP), OR PLAYED 80%+
 		let validWatch = (pe === 1) || (cmt >= (len * 0.8));
 		console.log("WATCHTIME STATS", validWatch, "pe", pe === 1, "cmt", cmt >= (len * 0.8));
@@ -18,10 +19,15 @@ export class GETEditors {
 		//if (!validWatch) return; want to cache when was skipped! don't return :)
 
 		ext.DispatchEventToEW({
-			func: "add-watchtime",
-			videoId: request.urlObj.searchParams.get("docid"),
-			playingFrom: request.urlObj.searchParams.get("list"),
-			completeWatch: validWatch // TODO: add to bkgScript
+			func: "storage",
+			storageFunc: "add-watchtime",
+			data: [{
+				data: {
+					videoId: request.urlObj.searchParams.get("docid"),
+					playingFrom: request.urlObj.searchParams.get("list"),
+					completeWatch: validWatch
+				}
+			}]
 		});
 	};
 
@@ -73,7 +79,8 @@ export class SmallPOSTEditors {
 		};
 
 		ext.DispatchEventToEW({
-			func: "set-cache",
+			func: "storage",
+			storageFunc: "set-cache",
 			data: [{"data": gathered}]
 		});
 
@@ -90,7 +97,8 @@ export class SmallPOSTEditors {
 		if (!gathered) return;
 
 		ext.DispatchEventToEW({
-			func: "set-cache",
+			func: "storage",
+			storageFunc: "set-cache",
 			data: [{"data": gathered}]
 		});
 
@@ -124,7 +132,8 @@ export class SmallPOSTEditors {
 		if (!gathered || !gathered.id) return;
 
 		ext.DispatchEventToEW({
-			func: "set-cache",
+			func: "storage",
+			storageFunc: "set-cache",
 			data: [{"data": gathered}]
 		});
 
@@ -157,7 +166,8 @@ export class SmallPOSTEditors {
 		if (!gathered || !gathered.id) return;
 
 		ext.DispatchEventToEW({
-			func: "set-cache",
+			func: "storage",
+			storageFunc: "set-cache",
 			data: [{"data": gathered}]
 		});
 
@@ -209,7 +219,8 @@ export class SmallPOSTEditors {
 		console.log("GATHERED", gathered);
 
 		ext.DispatchEventToEW({
-			func: "set-cache",
+			func: "storage",
+			storageFunc: "set-cache",
 			data: [{"data": gathered}]
 		});
 	};
@@ -217,8 +228,8 @@ export class SmallPOSTEditors {
 
 	static async TidyQueueNextItems(request, response) {		
 		// SET PLAYER PAGE COLOURS
-		const thumbs = ext.SafeDeepGet(response, ext.Structures.thumbnailsFromNextResponse);
-		document.querySelector(":root").style.setProperty("--playing-thumbnail", ext.ChooseBestThumbnail(thumbs));
+		//const thumbs = ext.SafeDeepGet(response, ext.Structures.thumbnailsFromNextResponse);
+		//document.querySelector(":root").style.setProperty("--playing-thumbnail", `url(${ext.ChooseBestThumbnail(thumbs)})`);
 
 		let browsePage = document.querySelector("ytmusic-browse-response");
 		if (browsePage && browsePage.getAttribute("c-edited") === false) {
@@ -240,7 +251,7 @@ export class SmallPOSTEditors {
 
 		let [newContents, currentVideoWE, currentData] = await middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(
 			playlistPanel.contents,
-			(request.cParams || {}).buildQueueFrom,
+			(request.cParams || {}).buildQueueFrom || request.body.playlistId,
 			request.body.videoId,
 			false
 		);
@@ -749,8 +760,14 @@ export class MainPOSTEditors {
 	static async _EditQueueContentsFromResponse(queueContents, id, videoIdToSelect, areQueueDatas, queueDataRequestIds) {
 		if (id === undefined) return [undefined, undefined, undefined];
 		if (!queueDataRequestIds) queueDataRequestIds = [];
+
+		if (id.startsWith("OL")) {
+			id = await ext.StorageGet({ storageFunc: "mfId-to-id", id });
+		};
+		if (id === undefined) return [undefined, undefined, undefined];
 		
 		const newList = await ext.StorageGet({ storageFunc: "edit-list", id });
+		if (!newList.listItems) return [undefined, undefined, undefined];
 
 		const newItemOrder = [];
 		let currentWatchEndpoint;

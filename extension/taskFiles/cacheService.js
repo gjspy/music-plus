@@ -252,22 +252,24 @@ export class CacheService {
 		const [items, hasContinuation] = GetItems();
 		if (items.length === 0) return;
 		
-		const gathered = {
-			id: response.browseId,
-			type: response.browsePageType,
-			items: [],
-			_itemsIsContinuation: true, // WE KNOW WE ARE. "CollectContinuationData"
-			_itemsHasContinuation: hasContinuation
+		const gathered = [];
+
+		for (const v of items) {
+			let made;
+
+			if (v.musicResponsiveListItemRenderer) made = this.GetInfoFromLIR(v);
+			else if (v.musicTwoRowItemRenderer) made = this.GetInfoFromTRIR(v, response.browsePageType);
+			else if (v.continuationItemRenderer) continue;
+			else fconsole.log("WHAT IS THIS item FOR CONTINUATIONDATA", response.browseId, v);
+
+			if (!made) continue;
+
+			made._itemsIsContinuation = true;
+			made._itemsHasContinuation = hasContinuation;
+			gathered.push(made);
 		};
 
-		items.forEach((v) => {
-			if (v.musicResponsiveListItemRenderer) gathered.items.push(this.GetInfoFromLIR(v));
-			else if (v.musicTwoRowItemRenderer) gathered.items.push(this.GetInfoFromTRIR(v, response.browsePageType));
-			else if (v.continuationItemRenderer) return;
-			else fconsole.log("WHAT IS THIS item FOR CONTINUATIONDATA", response.browseId, v);
-		});
-
-		return gathered;
+		return gathered; // TODO NO LONGER ADDS TO PLAYLIST / ALBUM "ITEMS" AS HERE WE ONLY GET LIST OF LIRS.
 	};
 
 
@@ -610,7 +612,7 @@ export class CacheService {
 		fconsole.log("gathered", gathered);
 		if (!gathered) return;
 
-		gathered = gathered.map( v => {  return { data: v, _saveBackup: v._saveBackup } });
+		gathered = gathered.map( v => { return { data: v, _saveBackup: v._saveBackup }; });
 
 		ext.DispatchEventToEW({
 			func: "storage",

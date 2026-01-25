@@ -1257,11 +1257,10 @@ ytmusic-app ytmusic-player-page#player-page .c-player-bkg {
 	width: 100vw;
 	height: 100vh;
 
-	position: absolute;
-	top: 0px;
-	left: 0px;
-	background: var(--playing-thumbnail);
-	filter: var(--c-player-bkg-filter);
+	position: fixed;
+	top: calc(var(--ytmusic-nav-bar-height) * -1);
+	left: calc(var(--ytmusic-guide-width) * -1);
+	z-index: -1
 }
 
 .c-player-bkg {
@@ -1379,6 +1378,11 @@ ytmusic-app-layout[player-page-open] #nav-bar-background, ytmusic-app-layout[pla
 	opacity: 0 !important;
 }
 
+
+/*#player-bar-background {
+	background-image: var(--playing-thumbnail);
+	transition: background-image 1s;
+}*/
 
 
 ytmusic-nav-bar #right-content {

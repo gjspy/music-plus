@@ -352,6 +352,6 @@ XMLHttpRequest.prototype.send = function(body) { // used for player/next/atr/qoe
 	return originalXHRSend.apply(this, arguments);
 };
 
-fconsole.log("middleware initialised successfully");
+fconsole.log("middleware runner initialised successfully");
 
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = window.fetch, non clonable.)

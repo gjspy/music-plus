@@ -49,9 +49,6 @@ npx eslint .
 install eslint vs code extension
 
 TODO: auto add tag when playlist cache comes in (make sure only happens once, duplicate tags bad)
-TODO: auto link private counterparts
-TODO: mfIdMap (indexes)
-TODO: caching continuation
 TODO: make it completely fine to reload, eventDriven runs twice when reloaded, old listener not cancelled
 TODO: sidebar no longer has creator for playlist, may filter out on cient if want it back
 TODO: offset for linked albums
@@ -62,6 +59,9 @@ TODO: *** MENU ITEMS  OF EDITED LIRS NEED UPDATING ENDPOINTS.
 TODO: shuffle!
 TODO: LIR menuRender items arent edited?
 TODO: make buildFrom and loadFrom different. allow play from original, default updated (so can click TRIR buttons)
+
+TODO caching continuation NO LONGER ADDS TO PLAYLIST / ALBUM "ITEMS" AS HERE WE ONLY GET LIST OF LIRS.
+
 validate user account, so if switch to other yt channel doesnt show all elems from old one?
 
 make paperItems appear incrementally to not lag the page, like do 10 per frame or whatever

@@ -2029,14 +2029,14 @@ export class MWUtils {
 
 
 	static BuildListItemRendererFromDataForAlbumPage(newData, albumData, artistData, minIndex) {
-		const video = newData.newData
+		const video = newData.newData;
 		const index = newData.displayIndex - minIndex;
 
 		const playEndp = this.BuildEndpoint({
 			navType: "watch",
 			playlistId: albumData.mfId,
 			firstVideo: {
-				id: video,
+				id: video.id,
 				type: (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
 			},
 			index: index,

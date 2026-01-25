@@ -3,6 +3,7 @@ import { EWUtils, EWUtils as utils } from "../utilsew.js";
 
 
 const MIDDLEWARE = "../networkMiddleware.js";
+const PLAYERPAGE = "../taskFiles/playerPage.js";
 
 const MODULESCRIPTS = {
 	"ext": "utilsmw.js",
@@ -38,6 +39,14 @@ async function EWInjectMiddleware(injectionTarget) {
 	});
 
 	fconsole.log("EWINJECTMIDDLEWARE RESP", JSON.stringify(resp));
+
+	resp = await browser.scripting.executeScript({
+		"target": injectionTarget,
+		"files": [PLAYERPAGE],
+		"world": "MAIN"
+	});
+
+	fconsole.log("EWINJECTPLAYERPAGE RESP", JSON.stringify(resp));
 };
 
 
@@ -76,6 +85,9 @@ async function Big(request, sender) {
 	} else if (func === "get-populated") {
 		api = { "route": `${EWUtils.STORAGE_API}cache/${request.id}/${EWUtils.STORAGE_GETPOPULATED}` };
 
+	} else if (func === "mfId-to-id") {
+		api = { "route": `${EWUtils.STORAGE_API}cache/index/mfId/${request.id}/get`}; // .STORAGEGET is bulkget. WANT /get
+	
 	} else if (func === "edit-list") {
 		api = { "route": `${EWUtils.EDITOR_API}listItems/${request.id}` };
 	
@@ -84,6 +96,13 @@ async function Big(request, sender) {
 
 	} else if (func === "set-cache") {
 		api = { "route": `${EWUtils.STORAGE_API}cache/${EWUtils.STORAGE_SET}` };
+		meth = "set";
+
+	} else if (func === "add-watchtime") {
+		const now = Date.now();
+		request.data[0].data.id = String(now);
+
+		api = { "route": `${EWUtils.STORAGE_API}stats/watchtime/${now}/${EWUtils.STORAGE_SET}`};
 		meth = "set";
 	};
 
@@ -105,6 +124,47 @@ async function Big(request, sender) {
 	
 
 	
+};
+
+
+async function EWOMAutoLights(request) {
+	let storage = await EWUtils.StorageGetLocal();
+
+	console.log(request, storage.lightApi.endpoint, storage.lightApi.enabled);
+	if (!storage.lightApi.endpoint || (!storage.lightApi.enabled && request.autoMusic)) return;
+
+	let brightness = request.action === "dim" ? 0 :
+		request.action === "undim" ? 255 : 
+		request.action === "brightness" ? request.value : undefined;
+
+
+
+	if (brightness) {
+		fetch(storage.lightApi.endpoint + "/api/brightness?auto_music=" + request.autoMusic, {
+			method: "POST",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({
+				room: storage.lightApi.autoMusicRoom,
+				brightness,
+				transition: request.transition
+			})
+		}).then(v => console.log(v));
+
+
+	} else if (request.action === "setImg") {
+		//let resp = await fetch(request.url);
+		//let blob = await resp.blob();
+		const blob = new Blob([request.imgData], {type: request.imgType});
+
+		let formData = new FormData();
+		formData.append("file", blob);
+
+		fetch(storage.lightApi.endpoint + `/api/set-by-img-file?auto_music=${request.autoMusic}&room=${storage.lightApi.autoMusicRoom}`, {
+			method: "POST",
+			body: formData
+		}).then(v => console.log(v));
+
+	};
 };
 
 
@@ -142,7 +202,6 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "add-video-to-tag")			EWOMAddVideoToTag(request);
 	else if (f === "remove-video-from-tag")		EWOMRemoveVideoFromTag(request);
 	else if (f === "create-tag")				EWOMCreateTag(request);
-	else if (f === "video-watched")				EWOMWatchtimeStore(request);
 };
 
 
