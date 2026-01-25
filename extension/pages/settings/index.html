@@ -70,6 +70,19 @@
 
 		text-align: left;
 	}
+
+	#light-bright {
+		width: 100%;
+	}
+
+	#light-bright label {
+		width: fit-content;
+	}
+
+	#light-bright input#brightness {
+		height: 1em;
+		margin: 0;
+	}
 	
 	
 </style>
@@ -89,6 +102,10 @@
 			<div id="lights-control">
 				<button class="half" id="dim">Dim</button>
 				<button class="half" id="undim">Undim</button>
+			</div>
+			<div id="light-bright">
+				<label>Brightness</label>
+				<input type="range" min="0" max="255" id="brightness">
 			</div>
 
 			<button id="goto-ls">Light Show</button>

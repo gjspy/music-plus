@@ -225,6 +225,8 @@ function FetchModifyRequest(requestData, resource, body_) {
 
 
 async function newFetch(resource, options) {
+	if (options === undefined) options = {};
+	
 	let request;
 	let resourceIsStr = typeof(resource) === "string";
 

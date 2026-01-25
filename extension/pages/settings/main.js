@@ -7,8 +7,9 @@ const TTAV_FUNCTIONS = {
 	"strg-tok": ["Set Storage API Token"],
 	"strg-cachedel": ["Delete Cache Entry of ID", {needExtStorage: true}],
 	"strg-human": ["Show Human Cache Entry of ID", {needExtStorage: true}],
-	"light-api": ["Set Light API endpoint", {needExtStorage: true}],
-	"light-entities": ["Set Light API EntitiesToKeys"]
+	"light-api": ["Set Light API endpoint[\"https://...\"]"],
+	"light-entities": ["Set Light API EntitiesToKeys[lightShow]"],
+	"light-room": ["Set Light API room"]
 };
 
 async function RefreshSidebar() {
@@ -101,6 +102,7 @@ async function Processor(func, {content = "", needExtStorage = false}) {
 	else if (func === "light-api") lclStorage.lightApi.endpoint = content;
 	else if (func === "light-entities") lclStorage.lightApi.entitiesToKeys = JSON.parse(content);
 	else if (func === "light-enabled") lclStorage.lightApi.enabled = content;
+	else if (func === "light-room") lclStorage.lightApi.autoMusicRoom = content;
 	else if (func === "clr-lcl") lclStorage = {}; // TODO: DOES NOT WORK. USE browser.storage.local.clear()
 	else if (func === "clr-ext") extStorage.cache = {};
 
@@ -143,6 +145,7 @@ async function init() {
 		lightCont.querySelector("#goto-ls").onclick = () => browser.tabs.create({ url: browser.runtime.getURL("pages/lightshow/index.html") });
 		lightCont.querySelector("#dim").onclick =   () => browser.runtime.sendMessage({ func: "auto-lights", action: "dim",   autoMusic: false});
 		lightCont.querySelector("#undim").onclick = () => browser.runtime.sendMessage({ func: "auto-lights", action: "undim", autoMusic: false});
+		lightCont.querySelector("#brightness").onchange = (e) => browser.runtime.sendMessage({ func: "auto-lights", action: "brightness", value: e.target.value, autoMusic: false });
 	};
 
 	const textarea = document.querySelector("textarea");

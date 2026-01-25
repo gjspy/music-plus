@@ -200,7 +200,7 @@ song metadata editing - name, explicit, LYRICS, PLAY SECTION! SEE ABOVE! DO NOW!
 *** NEW BACKUPS SYSTEM: ***
 make it so it saves not literally EVERY time, but one every hour for the past 24 hours, then 1 a day for the past week/month?
 
-
+TODO: popup, get brightness from lightApi for slider.
 
 
 

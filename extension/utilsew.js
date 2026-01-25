@@ -12,7 +12,8 @@ export class EWUtils {
 			lightApi: {
 				endpoint: "",
 				enabled: false,
-				entitiesToKeys: {}
+				entitiesToKeys: {},
+				autoMusicRoom: ""
 			}
 		},
 		

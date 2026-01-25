@@ -392,6 +392,7 @@ export class InjectMyPaperItems {
 		// NAME, YT DOES NOT UPDATE AS PAPER IS DETACHED?
 
 		let title = item.name || "?";
+		title = title.replace(/^\[.*?\] /, "");
 		if (title === "?" && ytLoadedInfo?.title) title = ytLoadedInfo?.title;
 
 		// SUBTITLE: PRIORITISE CACHE. BETTER DATA.
