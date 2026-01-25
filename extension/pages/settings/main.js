@@ -103,7 +103,10 @@ async function Processor(func, {content = "", needExtStorage = false}) {
 	else if (func === "light-entities") lclStorage.lightApi.entitiesToKeys = JSON.parse(content);
 	else if (func === "light-enabled") lclStorage.lightApi.enabled = content;
 	else if (func === "light-room") lclStorage.lightApi.autoMusicRoom = content;
-	else if (func === "clr-lcl") lclStorage = {}; // TODO: DOES NOT WORK. USE browser.storage.local.clear()
+	else if (func === "clr-lcl") {
+		await browser.storage.local.clear();
+		lclStorage = {};
+	}
 	else if (func === "clr-ext") extStorage.cache = {};
 
 	if (lclStorage !== lclBefore) await EWUtils.StorageSetLocal(lclStorage);
