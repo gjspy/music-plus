@@ -1,0 +1,12 @@
+{
+  "addons": {
+    "sitefixer@ultra": {
+      "updates": [
+        {
+          "version": "4.1.11",
+          "update_link": "https://gjspy.github.io/music-plus/release.xpi"
+        }
+      ]
+    }
+  }
+}
