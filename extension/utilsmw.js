@@ -1506,7 +1506,7 @@ export class MWUtils {
 		const vId = newData.id;
 		const plSetId = newData.newData.albumPlSetVideoId;
 
-		playButton.playNavigationEndpoint = this.BuildEndpoint({
+		if (albumData.mfId) playButton.playNavigationEndpoint = this.BuildEndpoint({
 			navType: "watch",
 			playlistId: albumData.mfId,
 			firstVideo: {

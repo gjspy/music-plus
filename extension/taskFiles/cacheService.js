@@ -264,8 +264,12 @@ export class CacheService {
 
 			if (!made) continue;
 
-			made._itemsIsContinuation = true;
-			made._itemsHasContinuation = hasContinuation;
+			if (made.artists) {
+				made.artists = made.artists.map(v => v.id);
+			};
+
+			//made._itemsIsContinuation = true;
+			//made._itemsHasContinuation = hasContinuation;
 			gathered.push(made);
 		};
 
