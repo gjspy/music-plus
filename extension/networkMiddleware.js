@@ -88,7 +88,8 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		return oldResp;
 	};
 
-	if (!request.body || middlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
+	//if (!request.body || middlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
+	if (middlewareEditors.urlsToEdit.indexOf(urlObj.pathname) === -1) {
 		return oldResp;
 	};
 
@@ -101,11 +102,11 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	let respBody = JSON.parse(respText);
 	let toCacheOriginal = structuredClone(respBody);
 
-	let browseId = request.body.browseId ||
+	let browseId = request.body?.browseId ||
 		ext.GetBrowseIdFromResponseContext(toCacheOriginal.responseContext);
 
 	let responseIsContinuation = !!(
-		request.body.continuation ||
+		request.body?.continuation ||
 		urlObj.searchParams.get("ctoken") ||
 		urlObj.searchParams.get("continuation")
 	);

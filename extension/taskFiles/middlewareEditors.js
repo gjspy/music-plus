@@ -87,7 +87,7 @@ export class SmallPOSTEditors {
 		return;
 	};
 
-	static async CacheDislike(request, reponse) {
+	/* DELETED DUE TO BINARY REQUESTS static async CacheDislike(request, reponse) {
 		let gathered = {
 			id: request.body.target.videoId,
 			liked: "DISLIKE",
@@ -127,7 +127,7 @@ export class SmallPOSTEditors {
 				saved: true,
 				"type": type
 			};
-		};*/
+		};
 
 		if (!gathered || !gathered.id) return;
 
@@ -161,7 +161,7 @@ export class SmallPOSTEditors {
 				saved: false,
 				"type": type
 			};
-		}; WANT THIS! TODO! */
+		}; WANT THIS! TODO! 
 
 		if (!gathered || !gathered.id) return;
 
@@ -201,7 +201,7 @@ export class SmallPOSTEditors {
 
 			listItem.remove();
 		};
-	};
+	};*/
 
 
 	static async CacheFromNextItems(request, response, lyricPanel) {
@@ -244,15 +244,15 @@ export class SmallPOSTEditors {
 		catch (err) { console.trace(err); };
 
 		if (!playlistPanel || !playlistPanel.contents) return;
-		let isShuffle = request.body.watchNextType === "WATCH_NEXT_TYPE_MUSIC_SHUFFLE";
+		// TODOlet isShuffle = request.body.watchNextType === "WATCH_NEXT_TYPE_MUSIC_SHUFFLE";
 
 		console.log("originalPlaylistPanelcontents", structuredClone(playlistPanel.contents));
 		console.log(request.cParams, (request.cParams || {}), (request.cParams || {}).buildQueueFrom);
 
 		let [newContents, currentVideoWE, currentData] = await middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(
 			playlistPanel.contents,
-			(request.cParams || {}).buildQueueFrom || request.body.playlistId,
-			request.body.videoId,
+			(request.cParams || {}).buildQueueFrom || response.currentVideoEndpoint.watchEndpoint.playlistId,//|| request.body.playlistId,
+			response.currentVideoEndpoint.watchEndpoint.videoId,//request.body.videoId,
 			false
 		);
 
@@ -307,7 +307,7 @@ export class SmallPOSTEditors {
 		if (!queueDatas) return;
 		let buildFrom = request.cParams ? request.cParams.buildQueueFrom : undefined;
 
-		let [newContents, currentVideoWE, currentData] = await middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(queueDatas, buildFrom, undefined, true, request.body.videoIds);
+		let [newContents, currentVideoWE, currentData] = await middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(queueDatas, buildFrom, undefined, true);//, request.body.videoIds);
 
 		if (newContents) response.queueDatas = newContents;
 		return response; // was changed in-place.
