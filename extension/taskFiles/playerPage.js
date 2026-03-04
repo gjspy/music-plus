@@ -51,7 +51,6 @@ function NiceColours() {
 
 	function _GetNextThumb(playerBar) {
 		// use builtin queue api from playeruiService to get full queue, and find next
-		//let queueContents = playerBar.playerUiService.queue.getItems();
 		let state = playerBar.playerUiService.store.getState();
 		let queueContents = state.queue.items;
 		let automixContents = state.queue.automixItems;
@@ -223,12 +222,12 @@ function NiceColours() {
 		};
 
 		// now using apis for details
-		let playerResponse = playerBar.playerUiService.playerApi.getPlayerResponse();
+		let playerResponse = playerBar.playerApi.getPlayerResponse();
 		if (!playerResponse) return;
 
 		let videoDetails = playerResponse.videoDetails;
 
-		let currentTime = playerBar.playerUiService.playerApi.getCurrentTime();
+		let currentTime = playerBar.playerApi.getCurrentTime();
 		let totalTime = Number(videoDetails.lengthSeconds);
 
 		let v = currentTime / totalTime;
@@ -246,32 +245,16 @@ function NiceColours() {
 			nextThumb = ext.UpscaleImgQuality(nextThumb);
 		};
 
-
-		// trying to fix youtube's broken gapless audio;
-		// song metadata updates to next, but stays at end-of-song timestamp;
-		// so if has done this and is frozen, seekTo(0 seconds) to restart it.
-		let tryingToFix = false;
-
-		if (diff < 3 && thisVId !== playingVId && playingVId !== undefined) {
-			console.log("trying to fix, seeking and playing");
-			playerBar.playerUiService.playerApi.seekTo(0);
-			playerBar.playerUiService.playerApi.play();
-
-			tryingToFix = true;
-		};
-
 		// normal autoplay flow.
 		// no intervals / timeouts, simply always dim when at the end and undim at start.
-		let shouldBeDim = diff < OP_TRANSITION_TIME + 1 && nextThumb !== thisImg && !tryingToFix;
+		let shouldBeDim = diff < OP_TRANSITION_TIME + 1 && nextThumb !== thisImg;
 		if (shouldBeDim) {
 			_Dim();
-			// console.log("dimming");
 
 			dimmed = true;
 
 		} else {
 			_Undim();
-			// console.log("undimming");
 
 			if (dimmed === true) lastImg = thisImg;
 			dimmed = false;
