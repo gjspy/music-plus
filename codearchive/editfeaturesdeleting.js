@@ -540,126 +540,12 @@ export function SidebarEditFeatures() {
 	// this function is called when the edit button is clicked.
 	// HERE IS WHERE "DRAGGABLE" ATTR IS GIVEN TO ELEMS
 	function _EnableEditMode(ytButtonsCont, editButton) {
-		const newPlaylistBtn = ytButtonsCont.querySelector("yt-button-renderer"); // default "New Playlist" YT button.
-		UHideElem(newPlaylistBtn); // hide it!
-
-		UHideElem(editButton);
-
-		// create new buttons
-		const finishBtn = UCreateButton("check", "Finish", "dark");
-		UAddToClass(finishBtn, "c-side-main");
-		ytButtonsCont.append(finishBtn);
-
-
-		const folderBtn = UCreateButton("folder", "Create", "dark");
-		folderBtn.addEventListener("click",  function(e) {
-			_NewFolderPopup(finishBtn);
-		});
-
-		ytButtonsCont.append(folderBtn);
-
-
-		const addBtn = UCreateButton("add", "Line", "dark");
-		addBtn.addEventListener("click", function(e) {
-			_NewSeparatorPopup(finishBtn);
-		});
-		
-		ytButtonsCont.append(addBtn);
-
-		const carouselBtn = UCreateButton("add", "Carousel", "dark");
-		carouselBtn.addEventListener("click", function(e) {
-			_NewCarousel(finishBtn);
-		});
-
-		ytButtonsCont.append(carouselBtn);
-
-		// KEEP THIS AFTER CREATING ALL OTHER BUTTONS!
-		finishBtn.addEventListener("click", function(e) {
-			_DisableEditMode(editButton, newPlaylistBtn, [finishBtn, folderBtn, addBtn, carouselBtn]);
-		});
-
-
-		// all return div containing respective svgs
-		const visibleIcon = UGetSVGFromRaw("visible", true);
-		const invisibleIcon = UGetSVGFromRaw("invisible", true);
-		const pencilIcon = UGetSVGFromRaw("pencil", true);
-		const moveIcon = UGetSVGFromRaw("move", true);
-		const deleteIcon = UGetSVGFromRaw("delete", true);
-		const expandIcon = UGetSVGFromRaw("expand-up", true);
-
-		for (let elem of [visibleIcon, invisibleIcon, pencilIcon, deleteIcon]) {
-			UAddToClass(elem, "c-paper-btn");
-			UAddToClass(elem, "small");
-		};
-
-		UAddToClass(moveIcon, "c-paper-btn");
-		UAddToClass(moveIcon, "tiny");
-		UAddToClass(moveIcon, "c-uninteractable");
-
-		UAddToClass(expandIcon, "c-paper-btn");
-		UAddToClass(expandIcon, "tiny");
-
-		let editButtons = [visibleIcon, invisibleIcon, pencilIcon, moveIcon, deleteIcon, expandIcon];
 
 		let ovf = UShowGridOfMusicItems((v) => (
 			v.saved === true &&
 			!document.querySelector(`#guide [plId=${v.id}]`)
 		), editButtons, true, true, undefined, undefined, "sidebar-edit");
 
-		let tinyDelete = UGetSVGFromRaw("delete", true);
-		UAddToClass(tinyDelete, "c-paper-btn");
-		UAddToClass(tinyDelete, "tiny");
-
-		for (let elem of document.querySelectorAll("#guide .c-sidebar-sep")) {
-			elem.setAttribute("c-draggable","true");
-
-			let delBtn = tinyDelete.cloneNode(true);
-			elem.append(delBtn);
-
-			delBtn.addEventListener("click", function(e) {
-				elem.remove();
-
-				e.preventDefault();
-				e.stopImmediatePropagation();
-				e.stopPropagation();
-
-				let id = elem.getAttribute("plid");
-
-				UDispatchEventToEW({
-					func: "sidebar-delete-sep",
-					sepId: id
-				});
-			});
-		};
-
-
-		for (let elem of document.querySelectorAll("#guide .c-carousel")) {
-			elem.setAttribute("c-draggable","true");
-
-			let delBtn = tinyDelete.cloneNode(true);
-			elem.append(delBtn);
-
-			delBtn.addEventListener("click", function(e) {
-				elem.remove();
-
-				e.preventDefault();
-				e.stopImmediatePropagation();
-				e.stopPropagation();
-
-				let id = elem.getAttribute("plid");
-
-				UDispatchEventToEW({
-					func: "sidebar-delete-carousel",
-					folderId: id
-				});
-			});
-		};
-
-		// give editButtonCont to each paper item, containing new buttons.
-		for (let elem of document.querySelectorAll("#guide .c-paper-wrapper:not([is-primary])")) {
-
-			UAddEditButtonsToPaperItem(elem, ...editButtons);
-		};
 
 		_AddDraggableFeatures(ovf);		
 	};

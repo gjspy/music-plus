@@ -1528,7 +1528,7 @@ export class MWUtils {
 
 		let l = lir.menu.menuRenderer.topLevelButtons[0].likeButtonRenderer;
 
-		if (l && l.likesAllowed) {
+		if (l && l.likesAllowed && newData.changed) {
 			l.likeStatus = newData.newData.liked;
 			l.target.videoId = vId;
 			l.serviceEndpoints[0].likeEndpoint.target.videoId = vId;

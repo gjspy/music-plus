@@ -73,11 +73,12 @@ export function MWInit(moduleScriptsEntries) {
 			window.cMusicFixerRunningServices.sidebarService = sidebar;
 		} catch (err) { fconsole.error("failed to load sidebarService because", err); };
 
-		/*try {
+		try {
 			const edit = new window.sidebarEditService();
+			edit.init();
 
 			window.cMusicFixerRunningServices.sidebarEditService = edit;
-		} catch (err) { fconsole.error("failed to load sidebarEditService because", err); };*/
+		} catch (err) { fconsole.error("failed to load sidebarEditService because", err); };
 
 		try {
 			const events = new window.eventDriven();

@@ -8,7 +8,7 @@ const PLAYERPAGE = "../taskFiles/playerPage.js";
 const MODULESCRIPTS = {
 	"ext": "utilsmw.js",
 	"sidebarService": "taskFiles/sidebarService.js",
-	//"sidebarEditService": "taskFiles/sidebarEditService.js",
+	"sidebarEditService": "taskFiles/sidebarEditService.js",
 	"cacheService": "taskFiles/cacheService.js",
 	"middlewareEditors": "taskFiles/middlewareEditors.js",
 	"eventDriven": "taskFiles/eventDriven.js"

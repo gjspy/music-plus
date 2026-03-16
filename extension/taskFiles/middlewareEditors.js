@@ -936,7 +936,7 @@ export class MainPOSTEditors {
 				text: newList.artistData.name,
 				navigationEndpoint: ext.BuildEndpoint({
 					navType: "browse",
-					browseId: newList.artistData.id
+					id: newList.artistData.id
 				})
 			}]
 		};

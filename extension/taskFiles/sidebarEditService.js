@@ -23,6 +23,64 @@ export class SidebarEditFeatures {
 	};
 
 
+	AddEditButtonsToElem(elem) {
+		const paper = elem.querySelector(".c-paper-item");
+		
+
+		const normButtonCont = elem.querySelector(".c-paper-button-cont");
+		const editCont = normButtonCont.cloneNode(true);
+		ext.HideElem(normButtonCont);
+		ext.UnhideElem(editCont);
+
+		paper.append(editCont);
+		ext.AddToClass(editCont, "c-editing");
+
+		editCont.append(this.svgs["move"].cloneNode(true));
+
+		let isHidden = elem.matches(".c-hidden");
+		const vis = this.svgs[(isHidden) ? "invisible" : "visible"].cloneNode(true);
+
+		editCont.append(vis);
+		vis.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+
+			isHidden = !isHidden;
+
+			vis.replaceWith(this.svgs[(isHidden) ? "invisible" : "visible"].cloneNode(true));
+
+			ext.DispatchEventToEW({
+				func: "sidebar-vis-change",
+				id: elem.getAttribute("plId"),
+				"isHidden": isHidden
+			});
+		});
+
+		const isFolder = elem.matches(".c-paper-folder");
+		if (!isFolder) return;
+
+		const pencil = this.svgs["pencil"].cloneNode(true);
+		editCont.append(pencil);
+
+		pencil.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+
+			// TODO: Rename popup
+		});
+
+		const del = this.svgs["delete"].cloneNode(true);
+		editCont.insertBefore(del, editCont.firstElementChild);
+
+		del.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+
+			// TODO: delete popup
+		});
+	};
+
+
 	OpenEditModeOnClick() {
 		ext.HideElem(this.ytNewPlBtn);
 		ext.HideElem(this.buttons.edit);
@@ -32,7 +90,28 @@ export class SidebarEditFeatures {
 		ext.UnhideElem(this.buttons.sep);
 		ext.UnhideElem(this.buttons.carousel);
 
+		for (const elem of document.querySelectorAll("#guide .c-sidebar-sep, #guide .c-carousel")) {
+			elem.setAttribute("c-draggable","true");
 
+			const del = this.svgs["delete"].cloneNode(true);
+			elem.append(del);
+
+			del.addEventListener("click", (e) => {
+				e.preventDefault();
+				elem.stopImmediatePropagation();
+
+				elem.remove();
+
+				ext.DispatchEventToEW({
+					func: "delete-sidebar-elem",
+					id: elem.getAttribute("plid")
+				});
+			});
+		};
+
+		for (const elem of document.querySelectorAll("#guide .c-paper-wrapper:not([is-primary])")) {
+
+		};
 	};
 
 	CloseEditModeOnClick() {
@@ -88,8 +167,8 @@ export class SidebarEditFeatures {
 	};
 
 
-	constructor() {
-		this.ytButtonsCont = document.querySelector(ext.HELPFUL_SELECTORS.sidebarYTButtonsCont); // TODO: this errors, bcs queries before yt has loaded the buttn
+	async init() {
+		this.ytButtonsCont = (await ext.WaitForBySelector(ext.HELPFUL_SELECTORS.sidebarYTButtonsCont, undefined, false))[0];
 		this.ytNewPlBtn = this.ytButtonsCont.querySelector("yt-button-renderer");
 
 		// RENAME YT BUTTON FROM "New Playlist" TO "New"
@@ -100,5 +179,10 @@ export class SidebarEditFeatures {
 
 		ext.UnhideElem(this.buttons.edit);
 		this.GenerateSVGs();
+	};
+
+
+	constructor() {
+		
 	};
 };
