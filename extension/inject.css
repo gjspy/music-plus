@@ -1,18 +1,13 @@
 :root {
-	--paper-title-size: 14px;
-	--paper-subtitle-size: 12px;
-	--paper-title-line-height: 20px;
+	--paper-title-size: 0.875em;
+	--paper-subtitle-size: 0.75em;
 	--paper-max-line-clamp: 3;
 
-	--infolder-title-size: 13px;
-	--infolder-subtitle-size: 10px;
-	--infolder-title-line-height: 16px;
-
 	--c-paper-icon-size: 20%;
-	--infolder-icon-size: 20%;
 
-	--c-paper-padding-top: 3px;
-	--c-paper-padding-btm: 4px;
+	--c-paper-padding-top: 0.1875em;
+	--c-paper-padding-btm: 0.25em;
+	--paper-item-padding-left: 0.375em;
 
 	--c-paper-border-radius: 4px;
 
@@ -21,23 +16,13 @@
 	--c-paper-solo-btn-padding: 0px 10px 0px 2px;
 
 	--folder-cont-padding-left: 25px;
-	--paper-item-padding-left: 6px;
 
-	--paper-item-width: 97%;
-	--folder-cont-width: calc(var(--paper-item-width) - var(--folder-cont-padding-left) + var(--paper-item-padding-left));
-	--folder-item-width: 100%;
 	--c-yt-background: #1d1d1d;
 
 	--dragging-opac: 0.5;
 	--dragging-oob-opac: 0.75;
 
-	--paper-spinner-container-rotation-duration: 1568ms;
-	--paper-spinner-expand-contract-duration: 1333ms;
-	--paper-spinner-full-cycle-duration: 5332ms;
-	--paper-spinner-cooldown-duration: 400ms;
-
 	--sidebar-width: var(--ytmusic-guide-width, 240px);
-	--sidebar-folder-scale: 0.8;
 
 	--max-bright-white: rgba(255,255,255,1);
 	--high-bright-white: rgba(220,220,220, 1);
@@ -51,16 +36,11 @@
 
 	--fancy-list-width: 30vw;
 
-
 	scrollbar-width: none;
 }
 
 .c-paper-wrapper {
-	--paper-min-height: 50px;
-}
-
-.c-paper-folder-cont > .c-paper-wrapper {
-	--paper-min-height: 40px !important;
+	--paper-min-height: 3.125em;
 }
 
 .c-paper-btn {
@@ -238,14 +218,10 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item {
 	display: flex;
 	flex-direction: row;
 
-	width: var(--paper-item-width);
-	/*max-height: calc(var(--paper-title-line-height) * var(--paper-max-line-clamp));*/
-	max-height: 100%;
+	width: 100%;
+	box-sizing: border-box;
 
-	min-height: 25px;
 	padding: var(--c-paper-padding-top) 0px var(--c-paper-padding-btm) var(--paper-item-padding-left);
-
-	/*margin: 0px 0px 1% 0px; removed because of possibility of clicking on margin, event goes to href of cont, not yt navigation click*/
 
 	border-radius: var(--c-paper-border-radius);
 	transition: background-color 0.1s ease;
@@ -277,24 +253,9 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item {
 		.c-paper-text-cont * {
 			line-clamp: 2;
 			-webkit-line-clamp: 2;
-
-			/*word-break: break-all;*/
 		}
 	}
-
-	& ytmusic-play-button-renderer {
-		visibility: hidden;
-		position: absolute;
-		max-height: 0px;
-	}
 }
-
-/*svg.c-paper-icon {
-	/*height: calc(var(--c-paper-icon-size)*1.1);
-	width: calc(var(--c-paper-icon-size)*1.1);//
-	height: var(--c-paper-icon-size);
-	width: var(--c-paper-icon-size);
-}*/
 
 .c-paper-button-cont svg {
 	height: 100%;
@@ -346,10 +307,12 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-icon-cont > .
 
 
 a.c-paper-wrapper[plId^="UC"] .c-paper-icon-cont img,
-a.c-ovf-elem[plId^="UC"] .c-paper-icon-cont img,
-a.c-paper-wrapper[plId^="FEmusic_library_privately_owned_artist"] .c-paper-icon-cont img,
-a.c-ovf-elem[plId^="FEmusic_library_privately_owned_artist"] .c-paper-icon-cont img{
+a.c-paper-wrapper[plId^="FEmusic_library_privately_owned_artist"] .c-paper-icon-cont img {
 	border-radius: 50% !important;
+}
+
+#guide #sections :nth-child(2) > div#items {
+	font-size: 16px;
 }
 
 
@@ -365,10 +328,10 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-icon-cont > .
 }
 
 .c-paper-text-cont {
-		padding: 0px 0px 0px 10px;
-		font-family: Roboto,Noto Naskh Arabic UI,Arial,sans-serif;
-		height: var(--c-paper-icon-size);
-		max-width: calc(100% - var(--c-paper-icon-size));
+	padding: 0px 0px 0px 0.625em;
+	font-family: Roboto,Noto Naskh Arabic UI,Arial,sans-serif;
+	height: var(--c-paper-icon-size);
+	max-width: calc(100% - var(--c-paper-icon-size));
 
 	& .c-paper-title {
 		font-size: var(--paper-title-size);
@@ -376,7 +339,7 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-icon-cont > .
 		text-justify: none;
 		font-weight: 550;
 		color: var(--high-bright-white);
-
+		cursor: pointer;
 	}
 
 	& .c-paper-subtitle {
@@ -432,10 +395,7 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-button-cont {
 	flex-direction: row;
 	align-items: center;
 
-	/*padding-bottom: 3px;*/
 	margin-top: -3px;
-
-	/*visibility: visible;*/
 	opacity: 0;
 
 	margin-left: auto;
@@ -452,9 +412,6 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-button-cont {
 
 	pointer-events: none;
 
-	/*background: transparent;*/
-	/*background: linear-gradient(to left, rgba(29, 29, 29, 1), rgba(29, 29, 29, 0.8) 80%, rgba(29, 29, 29, 0));*/
-	/*background: linear-gradient(to left, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.7) 70%, transparent);*/
 	border-radius: var(--c-paper-border-radius);
 
 	& > :not(.bkg-cont):not(:has(svg.move)) {
@@ -466,7 +423,7 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-button-cont {
 		}
 	}
 
-	& > :not(.bkg-cont) { /* direct children only? */
+	& > :not(.bkg-cont) {
 		transition: transform 0.03s linear;
 
 		&:not(.c-uninteractable):hover {
@@ -493,11 +450,6 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-button-cont {
 	&.c-editing {
 		opacity: 1 !important;
 	}
-
-	/*&.c-active {
-		opacity: 1 !important;
-	}*/
-
 }
 
 
@@ -532,44 +484,14 @@ div:not(.c-carousel) > .c-paper-wrapper > .c-paper-item > .c-paper-button-cont >
 }
 
 .c-paper-folder-cont {
+	font-size: 0.8em;
+
 	display: flex;
 	flex-direction: column;
 
-	/*padding: 0px 0px 20px var(--folder-cont-padding-left);*/
 	padding: 0px 0px 0px var(--folder-cont-padding-left);
 	width: var(--folder-cont-width);
 	cursor: default;
-
-	/*&:not(:empty) {
-		margin-top: -8px;
-	}*/
-
-	& .c-paper-wrapper {
-		margin: 0px;
-
-		/*transform: scale(var(--sidebar-folder-scale));*/
-
-		/*transform-origin: top left;*/
-		width: var(--folder-item-width);
-
-		& .c-paper-title {
-			font-size: var(--infolder-title-size);
-			line-height: var(--infolder-title-line-height);
-		}
-
-		& .c-paper-subtitle {
-			font-size: var(--infolder-subtitle-size);
-		}
-
-		/*& .c-paper-icon {
-			/*##width: var(--infolder-icon-size);
-			height: var(--c-paper-icon-size);
-
-			/*padding-bottom: 3px;
-		}*/
-	}
-
-
 }
 
 body:has([c-dragging="oob"]) {
@@ -592,12 +514,16 @@ body:has([c-dragging="oob"]) {
 	display: none;
 }
 
-.c-ovf-elem {
+.c-grid-popup a.c-paper-wrapper {
 	text-decoration: none;
 	color: initial;
 }
 
-.c-ovf-elem label {
+.c-grid-popup a.c-paper-wrapper .c-paper-item {
+	flex-direction: column;
+}
+
+.c-grid-popup a.c-paper-wrapper label {
 	width: 100%;
 	height: 37px;
 
@@ -617,7 +543,7 @@ body:has([c-dragging="oob"]) {
 	pointer-events: none;
 }
 
-.c-ovf-elem .c-paper-title {
+.c-grid-popup a.c-paper-wrapper .c-paper-title {
 	-webkit-line-clamp: 3;
 	line-clamp: 3;
 	overflow: hidden;
@@ -628,7 +554,7 @@ body:has([c-dragging="oob"]) {
 	line-height: 12px;
 }
 
-.c-ovf-elem .c-paper-subtitle {
+.c-grid-popup a.c-paper-wrapper .c-paper-subtitle {
 	display: flex;
 
 	justify-content: center;
@@ -643,8 +569,14 @@ body:has([c-dragging="oob"]) {
 	color: #fff;
 }
 
-.c-ovf-elem .c-paper-subtitle > * {
+.c-grid-popup a.c-paper-wrapper .c-paper-subtitle > * {
 	flex-shrink: 0;
+}
+
+.c-grid-popup a.c-paper-wrapper .c-paper-icon-cont {
+	width: 100% !important;
+	padding: 10%;
+	box-sizing: border-box;
 }
 
 .c-sidebar-sep {
@@ -671,6 +603,7 @@ body:has([c-dragging="oob"]) {
 }
 
 .c-sidebar-sep .c-sep-title {
+	font-size: 0.6em;
 	flex-shrink: 0;
 	flex-grow: 0;
 
@@ -820,13 +753,13 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 
 	background-color: #0000006e;
 
-	opacity: 0;
+	/*opacity: 0;
 	transition: opacity 0.3s ease;
 
 	&.active {
 		opacity: 1;
 		transition: opacity 0.05s ease;
-	}
+	}*/
 }
 
 .c-popup-bkg:has(.c-dropdown) {
@@ -891,53 +824,6 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 	/*width: inherit;*/
 	padding: 0px 0px 0px 15px;
 
-	& .c-text-input {
-		height: 40px;
-
-		&.invalid .c-ul-bkg {
-			background-color: red;
-		}
-
-		& .c-label-hover {
-			height: 12px;
-			/*! display: inline; */
-		}
-
-		& label {
-			position: absolute;
-
-			color: var(--yt-spec-text-secondary);
-			font-size: 20px;
-			line-height: 24px;
-
-			user-select: none;
-			pointer-events: none;
-
-			transition: transform 0.1s ease, font-size 0.1s ease;
-
-			&.floating {
-				transform: translateY(-75%);
-				font-size: 12px;
-				margin-right: auto;
-			}
-		}
-
-		& input {
-			width: 100%;
-			height: 24px;
-
-			border: none;
-			padding: 0px;
-
-			background-color: #0000;
-			color: var(--yt-spec-text-secondary);
-
-			outline-style: none;
-			font-size: 14px;
-			caret-color: var(--yt-spec-light-blue);
-		}
-	}
-
 	&:has(:first-child.c-popup-text-line) {
 		margin-top: -26px;
 
@@ -945,6 +831,53 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 			margin-left: 0px;
 		}
 	}
+}
+
+.c-popup-content .c-text-input {
+	height: 40px;
+
+	&.invalid .c-ul-bkg {
+		background-color: red;
+	}
+
+	& .c-label-hover {
+		height: 12px;
+		/*! display: inline; */
+	}
+
+	& input {
+		width: 100%;
+		height: 24px;
+
+		border: none;
+		padding: 0px;
+
+		background-color: #0000;
+		color: var(--yt-spec-text-secondary);
+
+		outline-style: none;
+		font-size: 14px;
+		caret-color: var(--yt-spec-light-blue);
+	}
+}
+
+.c-popup-cont .c-text-input label {
+	position: absolute;
+
+	color: var(--yt-spec-text-secondary);
+	font-size: 20px;
+	line-height: 24px;
+
+	user-select: none;
+	pointer-events: none;
+
+	transition: transform 0.1s ease, font-size 0.1s ease;
+}
+
+.c-popup-cont .c-text-input:has(.floating) label {
+	transform: translateY(-75%);
+	font-size: 12px;
+	margin-right: auto;
 }
 
 .c-popup-text-line {
@@ -1085,42 +1018,61 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 	overscroll-behavior: none;
 }
 
-.c-ovf-elem {
+.c-grid-popup :not(.c-carousel) > a.c-paper-wrapper {
 	width: 125px;
-	height: 175px;
+	height: 250px;
 }
 
-.c-ovf-elem[draggable="true"] {
+.c-grid-popup div.c-carousel {
+	width: 125px;
+	
+	padding: 0 !important;
+	margin-top: 10px;
+}
+
+.c-grid-popup .c-sidebar-sep {
+	width: 125px;
+	height: 250px;
+	box-sizing: border-box;
+}
+
+.c-grid-popup .c-sidebar-sep .c-paper-btn {
+	height: 15px;
+}
+
+.c-grid-popup a.c-paper-wrapper[draggable="true"] {
 	cursor: grab;
 }
 
-.c-ovf-elem .c-paper-folder-cont {
+.c-grid-popup a.c-paper-wrapper .c-paper-folder-cont {
 	display: none;
 }
 
-.c-ovf-elem[c-dragging="true"] {
+.c-grid-popup a.c-paper-wrapper[c-dragging="true"] {
 	opacity: var(--dragging-opac);
 }
 
-.c-ovf-elem[c-dragging="oob"] { /* Out Of Bounds*/
+.c-grid-popup a.c-paper-wrapper[c-dragging="oob"] { /* Out Of Bounds*/
 	opacity: var(--dragging-oob-opac);
 }
 
-.c-ovf-elem img, .c-ovf-elem .c-paper-icon.folder {
+.c-grid-popup a.c-paper-wrapper img, .c-grid-popup a.c-paper-wrapper .c-paper-icon.folder {
 	width: 80%;
 	aspect-ratio: 1 / 1;
 
 	object-fit: contain;
-
-	margin: 5px 0 0 10%;
 
 	/* these are for svg but dont affect img so its fine */
 	height: unset;
 	fill: white;
 }
 
-.c-ovf-elem .c-paper-btn {
-	display: none;
+.c-grid-popup a.c-paper-wrapper .c-paper-btn {
+	display: none !important;
+}
+
+.c-grid-popup a.c-paper-wrapper .c-paper-button-cont {
+	display: none !important;
 }
 
 
@@ -1692,8 +1644,8 @@ ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_ALBUM"] {
 .c-carousel .c-paper-wrapper,
 .c-carousel .c-paper-item,
 .c-carousel .c-paper-icon-cont {
-	width: 30px;
-	height: 30px;
+	width: 1.875em;
+	height: 1.875em;
 
 	position: relative;
 }
@@ -1701,7 +1653,7 @@ ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_ALBUM"] {
 
 .c-carousel .c-paper-icon {
 	border-radius: 2px;
-	height: 30px;
+	height: 100%;
 	aspect-ratio: 1/1;
 	filter: drop-shadow(#342d2db0 1px 1px 2px);
 
@@ -1713,12 +1665,13 @@ ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_ALBUM"] {
 	margin-bottom: 5px;
 }
 
-.c-carousel[c-draggable] {
+.c-carousel[c-draggable="true"] {
 	cursor: grab;
 	height: 60px !important;
 }
 
-.c-carousel[c-draggable]:has(> :last-child:nth-child(1)) {
+.c-carousel[c-draggable="true"]:has(> :last-child:nth-child(1)),
+.c-grid-popup .c-carousel {
 	border-radius: 4px;
 	padding: 10px;
 	background: rgba(100,100,100,0.3);

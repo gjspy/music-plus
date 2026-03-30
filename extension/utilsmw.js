@@ -260,6 +260,12 @@ export class MWUtils {
 		]);
 	};
 
+	static Delay(ms) {
+		return new Promise((resolve) => {
+			setTimeout(() => resolve(), ms);
+		});
+	};
+
 	static UpscaleImgQuality(imgUrl) {
 		// regex matches = or - and char (w or h) and then digits.
 		// all are capture groups so can re-place contents while replacing num to 544.
@@ -389,68 +395,6 @@ export class MWUtils {
 		})).storage;
 		
 		return storage;
-	};
-
-	static FilterStorageResults(storage, filterFunction) {
-		const values = Object.values(storage.cache);
-		return values.filter(filterFunction);
-	};
-
-
-	static SortStorageResults(entireStorage, filteredResults) {
-		// GROUP BY PRIVACY -> TYPE -> (ARTIST ID)? -> ITEM NAME
-
-		const organisation = [{}, {}]; // NOT AND PRIVATE
-
-		filteredResults.forEach((v) => {
-			if (v.type !== "ARTIST" && v.type !== "ALBUM" && v.type !== "PLAYLIST") return;
-			if (v.id === this.VARIOUS_ARTISTS_ID) return;
-
-			const indexByPrivacy = Number(Boolean(v.private));
-			let group = organisation[indexByPrivacy];
-
-			if (!group[v.type]) group[v.type] = {};
-			group = group[v.type];
-
-			if (v.type === "ALBUM") {
-				if (!group[v.artist]) group[v.artist] = {};
-				group = group[v.artist];
-			};
-
-			group[v.id] = {
-				id: v.id,
-				name: v.name
-			};
-		});
-
-		for (const privateGroup of organisation) {
-			for (const [type, group] of Object.entries(privateGroup)) { // ALBUM: [], ARTIST: [], PLAYLIST: []
-				if (type === "ALBUM") {
-					const alphabeticalArtists = Object.values(group).sort((a,b) => {
-						a = entireStorage.cache[a].name;
-						b = entireStorage.cache[b].name;
-						return a.localeCompare(b);
-					});
-
-					for (const artistGroup of Object.values(alphabeticalArtists)) {
-						const alphabeticalReleases = Object.values(artistGroup).sort((a, b) => a.name.localeCompare(b.name));
-
-						alphabeticalReleases.forEach((v) => {
-						//	_CreateOVFPaperItem(paperService, ovf, v.id);
-						});
-							
-					};
-
-					continue;
-				};
-
-				let alphabetical = Object.values(group).sort((a, b) => a.name.localeCompare(b.name));
-
-				alphabetical.forEach((v) => {
-					//_CreateOVFPaperItem(paperService, ovf, v.id);
-				});				
-			};
-		};
 	};
 
 

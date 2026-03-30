@@ -59,23 +59,16 @@ TODO: *** MENU ITEMS  OF EDITED LIRS NEED UPDATING ENDPOINTS.
 TODO: shuffle!
 TODO: LIR menuRender items arent edited?
 TODO: make buildFrom and loadFrom different. allow play from original, default updated (so can click TRIR buttons)
+fix reloading sidebar when yt redreshes it
 
 TODO caching continuation NO LONGER ADDS TO PLAYLIST / ALBUM "ITEMS" AS HERE WE ONLY GET LIST OF LIRS.
 
 validate user account, so if switch to other yt channel doesnt show all elems from old one?
 
-make paperItems appear incrementally to not lag the page, like do 10 per frame or whatever
-
-FEELS SNAPPY STILL AFTER ADDING PAPERITEMS!
-
-
-removing last child of folder does not work (inc carousel)
 sections that are draggable, another variant of folder
 titles for sidebar, variant for separators
 spacing elements for sidebar, instead of putting carousels everywhere
 something for dfining "Related" albums for playlists
-carousels as folder children don't work too well
-// IN CACHING: IF cMusicFixerChanged THEN DON'T DO IT.. IF EXT REFRESHES, IT CACHES MODIFIED AS IF ITS TRUE
 
 middleware grid pages, cache sort option so can edit before getting first resp!
 

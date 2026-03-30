@@ -150,7 +150,7 @@ export class InjectMyPaperItems {
 
 		// USEFUL
 		function _GetBtnCont(mfId) {
-			return document.querySelector(`[mfId="${mfId}"] .c-paper-button-cont`);
+			return mfId !== undefined && document.querySelector(`[mfId="${mfId}"] .c-paper-button-cont`);
 		};
 
 		// OTHER MAIN FUNCS
@@ -417,8 +417,9 @@ export class InjectMyPaperItems {
 		newElem.setAttribute("href", `browse/${item.id}`); // FOR MIDDLE MOUSE/NEW TAB
 		newElem.setAttribute("plId", item.id);
 		newElem.setAttribute("mfId", mfId);
-		newElem.setAttribute("draggable", "false");
+		newElem.setAttribute("c-draggable", "false");
 		newElem.setAttribute("c-clickable", "true");
+		newElem.setAttribute("grabbable", "false");
 
 		this.AddInteractionToPaperItem(newElem, item.id, mfId);
 
@@ -494,8 +495,9 @@ export class InjectMyPaperItems {
 		if (item.hidden) ext.HideElem(newElem);
 
 		newElem.setAttribute("plId", item.id);
-		newElem.setAttribute("draggable", "false");
+		newElem.setAttribute("c-draggable", "false");
 		newElem.setAttribute("c-clickable", "true");
+		newElem.setAttribute("grabbable", "false");
 		parent.insertBefore(newElem, insertBefore);
 
 		// FAKE A CLICK TO OPEN THE FOLDER.
@@ -532,14 +534,18 @@ export class InjectMyPaperItems {
 	};
 
 
-	PopulateCont(items, cont) {
-		items.forEach((item) => {
+	async PopulateCont(items, cont) {
+		let i = 0;
+		for (const item of items) {
 			try { this.CreateItem(item, cont); }
 			catch (err) {
 				const contId = cont.getAttribute("id");
 				fconsole.error(`ERROR ADDING PL ${item.id} TO CONT #${contId}:`, item, err);
 			};
-		});
+
+			i ++;
+			if (i % 25 === 0) await ext.Delay(10);
+		};
 	};
 
 	GetAllItemsInCont(contIdList) {
@@ -621,7 +627,7 @@ export class InjectMyPaperItems {
 		};
 		
 		if (getNewStorage) {
-			ext.StorageGet(true).then((storage) => {
+			ext.StorageGet(true).then((storage) => { // TODo
 				this.storage = storage || {};
 
 				this.RefreshCont(false);

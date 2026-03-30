@@ -59,10 +59,14 @@ export class EWUtils {
 	static STORAGE_API = this.API_ENDPOINT + "storage/music/";
 	static SIDEBAR_API = this.API_ENDPOINT + "music/sidebar/";
 	static EDITOR_API = this.API_ENDPOINT + "music/edit/";
+	static USER_API = this.API_ENDPOINT + "music/user/"
 	static STORAGE_GET = "bulkget";
 	static STORAGE_GETPOPULATED = "getpopulated";
 	static STORAGE_GETWITHCACHE = "getwithcache";
 	static STORAGE_SET = "set";
+	static STORAGE_NEW = "new";
+	static STORAGE_MOD = "modify";
+	static STORAGE_DEL = "del";
 
 	// RECURSIVELY CHECK EACH DIR HAS KEYS IT REQUIRES.
 	static CheckHasKeys(cont, shouldHave) {
@@ -160,6 +164,6 @@ export class EWUtils {
 			throw Error(`External response was ${response.status} for ${route}].`);
 		};
 		
-		//browser.storage.session.set({ fetchedThisSession: true });
+		return await response.json();
 	};
 };

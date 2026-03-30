@@ -7,6 +7,7 @@ const PLAYERPAGE = "../taskFiles/playerPage.js";
 
 const MODULESCRIPTS = {
 	"ext": "utilsmw.js",
+	"popupService": "popups.js",
 	"sidebarService": "taskFiles/sidebarService.js",
 	"sidebarEditService": "taskFiles/sidebarEditService.js",
 	"cacheService": "taskFiles/cacheService.js",
@@ -86,10 +87,13 @@ async function Big(request, sender) {
 		api = { "route": `${EWUtils.STORAGE_API}cache/${request.id}/${EWUtils.STORAGE_GETPOPULATED}` };
 
 	} else if (func === "mfId-to-id") {
-		api = { "route": `${EWUtils.STORAGE_API}cache/index/mfId/${request.id}/get`}; // .STORAGEGET is bulkget. WANT /get
+		api = { "route": `${EWUtils.STORAGE_API}cache/index/mfId/${request.id}/get` }; // .STORAGEGET is bulkget. WANT /get
 	
 	} else if (func === "edit-list") {
 		api = { "route": `${EWUtils.EDITOR_API}listItems/${request.id}` };
+	
+	} else if (func === "get-library") {
+		api = { "route": `${EWUtils.USER_API}get-library` };
 	
 
 
@@ -102,7 +106,34 @@ async function Big(request, sender) {
 		const now = Date.now();
 		request.data[0].data.id = String(now);
 
-		api = { "route": `${EWUtils.STORAGE_API}stats/watchtime/${now}/${EWUtils.STORAGE_SET}`};
+		api = { "route": `${EWUtils.STORAGE_API}stats/watchtime/${now}/${EWUtils.STORAGE_SET}` };
+		meth = "set";
+
+	} else if (func === "sidebar") {
+		let path = `folders/${request.data.data.id}`;
+
+		if (request.data.data.id === "paperItemOrder") {
+			path = "paperItemOrder";
+			request.data.data = request.data.data.contents;
+		};
+		
+		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/${path}/${EWUtils.STORAGE_SET}` };
+		meth = "set";
+
+	} else if (func === "sidebar-new-folder") {
+		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/folders/${EWUtils.STORAGE_NEW}` };
+		meth = "setWithResp";
+	
+	} else if (func === "sidebar-new-sep") {
+		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/separators/${EWUtils.STORAGE_NEW}` };
+		meth = "setWithResp";
+
+	} else if (func === "sidebar-vis-change") {
+		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/hidden/${EWUtils.STORAGE_MOD}` };
+		meth = "set";
+	
+	} else if (func === "sidebar-del") {
+		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/${request.data.data.type}s/${request.data.data.id}/${EWUtils.STORAGE_DEL}` };
 		meth = "set";
 	};
 
@@ -116,9 +147,15 @@ async function Big(request, sender) {
 			functionResponseCorrelation: request.functionResponseCorrelation,
 			storage: resp
 		});
-	} else if (meth === "set") {
+	} else if (meth === "set" || meth === "setWithResp") {
 		api.data = request.data;
-		await EWUtils.StorageSetExternal(api);
+
+		resp = await EWUtils.StorageSetExternal(api);
+
+		if (meth === "setWithResp") browser.tabs.sendMessage(sender.tab.id, {
+			functionResponseCorrelation: request.functionResponseCorrelation,
+			storage: resp
+		});
 	};
 
 	
@@ -176,16 +213,6 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "get-template-elements")		EWOMGetTemplateElems(request, sender);
 	else if (f === "reinit-sidebar")			EWInitSidebarThings({"tabId": sender.tab.id}); //TODO: UGLY, WHY?
 	else if (f === "save-account-info")         EWOMSaveAccountInfo(request);
-	else if (f === "sidebar-save-changes")      EWOMSidebarSaveChanges(request);
-	else if (f === "sidebar-new-folder")        EWOMSidebarNewFolder(request, sender);
-	else if (f === "sidebar-delete-folder")     EWOMSidebarDeleteFolder(request);
-	else if (f === "sidebar-rename-folder")     EWOMSidebarRenameFolder(request);
-	else if (f === "sidebar-visibility-change") EWOMSidebarVisibilityChange(request);
-	else if (f === "sidebar-new-sep")           EWOMSidebarNewSep(request, sender);
-	else if (f === "sidebar-delete-sep")        EWOMSidebarDeleteSep(request);
-	else if (f === "sidebar-new-carousel")      EWOMSidebarNewCarousel(request, sender);
-	else if (f === "sidebar-delete-carousel")   EWOMSidebarDeleteFolder(request);
-	else if (f === "get-hidden-song-details")   EWOMGetHiddenSongDetails(request);
 	else if (f === "storage")				    Big(request, sender);
 	else if (f === "playlist-create")			EWOMOnNewPlaylist(request, sender);
 	else if (f === "playlist-delete")			EWOMOnDeletePlaylist(request, sender);

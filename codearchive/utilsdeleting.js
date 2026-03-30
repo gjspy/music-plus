@@ -1,26 +1,5 @@
 class Utils {
 
-	static U_VARIOUS_ARTISTS = "Various Artists";
-	//static U_VARIOUS_ARTISTS_EXTID = "VARIOUS";
-
-
-	// UGetSVGFromRaw(name, returnDiv, returnHTMLString)
-	// UWaitForBySelector(selector, parent, mayWaitForever)
-	// UNavigateOnClick(elem, navigationEndpointOuterDict, excessFunc, excessParams, verifyFunc, useCapture, preventPropagation)
-
-	static URemovePopup(popup, fadeOut) {
-		if (!fadeOut) {
-			popup.remove();
-			return;
-		};
-
-		this.URemoveFromClass(popup, "active");
-
-		setTimeout(function() {
-			popup.remove();
-		}, 300);
-	};
-
 	// messy function, but it creates a popup :)
 	static UCreatePopup(layout) {
 		function _TextInputFloating(inputElem, label, underline) {
@@ -292,123 +271,6 @@ class Utils {
 		browser.tabs.sendMessage(tabId, response);
 	};
 
-	static UConvertCPaperItemToCGridItem(paperElem) {
-		URemoveFromClass(paperElem, "c-paper-wrapper");
-		UAddToClass(paperElem, "c-ovf-elem");
-	};
-
-	static UShowGridOfMusicItems(musicItemFilter, editButtons, includeFolders, areDraggable, onClick, pStorage, purpose, title, subtitle) {
-		function _CreateOVFPaperItem(paperService, ovf, id) {
-			let isFolder = id.match(/^CF/);
-			let paperElem;
-
-			if (isFolder) paperElem = paperService.CreateAndPopulateFolderPaperItem(id, ovf.elemCont);
-			else paperElem = paperService.CreatePaperElem(id, ovf.elemCont);
-
-			UConvertCPaperItemToCGridItem(paperElem);
-			if (areDraggable) {
-				paperElem.setAttribute("c-draggable", "true");
-				paperElem.removeAttribute("href");
-
-				if (editButtons) UAddEditButtonsToPaperItem(paperElem, ...editButtons);
-			};
-
-			if (onClick) paperElem.addEventListener("click", () => onClick(id));
-		};
-
-		function OnStorageGet(storage) {
-			let organisation = [{},{}];
-
-			let paperService = new InjectMyPaperItems();
-			paperService.storage = storage;
-
-			// sort by private -> type -> artistId(albums) -> alphabetical name			
-			// o = [{type: {artist: {id: undefined, id: undefined
-
-			let values = Object.values(storage.cache);
-			if (musicItemFilter) values = values.filter(musicItemFilter);
-
-			for (let v of values) {
-				if (v.type !== "ARTIST" && v.type !== "ALBUM" && v.type !== "PLAYLIST") continue;
-				if (v.id === U_VARIOUS_ARTISTS_EXTID) continue;
-
-				let privateI = Number(!!v.private);
-				let group = organisation[privateI];
-
-				if (!group[v.type]) group[v.type] = {};
-				group = group[v.type];
-
-				if (v.type === "ALBUM") {
-					if (!group[v.artist]) group[v.artist] = {};
-					group = group[v.artist];
-				};
-
-				group[v.id] = {
-					id: v.id,
-					name: v.name
-				};
-			};
-
-			if (includeFolders) {
-				let folders = Object.values(storage.sidebar.folders.folders);
-				if (musicItemFilter) folders = folders.filter(musicItemFilter);
-
-				for (let folder of folders) {
-					_CreateOVFPaperItem(paperService, ovf, folder.id);
-				};
-			};
-
-
-			for (let privateGroup of organisation) { // isPrivate: {}, notPrivate: {}
-				for (let [type, group] of Object.entries(privateGroup)) { // ALBUM: [], ARTIST: [], PLAYLIST: []
-
-					if (type === "ALBUM") {
-						for (let artistGroup of Object.values(group)) {
-							let alphabetical = Object.values(artistGroup).sort((a, b) => a.name.localeCompare(b.name));
-
-							for (let v of alphabetical) {
-								_CreateOVFPaperItem(paperService, ovf, v.id);
-							};
-						};
-
-						continue;
-					};
-
-					let alphabetical = Object.values(group).sort((a, b) => a.name.localeCompare(b.name));
-
-					for (let v of alphabetical) {
-						_CreateOVFPaperItem(paperService, ovf, v.id);
-					};					
-				};
-			};
-		};
-
-		let ovfcont = document.createElement("div");
-		ovfcont.innerHTML = UTemplateElementsStrings["c-popup-elem-overflow"];
-
-		let ovf = {
-			ovf: ovfcont.firstElementChild,
-			elemCont: ovfcont.querySelector(".elem-cont"),
-			paperStorage: ovfcont.querySelector(".paper-storage")
-		};
-
-		if (purpose) ovf.ovf.setAttribute("func", purpose);
-
-		if (title) ovf.ovf.querySelector(".header a:first-child").textContent = title;
-		if (subtitle) ovf.ovf.querySelector(".header a:last-child").textContent = subtitle;
-
-		document.body.append(ovfcont);
-
-		ovf.promiseOfFillingGrid = async function() {
-			if (!pStorage) pStorage = await this.UMWStorageGet();
-
-			OnStorageGet(pStorage);
-		}();
-		
-
-		return ovf;
-	};
-
 
 
 
@@ -418,15 +280,6 @@ class Utils {
 		// worry about recursion, only use this to overwrite with different values
 		// dont use to create one big object with all info
 	};
-
-	/*static UReturnPlayableIdFromCachedInfo(info) {
-		if (info.type === "ALBUM") {
-			if (info.private === true || )
-			return info.mfId;
-		}
-		if (info.type === "PLAYLIST") return info.if.replace(/^VL/,"");
-
-	};*/
 
 	static UGenerateArtificialPlaylistSetId() {
 		let str = "";
