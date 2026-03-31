@@ -17,7 +17,9 @@ export class SidebarEditFeatures {
 		const parent = elem.closest(".c-grid-popup, div#items, .c-paper-folder, .c-carousel");
 		if (parent.classList.contains("c-popup")) return;
 
-		const parentContents = Array.from(parent.querySelectorAll(":scope > [plid]")).map(v => v.getAttribute("plid"));
+		const parentPaperCont = (parent.classList.contains("c-paper-folder")) ? parent.querySelector(".c-paper-folder-cont") : parent;
+
+		const parentContents = Array.from(parentPaperCont.querySelectorAll(":scope > [plid]")).map(v => v.getAttribute("plid"));
 		
 		ext.DispatchEventToEW({
 			func: "storage",
@@ -71,15 +73,9 @@ export class SidebarEditFeatures {
 			let containerOfMOE = mouseOverElem.closest(".c-paper-wrapper, .c-sidebar-sep, .c-carousel");
 			if (!containerOfMOE) return;
 
-			if (containerOfMOE === grabTarget) {
-				if (targetIsFolder || targetIsCarousel || targetIsSep) return;
-
-				// NORMAL? IDK
-				return;
-			};
+			if (containerOfMOE === grabTarget) return; // ??
 
 			if (grabTarget.contains(containerOfMOE)) return;
-
 
 			const isInsertableFolder = containerOfMOE.matches(".c-paper-folder.open");
 			const isHoveringFolderTitle = (isInsertableFolder && mouseOverElem.closest(".c-paper-item") === containerOfMOE.children[0]);
@@ -94,9 +90,10 @@ export class SidebarEditFeatures {
 
 			if (carousel) {
 				if (targetIsFolder || targetIsCarousel) {
-					containerOfMOE = carousel;
+					containerOfMOE = carousel; // SET IS HOVERING OVER CAROUSEL, NOT CHILD OF CAROUSEL.
 
 				} else {
+					if (carousel.children.length === 1) return [carousel.firstElementChild, carousel];
 					if (containerOfMOE === carousel) return;
 
 					// SAME LOGIC AS NORMAL, BUT WITH X ISNTEAD OF Y
@@ -186,7 +183,7 @@ export class SidebarEditFeatures {
 			if (isOob) InBounds();
 
 			const resp = GetClosestElemToMouse(event.clientX, event.clientY);
-			if (!(resp)) return;
+			if (!resp) return;
 			const [closest, parent] = resp;
 			if (insertedBefore === closest && insertedInside === parent) return;
 
@@ -417,8 +414,6 @@ export class SidebarEditFeatures {
 		if (!isFolder) {
 			return;
 		};
-
-		ext.UnhideElem(normButtonCont);
 
 		/*const pencil = this.svgs["pencil"].cloneNode(true);
 		editCont.append(pencil);
