@@ -372,7 +372,7 @@ export class MWUtils {
 	};
 
 	/**
-	 * waiter: {detail: {data}, resolve: function, scope: "this", once: bool}
+	 * waiter: {name: "", resolve: function, scope: "this", once: bool}
 	 */
 	static RegisterEWFunction(waiter) {
 		if (!this.state.EWEventListener.listening) this.LaunchListenerOfEWEvents();
@@ -381,7 +381,7 @@ export class MWUtils {
 		this.state.EWEventListener.idCount ++;
 
 		waiter.id = id;
-		this.state.EWEventListener.waiters[id] = waiter;
+		this.state.EWEventListener.waiters[(waiter.name) ? waiter.name : id] = waiter;
 
 		return id;
 	};

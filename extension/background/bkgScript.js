@@ -4,6 +4,7 @@ import { EWUtils, EWUtils as utils } from "../utilsew.js";
 
 const MIDDLEWARE = "../networkMiddleware.js";
 const PLAYERPAGE = "../taskFiles/playerPage.js";
+const SETTINGS_PAGE_URL = browser.runtime.getURL("pages/settings/index.html");
 
 const MODULESCRIPTS = {
 	"ext": "utilsmw.js",
@@ -176,7 +177,7 @@ async function EWOMAutoLights(request) {
 
 
 
-	if (brightness) {
+	if (brightness !== undefined) {
 		fetch(storage.lightApi.endpoint + "/api/brightness?auto_music=" + request.autoMusic, {
 			method: "POST",
 			headers: {"Content-Type": "application/json"},

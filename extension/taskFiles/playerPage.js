@@ -140,12 +140,12 @@ function NiceColours() {
 		if (dataNow.dimness === "dim") return;
 		root.style.setProperty("--c-player-bkg-opacity", 0);
 
-		/*UDispatchEventToEW({
-			func: "auto-lights",
+		ext.DispatchEventToEW({
+			func: "ext-page-colours",
 			action: "dim",
 			transition: dataNow.transition,
 			autoMusic: true
-		});*/
+		});
 
 		dataNow.dimness = "dim";
 	};
@@ -154,12 +154,12 @@ function NiceColours() {
 		if (dataNow.dimness === "undim") return;
 		root.style.setProperty("--c-player-bkg-opacity", 1);
 
-		/*setTimeout(() => UDispatchEventToEW({
-			func: "auto-lights",
+		setTimeout(() => ext.DispatchEventToEW({
+			func: "ext-page-colours",
 			action: "undim",
 			transition: dataNow.transition,
 			autoMusic: true
-		}), 100);*/
+		}), 100);
 
 		dataNow.dimness = "undim";
 	};
@@ -295,6 +295,10 @@ function NiceColours() {
 		root.style.setProperty("--scrolled-height", `${scrollHeight}px`);
 	};
 
+	function _OnRequestedUpdate() {
+		_PublishPlayingThumbnail(dataNow.playingThumbnail);
+	};
+
 	let playerBar, slider, root;
 	let playingVId, lastImg;
 	let blocking_transitioning = false;
@@ -303,6 +307,7 @@ function NiceColours() {
 	_CreatePlrBkgs();
 
 	document.addEventListener("scroll", _OnScroll);
+	ext.RegisterEWFunction({name: "update-lights", scope: this, resolve: _OnRequestedUpdate, once: false});
 
 	setInterval(_ColourFeaturesInterval, 500);
 };

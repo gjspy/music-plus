@@ -110,7 +110,6 @@ async function Processor(func, {content = "", needExtStorage = false}) {
 	else if (func === "clr-ext") extStorage.cache = {};
 
 	if (lclStorage !== lclBefore) await EWUtils.StorageSetLocal(lclStorage);
-	//if (needExtStorage && extStorage !== extBefore) await EWUtils.StorageSetExternal(extStorage, lclStorage);
 
 	showLog(`done ${func}`);
 };
@@ -151,6 +150,8 @@ async function init() {
 		lightCont.querySelector("#brightness").onchange = (e) => browser.runtime.sendMessage({ func: "auto-lights", action: "brightness", value: e.target.value, autoMusic: false });
 	};
 
+	document.querySelector("#hide-controls").onclick = () => document.querySelector("#main-cont").replaceChildren();
+
 	const textarea = document.querySelector("textarea");
 	const tavButtons = document.querySelector(".btn-cont#tav-btns");
 
@@ -184,7 +185,31 @@ async function init() {
 		};
 	};
 
+	// HEARS EVERY EVENT BKGSCRIPT HEARS
+	browser.runtime.onMessage.addListener((request) => {
+		console.log(request)
+		if (request.func !== "auto-lights" && request.func !== "ext-page-colours") return;
 
+		let brightness = request.action === "dim" ? 0 :
+			request.action === "undim" ? 1 : 
+			request.action === "brightness" ? request.value / 255 : undefined;
+		
+		if (brightness !== undefined) {
+			document.body.style.setProperty("--c-player-bkg-transition", `opacity ${request.transition}s ease`);
+			document.body.style.setProperty("--c-player-bkg-opacity", String(brightness));
+		
+		} else if (request.action === "setImg") {
+			const blob = new Blob([request.imgData], {type: request.imgType});
+			document.body.style.setProperty("--playing-thumbnail", `url(${URL.createObjectURL(blob)})`);
+		};
+	});
+
+	const tab = (await browser.tabs.query({ url: "*://music.youtube.com/*", windowId: browser.windows.WINDOW_ID_CURRENT}))[0];
+
+	if (tab) browser.tabs.sendMessage(tab.id, {
+		functionResponseCorrelation: "update-lights"
+	})
+	
 };
 
 /* eslint-disable no-restricted-globals */

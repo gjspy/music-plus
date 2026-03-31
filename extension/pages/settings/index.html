@@ -2,12 +2,28 @@
 <html>
 <head>
 	<meta charset="UTF-8">
+	<link rel="stylesheet" href="../../inject.css">
 </head>
 
 <style>
 	body {
 		display: flex;
 		justify-content: center;
+		background-color: black;
+
+		--c-player-bkg-filter: blur(20px) brightness(0.9) saturate(1.4);
+	}
+
+	.c-player-bkg {
+		z-index: -1;
+	}
+
+	.c-player-bkg img {
+		width: 110vw;
+		height: 110vh;
+
+		margin-top: -5vh;
+		margin-left: -5vh;
 	}
 
 	#main-cont {
@@ -88,6 +104,9 @@
 </style>
 
 <body>
+	<div id="c-player-page-bkg" class="c-player-bkg">
+		<img class="bkg">
+	</div>
 	<div id="main-cont">
 		<h1 id="header">YTMusic+</h1>
 
@@ -110,6 +129,7 @@
 
 			<button id="goto-ls">Light Show</button>
 		</div>
+		<button id="hide-controls">Hide Controls</button>
 
 		<div class="btn-cont" id="debug-cont">
 			<button id="l">Dump Local Storage</button>
