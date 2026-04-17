@@ -1,26 +1,29 @@
 import { MWInit } from "../initmw.js";
-import { EWUtils, EWUtils as utils } from "../utilsew.js";
+import { EWUtils } from "../utilsew.js";
 
 
 const MIDDLEWARE = "../networkMiddleware.js";
 const PLAYERPAGE = "../taskFiles/playerPage.js";
-const SETTINGS_PAGE_URL = browser.runtime.getURL("pages/settings/index.html");
 
 const MODULESCRIPTS = {
 	"ext": "utilsmw.js",
 	"popupService": "popups.js",
+	"popupTemplates": "popupTemplates.js",
 	"sidebarService": "taskFiles/sidebarService.js",
 	"sidebarEditService": "taskFiles/sidebarEditService.js",
 	"cacheService": "taskFiles/cacheService.js",
 	"middlewareEditors": "taskFiles/middlewareEditors.js",
-	"eventDriven": "taskFiles/eventDriven.js"
+	"eventDriven": "taskFiles/eventDriven.js",
+	"baseEditMode": "editModes/_baseEditor.js",
+	"albumEditMode": "editModes/albumEditMode.js"
 };
 
 const TEMPLATE_ELEMS_FP = "../templateElements.html";
 
 
 async function EWInit(injectionTarget) {
-	const files = Object.entries(MODULESCRIPTS).map(v => [v[0], browser.runtime.getURL(v[1])]);
+	// ?t=... to force refresh of script every time! so can reload ext and not need to reload page when testing.
+	const files = Object.entries(MODULESCRIPTS).map(v => [v[0], browser.runtime.getURL(v[1]) + "?t=" + Date.now()]);
 
 	const resp1 = await browser.scripting.executeScript({
 		"target": injectionTarget,
@@ -52,7 +55,7 @@ async function EWInjectMiddleware(injectionTarget) {
 };
 
 
-async function OnInitTab(request, sender, sendResponse) {
+async function OnInitTab(request, sender) {
 	fconsole.log("BKGSCRIPT STARTED FOR TAB", sender.tab.id);
 
 	const injectionTarget = { "tabId": sender.tab.id };	
@@ -77,37 +80,37 @@ async function Big(request, sender) {
 	const func = request.storageFunc;
 	
 	let resp = undefined;
-	let api;
+	let api = {};
 	let meth = "get";
 
 	if 		(func === "getlocal") resp = await EWUtils.StorageGetLocal();
 	else if (func === "getsidebar") {
-		api = { "route": `${EWUtils.SIDEBAR_API}${EWUtils.STORAGE_GETWITHCACHE}` };
+		api.route = `${EWUtils.SIDEBAR_API}${EWUtils.STORAGE_GETWITHCACHE}`;
 	
 	} else if (func === "get-populated") {
-		api = { "route": `${EWUtils.STORAGE_API}cache/${request.id}/${EWUtils.STORAGE_GETPOPULATED}` };
+		api.route = `${EWUtils.STORAGE_API}cache/${request.id}/${EWUtils.STORAGE_GETPOPULATED}`;
 
 	} else if (func === "mfId-to-id") {
-		api = { "route": `${EWUtils.STORAGE_API}cache/index/mfId/${request.id}/get` }; // .STORAGEGET is bulkget. WANT /get
+		api.route = `${EWUtils.STORAGE_API}cache/index/mfId/${request.id}/get`; // .STORAGEGET is bulkget. WANT /get
 	
 	} else if (func === "edit-list") {
-		api = { "route": `${EWUtils.EDITOR_API}listItems/${request.id}` };
+		api.route = `${EWUtils.EDITOR_API}listItems/${request.id}`;
 	
 	} else if (func === "get-library") {
-		api = { "route": `${EWUtils.USER_API}get-library` };
+		api.route = `${EWUtils.USER_API}get-library`;
 	
 
 
 
 	} else if (func === "set-cache") {
-		api = { "route": `${EWUtils.STORAGE_API}cache/${EWUtils.STORAGE_SET}` };
+		api.route = `${EWUtils.STORAGE_API}cache/${EWUtils.STORAGE_SET}`;
 		meth = "set";
 
 	} else if (func === "add-watchtime") {
 		const now = Date.now();
 		request.data[0].data.id = String(now);
 
-		api = { "route": `${EWUtils.STORAGE_API}stats/watchtime/${now}/${EWUtils.STORAGE_SET}` };
+		api.route = `${EWUtils.STORAGE_API}stats/watchtime/${now}/${EWUtils.STORAGE_SET}`;
 		meth = "set";
 
 	} else if (func === "sidebar") {
@@ -118,25 +121,38 @@ async function Big(request, sender) {
 			request.data.data = request.data.data.contents;
 		};
 		
-		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/${path}/${EWUtils.STORAGE_SET}` };
+		api.route = `${EWUtils.STORAGE_API}customisation/sidebar/${path}/${EWUtils.STORAGE_SET}`;
 		meth = "set";
 
 	} else if (func === "sidebar-new-folder") {
-		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/folders/${EWUtils.STORAGE_NEW}` };
+		api.route = `${EWUtils.STORAGE_API}customisation/sidebar/folders/${EWUtils.STORAGE_NEW}`;
 		meth = "setWithResp";
 	
 	} else if (func === "sidebar-new-sep") {
-		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/separators/${EWUtils.STORAGE_NEW}` };
+		api.route = `${EWUtils.STORAGE_API}customisation/sidebar/separators/${EWUtils.STORAGE_NEW}`;
 		meth = "setWithResp";
 
 	} else if (func === "sidebar-vis-change") {
-		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/hidden/${EWUtils.STORAGE_MOD}` };
+		api.route = `${EWUtils.STORAGE_API}customisation/sidebar/hidden/${EWUtils.STORAGE_MOD}`;
 		meth = "set";
 	
 	} else if (func === "sidebar-del") {
-		api = { "route": `${EWUtils.STORAGE_API}customisation/sidebar/${request.data.data.type}s/${request.data.data.id}/${EWUtils.STORAGE_DEL}` };
+		api.route = `${EWUtils.STORAGE_API}customisation/sidebar/${request.data.data.type}s/${request.data.data.id}/${EWUtils.STORAGE_DEL}`;
+		meth = "set";
+	
+	} else if (func === "set-song-hidden" || func === "set-song-skipped") {
+		api.route = `${EWUtils.STORAGE_API}customisation/listEdits/${request.data.fromId}/${EWUtils.STORAGE_MOD}`;
+		request.data = {
+			key: (func === "set-song-hidden") ? "hiddenSongs" : "skippedSongs",
+			data: {
+				id: request.data.id,
+				mode: (request.data.playable) ? "del" : "add"
+			}
+		};
 		meth = "set";
 	};
+
+	if (!api) throw "FUNC NOT RECOGNISED";
 
 	if (meth === "get") {
 		try {
@@ -157,18 +173,13 @@ async function Big(request, sender) {
 			functionResponseCorrelation: request.functionResponseCorrelation,
 			storage: resp
 		});
-	};
-
-	
-
-	
+	};	
 };
 
 
 async function EWOMAutoLights(request) {
 	let storage = await EWUtils.StorageGetLocal();
 
-	console.log(request, storage.lightApi.endpoint, storage.lightApi.enabled);
 	if (!storage.lightApi.endpoint || (!storage.lightApi.enabled && request.autoMusic)) return;
 
 	let brightness = request.action === "dim" ? 0 :
@@ -186,12 +197,10 @@ async function EWOMAutoLights(request) {
 				brightness,
 				transition: request.transition
 			})
-		}).then(v => console.log(v));
+		});
 
 
 	} else if (request.action === "setImg") {
-		//let resp = await fetch(request.url);
-		//let blob = await resp.blob();
 		const blob = new Blob([request.imgData], {type: request.imgType});
 
 		let formData = new FormData();
@@ -200,8 +209,7 @@ async function EWOMAutoLights(request) {
 		fetch(storage.lightApi.endpoint + `/api/set-by-img-file?auto_music=${request.autoMusic}&room=${storage.lightApi.autoMusicRoom}`, {
 			method: "POST",
 			body: formData
-		}).then(v => console.log(v));
-
+		});
 	};
 };
 
@@ -210,9 +218,8 @@ function OnMessage(request, sender, sendResponse) {
 	fconsole.log("received in EW", JSON.stringify(request), sender, sendResponse);
 	
 	const f = request.func;
-	if (f === "start")                          OnInitTab(request, sender, sendResponse);
+	if (f === "start")                          OnInitTab(request, sender);
 	else if (f === "get-template-elements")		EWOMGetTemplateElems(request, sender);
-	else if (f === "reinit-sidebar")			EWInitSidebarThings({"tabId": sender.tab.id}); //TODO: UGLY, WHY?
 	else if (f === "save-account-info")         EWOMSaveAccountInfo(request);
 	else if (f === "storage")				    Big(request, sender);
 	else if (f === "playlist-create")			EWOMOnNewPlaylist(request, sender);

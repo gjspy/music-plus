@@ -23,9 +23,30 @@ export class EventDriven {
 
 	// PAGE MODIFIERS
 	async AlbumAndPlaylist(state) {
-		console.log("both");
+		state = state.navigation.mainContent.response;
+
 		if (ext.SafeDeepGet(state, ext.Structures.cExtCoolBkg())) {
 			this.browsePage.setAttribute("c-fancy-page", "list");
+		};
+
+		const header = ext.SafeDeepGet(state, ext.Structures.listPageHeaderRenderer()) || ext.SafeDeepGet(state, ext.Structures.listPageHeaderRendererUserOwned());
+		const headerCont =  (await ext.WaitForBySelector(ext.HELPFUL_SELECTORS.listPageHeaderCont))[0];
+		
+		if (header?.cThirdSubtitle) {
+			const div = document.createElement("div");
+			div.className = "second-subtitle-container c-third-subtitle style-scope ytmusic-responsive-header-renderer";
+
+			const descriptionCont = (await ext.WaitForBySelector("div#header-description", headerCont))[0];
+
+			const created = ext.CreateTextElemFromRuns(div, header.cThirdSubtitle.runs);
+			headerCont.insertBefore(created, descriptionCont);
+		};
+
+		if (header?.description) {
+			const description = header.description.musicDescriptionShelfRenderer;
+
+			const descriptionSpan = (await ext.WaitForBySelector(".description span:first-child", headerCont))[0];
+			descriptionSpan.textContent = description.description.runs[0].text;
 		};
 
 		const listItems = await ext.WaitForBySelector(ext.HELPFUL_SELECTORS.listItemRenderersOfCurrentBrowseResponse);
@@ -33,7 +54,6 @@ export class EventDriven {
 	};
 
 	async Album(state) {
-		console.log("ALBUM");
 		const listItems = await ext.WaitForBySelector(ext.HELPFUL_SELECTORS.listItemRenderersOfCurrentBrowseResponse);
 		
 		listItems.forEach(listItem => {
@@ -44,7 +64,7 @@ export class EventDriven {
 			nameText.setAttribute("title", title);
 			nameElem.removeAttribute("title");
 
-			const data = ext.SafeDeepGet(listItem, ext.Structures.cDataFromElem());
+			const data = listItem.data?.cData;
 			if (!data) return;
 
 			if (data.albumData.id !== data.thisData.cameFrom.id) {
@@ -85,6 +105,9 @@ export class EventDriven {
 		this.browsePage.setAttribute("c-page-type", browsePageType);
 		this.browsePage.removeAttribute("c-fancy-page");
 
+		window.cMusicFixerRunningServices.activeEditMode?.close();
+		window.cMusicFixerRunningServices.activeEditMode = undefined;
+
 		if (ext.BrowsePageTypes.isPlaylist(browsePageType)) {
 			this.AlbumAndPlaylist(state);
 			this.Playlist(state);
@@ -92,9 +115,13 @@ export class EventDriven {
 		} else if (ext.BrowsePageTypes.isAnyAlbum(browsePageType)) {
 			this.AlbumAndPlaylist(state);
 			this.Album(state);
+
+			window.cMusicFixerRunningServices.activeEditMode = new albumEditMode();
 		};
 
-		console.log("MODIFIED", browsePageType);
+		window.cMusicFixerRunningServices.activeEditMode?.init();
+
+		fconsole.log("MODIFIED", browsePageType);
 
 		const isEdited = ext.SafeDeepGet(state, ext.Structures.cDidExtChangeResponse());
 		this.browsePage.setAttribute("c-edited", Boolean(isEdited));
@@ -193,9 +220,6 @@ export class EventDriven {
 	};
 
 	constructor() {
-		this.observers = {
-			navProgress: undefined,
-			dropdown: undefined
-		};
+		this.observers = {};
 	};
 };

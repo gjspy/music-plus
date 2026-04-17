@@ -12,86 +12,11 @@ const TTAV_FUNCTIONS = {
 	"light-room": ["Set Light API room"]
 };
 
-async function RefreshSidebar() {
-	// TODO: WHAT TAB?
-	/*let result = (await browser.scripting.executeScript({
-		func: () => (new InjectMyPaperItems()).MainTasks(),
-		target: {tabId: tab.id},
-		world: "MAIN"
-	}))[0];
-
-	showLog(result);*/
-};
-// TODO: page enabling/disabling
-
-
-function GetHumanJSONOfId(storage, id, _depth) {
-	if (_depth === undefined) _depth = 0;
-
-	const value = storage.cache[id];
-	if (!value) return {};
-
-	const itemType = value.type;
-	const human = structuredClone(value);
-
-	for (const [k,v] of Object.entries(value)) {
-		if (itemType === "ALBUM") {
-			if (k === "items" || k === "features" || k === "privateCounterparts") {
-				human[k] = v.map( x => storage.cache[x] );
-				continue;
-			};
-
-			if (k === "artist" && _depth === 0) {
-				human[k] = storage.cache[v];
-				continue;
-			};
-
-			if (k === "alternate" && _depth === 0) {
-				human[k] = v.map(x => GetHumanJSONOfId(storage, x, _depth + 1));
-				continue;
-			};
-		};
-
-		if (itemType === "PLAYLIST") {
-			if (k === "items") {
-				human[k] = v.map(x => GetHumanJSONOfId(storage, x, _depth + 1));
-				continue;
-			};
-		};
-
-		if (itemType === "ARTIST") {
-			if (k === "discography" && _depth === 0) {
-				human[k] = v.map(x => GetHumanJSONOfId(storage, x, _depth + 1));
-				continue;
-			};
-		};
-
-		if (itemType === "SONG") {
-			if (k === "album") {
-				human[k] = v.map(x => GetHumanJSONOfId(storage, x, _depth + 1));
-				continue;
-			};
-
-			if (k === "artists" && _depth === 0) {
-				human[k] = v.map(x => GetHumanJSONOfId(storage, x, _depth + 1));
-				continue;
-			};
-		};
-
-		human[k] = v;
-	};
-
-	return human;
-};
-
 async function Processor(func, {content = "", needExtStorage = false}) {
 	let lclStorage = await EWUtils.StorageGetLocal();
-	//let extStorage = needExtStorage ? await EWUtils.StorageGetExternal({"localStorage": lclStorage}) : {};
-	fconsole.log(content, needExtStorage);
 	let extStorage = {};
 
 	const lclBefore = structuredClone(lclStorage);
-	const extBefore = structuredClone(extStorage);
 
 	if 		(func === "strg-e") extStorage = JSON.parse(content);
 	else if (func === "strg-l") lclStorage = JSON.parse(content);
@@ -177,8 +102,6 @@ async function init() {
 			};
 
 			const strg = (strgType === "l") ? await EWUtils.StorageGetLocal() :
-//				(strgType === "e") ? await EWUtils.StorageGetExternal(false) :
-//				(strgType === "er") ? await EWUtils.StorageGetExternal(true) :
 				(strgType === "s") ? await browser.storage.session.get() : {};
 			
 			dump(strg);

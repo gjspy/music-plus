@@ -6,11 +6,11 @@ export function MWInit(moduleScriptsEntries) {
 		window.fconsole = class fconsole {
 			static kw = "MFIXER:";
 
-			static debug = (...data) => console.debug(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
-			static log = (...data) => console.log(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
-			static info = (...data) => console.info(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
-			static warn = (...data) => console.warn(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
-			static error = (...data) => console.error(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
+			static debug = (...data) => console.debug(this.kw, ...data, "\n  ↳", (new Error().stack?.split("\n")[1]));
+			static log = (...data) => console.log(this.kw, ...data, "\n  ↳", (new Error().stack?.split("\n")[1]));
+			static info = (...data) => console.info(this.kw, ...data, "\n  ↳", (new Error().stack?.split("\n")[1]));
+			static warn = (...data) => console.warn(this.kw, ...data, "\n  ↳", (new Error().stack?.split("\n")[1]));
+			static error = (...data) => console.error(this.kw, ...data, "\n  ↳", (new Error().stack?.split("\n")[1]));
 		};
 	};
 
@@ -51,6 +51,7 @@ export function MWInit(moduleScriptsEntries) {
 		await ext.InitTemplateElements(); // NOT AWAITING.
 
 		window.cMusicFixerNetworkMiddlewareEnabled = true;
+		//@ts-ignore
 		window.cMusicFixerRunningServices = {};
 
 		// ADD EVENT FOR C-DROPDOWNS DELETION WHEN USER CLICKS SOMEWHERE OTHER THAN IT.
@@ -68,7 +69,7 @@ export function MWInit(moduleScriptsEntries) {
 		// START EXTENSION FEATURES
 		try {
 			const sidebar = new window.sidebarService();
-			sidebar.init(true);
+			sidebar.init();
 
 			window.cMusicFixerRunningServices.sidebarService = sidebar;
 		} catch (err) { fconsole.error("failed to load sidebarService because", err); };
@@ -94,4 +95,6 @@ export function MWInit(moduleScriptsEntries) {
 		fconsole.error("ERROR IN MWINIT", err);
 		return ["error in mwinit", String(err)];
 	};
+
+	return ["success"];
 };

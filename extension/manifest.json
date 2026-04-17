@@ -29,7 +29,7 @@
 
 	"web_accessible_resources": [{
 		"matches": ["*://music.youtube.com/*"],
-		"resources": ["utilsmw.js", "popups.js", "taskFiles/*"]
+		"resources": ["utilsmw.js", "popups.js", "popupTemplates.js", "taskFiles/*", "editModes/*"]
 	}],
 
 	"host_permissions": [

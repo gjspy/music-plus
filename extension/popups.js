@@ -1,8 +1,8 @@
 export class PopupService {
 
-	_FloatingTextInput(elem, label, underline) {
-		let isFocused;
+	dropdownPadFromDocumentEdge = 40;
 
+	_FloatingTextInput(elem) {
 		const decide = () => {
 			if (elem.value === "") {
 				ext.RemoveFromClass(elem, "floating");
@@ -30,6 +30,7 @@ export class PopupService {
 
 	async _LoadGrid() {
 		const paperService = new sidebarService();
+		document.body.append(this.contents);
 		
 		await paperService.PopulateCont(this.items, this.childCont);
 		return Array.from(this.childCont.children);
@@ -43,7 +44,7 @@ export class PopupService {
 		if (item.icon) elem.querySelector(".c-popup-icon").append(ext.GetSVG(item.icon));
 		if (item.id) elem.setAttribute("id", item.id);
 
-		if (item.class === "c-text-input") this._FloatingTextInput(elem.querySelector("input"), elem.querySelector("label"), elem.querySelector(".c-underline"));
+		if (item.class === "c-text-input") this._FloatingTextInput(elem.querySelector("input"));
 
 		for (const underline of elem.querySelectorAll(".c-underline:empty")) {
 			underline.append(ext.GetTemplateElem("c-underline"));
@@ -73,16 +74,78 @@ export class PopupService {
 
 			actionsCont.append(btn);
 		});
+
+		document.body.append(this.contents);
+	};
+
+	InitialiseDropdown({buttons, originalClickEvent, scope, onClickRunFirst}) {
+		this.contents = document.createElement("div");
+		this.contents.className = "c-popup-bkg";
+
+		this.childCont = document.createElement("div");
+		this.childCont.className = "c-dropdown";
+		this.contents.append(this.childCont);
+
+		this.items = buttons;
+		this.originalClickEvent = originalClickEvent;
+		this.scope = scope;
+		this.onClickRunFirst = onClickRunFirst;
+	};
+
+	_LoadDropdown() {
+		this.contents.style.opacity = 0;
+
+		document.body.append(this.contents);
+
+		for (const v of this.items) {
+			const button = document.createElement("div");
+			button.className = v.type + "-btn c-drop-btn";
+
+			if (v.icon) button.append(ext.GetSVG(v.icon));
+
+			const text = document.createElement("a");
+			text.textContent = v.text;
+			button.append(text);
+
+			if (v.onclick) button.onclick = () => {
+				if (this.onClickRunFirst) this.onClickRunFirst.call(this.scope);
+
+				this.ClearPopups();
+
+				const state = polymerController.store.getState();
+				const pageId = ext.SafeDeepGet(state, ext.Structures.browseIdFromPolymerState());
+				v.onclick.call(this.scope, state, pageId);
+			};
+
+			this.childCont.append(button);
+		};
+
+		setTimeout(() => {
+			const bounds = {
+				x: document.documentElement.clientWidth,
+				y: document.documentElement.clientHeight
+			};
+
+			const size = this.childCont.getBoundingClientRect();
+
+			const posX = Math.min(this.originalClickEvent.x, bounds.x - size.width - this.dropdownPadFromDocumentEdge);
+			const posY = Math.min(this.originalClickEvent.y + 20, bounds.y - size.height - this.dropdownPadFromDocumentEdge);
+
+			this.contents.style.left = String(posX) + "px";
+			this.contents.style.top = String(posY) + "px";
+			this.contents.style.opacity = "1";
+		}, 1);
 	};
 
 
 	Load() {
 		ext.AddToClass(this.contents, "c-popup");
 
-		document.body.append(this.contents);
-
 		if (this.type === "modal") this._LoadModal();
 		else if (this.type === "grid") return this._LoadGrid();
+		else if (this.type === "dropdown") return (new Promise(() => setTimeout(() => this._LoadDropdown(), 1)));
+
+		return Promise.resolve([]);
 	};
 
 
@@ -104,5 +167,6 @@ export class PopupService {
 
 		if (type === "modal") this.InitialiseModal(options);
 		else if (type === "grid") this.InitialiseItemsGrid(options);
+		else if (type === "dropdown") this.InitialiseDropdown(options);
 	};
 };

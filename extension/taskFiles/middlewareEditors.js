@@ -792,7 +792,7 @@ export class MainPOSTEditors {
 
 		for (const newData of newList.listItems) {
 			if (!newData.id) continue; // PLACEHOLDERS OF {}
-			if ((newData.hidden || newData.skipped) && (id !== newData.id) && (queueDataRequestIds.indexOf(newData.id) === -1)) {
+			if ((newData.hidden || newData.skipped) && (videoIdToSelect !== newData.id) && (queueDataRequestIds.indexOf(newData.id) === -1)) {
 				indexOffset ++;
 				continue;
 			}; // DON'T CREATE SKIPPED. ADD INDEX OFFSET. TODO: USE INDEXOFFSET TO SET watchEndpoint indexes.
@@ -870,6 +870,7 @@ export class MainPOSTEditors {
 		const newItemOrder = [];
 		let newLengthSec = 0;
 		let playableSongs = 0;
+		let visibleIndex = newList.minIndex;
 
 		for (const newData of newList.listItems) {
 			if (!newData.id) continue; // PLACEHOLDERS OF {}
@@ -882,17 +883,22 @@ export class MainPOSTEditors {
 			const thisCData = {
 				albumData: newList.albumData,
 				artistData: newList.artistData,
-				thisData: newData
+				thisData: newData,
+				indexData: {
+					"displayIndex": newData.displayIndex, // NOT index to display, just the base unedited ish?
+					"visibleIndex": visibleIndex
+				}
 			};
 
-			if (lir.musicResponsiveListItemRenderer) lir.musicResponsiveListItemRenderer.cData = thisCData
+			if (lir.musicResponsiveListItemRenderer) lir.musicResponsiveListItemRenderer.cData = thisCData;
 			else lir.cData = thisCData;
 
-			ext.ModifyListItemRendererForAnyPage(lir, newList.albumData, newList.artistData, "MUSIC_PAGE_TYPE_ALBUM");
+			ext.ModifyListItemRendererForAnyPage(lir, newList.albumData, newList.artistData, "MUSIC_PAGE_TYPE_ALBUM", visibleIndex);
 
 			newItemOrder.push(lir);
 			newLengthSec += newData.newData.lengthSec;
 			if (!(newData.hidden || newData.skipped)) playableSongs ++;
+			if (!newData.hidden) visibleIndex++;
 			
 			// AddListItemReplacements sets lir.cData = newData, has hidden and skipped in it.
 		};
@@ -956,14 +962,13 @@ export class MainPOSTEditors {
 			}
 		};
 
+		if (originalLengthSec !== newLengthSec && newLengthSec) headerRenderer.cThirdSubtitle = {runs: [
+			{text: "(" + headerRenderer.secondSubtitle.runs[0].text},
+			{text: `${ext.SecondsToWordyHMS(originalLengthSec, 2)} - originally)`}
+		]};
 
 		headerRenderer.secondSubtitle.runs[0].text = `${playableSongs} songs`;
-		headerRenderer.secondSubtitle.runs[2].text = ext.SecondsToWordyHMS(originalLengthSec);
-
-		if (originalLengthSec !== newLengthSec && newLengthSec) headerRenderer.secondSubtitle.runs.push(
-			{text: ext.YT_DOT},
-			{text: `${ext.SecondsToWordyHMS(newLengthSec)} edited`}
-		);
+		headerRenderer.secondSubtitle.runs[2].text = ext.SecondsToWordyHMS(newLengthSec, 2);
 
 		const playButton = ext.GetEndpointByNameFromArray(headerRenderer.buttons, "musicPlayButtonRenderer");
 		const firstLIR = musicShelfRenderer.contents[0].musicResponsiveListItemRenderer;

@@ -1,16 +1,12 @@
-completely redo popups
 make inject.css scripted and not instant/automatic
-make tab ignoring work cMusicFixerExtIgnoreTab
 the reason we lose error context in bkg world when injecting code is bcs exceptions arent json serializable so cant be transferred. should catch but retrhow String(caught)
 can easily edit utils.GetSVG() to look in youtube's SVG store. so we could auto-update to their icons when they change them!
 do something to default yt "New platlist" button, beore sidebarEditfeatures appear. make it flex: 50% and let it be big until we change it and put max_width: (dpo we rlly need that?)
-"js/ts.implicitProjectConfig.checkJs": true
 
 CACHING NOW DOES artists NOT artist FOR ALBUM, and list of them => {type: MUSIC_PAGE_TYPE_ARTIST} not {type: ARTIST}, __FULL_CONTENTS -> contData
 make it not overwrite album/pl.items if items is a list length 0 (bkg)
 dont store if id is undefined/null etc.
 ensure only stores playlistSetVideoId if has come from album page
-"javascript.suggestionActions.enabled": false
 popups: try to load one on top of other
 
 REWRITE SIDEBAR EDIT SERVICE, havent yet:
@@ -19,11 +15,7 @@ sections; surrounded by separators, movable as one like a folder
 REWRITE MIDDLEWARE, HAVENT DONE THAT.
 fix mpad not having custom uploads, allow to remove from
 artist page, when auto sets to sort by date, do this before first load?
-make ALL CODE work so when clicking "reload" in remote debugging page, no issues arise. PERF for debugging.
 more popup: have settings page and tab-specific buttons on popup?
-
-CHANGING SIDEBAR ELEM DESIGN. NO LONGER TAKES COLOUR OF BKG, TAKE COLOUR OF ICON.
-SO BKG OF PLAY BUTTON IS BLURRED IMG OF PAPER ITEM.
 
 install node.js to get npm and npx
 add this to settings.json:
@@ -42,11 +34,18 @@ add this to settings.json:
     "eslint.format.enable": true // Enable ESLint as a formatter
 }
 
+XX "javascript.suggestionActions.enabled": false
+XX "js/ts.implicitProjectConfig.checkJs": true
+
 !!!! "source.fixAll.eslint": true SET TO "NEVER" ?
 npm install --save @types/firefox-webext-browser
 npm install globals --save-dev
 npx eslint .
 install eslint vs code extension
+
+install disable ts errors extension
+npm install tsc-silent --save-dev
+
 
 TODO: auto add tag when playlist cache comes in (make sure only happens once, duplicate tags bad)
 TODO: make it completely fine to reload, eventDriven runs twice when reloaded, old listener not cancelled
@@ -194,6 +193,32 @@ song metadata editing - name, explicit, LYRICS, PLAY SECTION! SEE ABOVE! DO NOW!
 make it so it saves not literally EVERY time, but one every hour for the past 24 hours, then 1 a day for the past week/month?
 
 TODO: popup, get brightness from lightApi for slider.
+
+
+
+
+
+PLAYLIST EDIT MODE:
+ - Set "Period Archive"
+ - Set "Period Replay"
+ - Set Related Albums
+
+Show related albums in carousel below!
+
+MAKE THIS AVAILABLE over on mymusicarchive, then have BUTTON there to "Backup", manually downloads everything that doesnt already exist.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

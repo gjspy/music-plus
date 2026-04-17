@@ -65,7 +65,8 @@ export class MWUtils {
 		sidebarFolderHasVisibleActiveChild: ":has(:not(.c-hidden) > .c-paper-item > .c-active)",
 		allCGuideElements: "#guide .c-paper-wrapper:not([is-primary]), #guide .c-carousel, #guide .c-sidebar-sep",
 		sidebarYTButtonsCont: "#buttons.ytmusic-guide-section-renderer:has(yt-button-renderer)",
-		listItemRenderersOfCurrentBrowseResponse: "ytmusic-browse-response #content-wrapper > #contents > ytmusic-two-column-browse-results-renderer > #secondary > ytmusic-section-list-renderer > #contents > :first-child > #contents > ytmusic-responsive-list-item-renderer"
+		listItemRenderersOfCurrentBrowseResponse: "ytmusic-browse-response #content-wrapper > #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-list-item-renderer",
+		listPageHeaderCont: "ytmusic-browse-response #content-wrapper > #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-header-renderer"
 	};
 
 	
@@ -320,7 +321,7 @@ export class MWUtils {
 			if (i === runs.length - 1) continue; // DON'T DRAW DOT IF IS LAST RUN.
 
 			const dot = document.createElement("a");
-			dot.textContent = this.YT_DOT;
+			dot.textContent = " " + this.YT_DOT + " ";
 			cont.append(dot);
 		};
 
@@ -388,6 +389,9 @@ export class MWUtils {
 	static RemoveRegisteredEWWaiter = (id) => delete this.state.EWEventListener.waiters[id];
 
 
+	/**
+	 * @param {any} path
+	 */
 	static async StorageGet({path = undefined, storageFunc = undefined, id = undefined}) {
 		const storage = (await this.DispatchFunctionToEW({
 			func: "storage",
@@ -511,7 +515,7 @@ export class MWUtils {
 			const browsePageType = opts.browsePageType || this.GetBrowsePageTypeFromBrowseId(opts.id, true, true);
 
 			const v = {
-				browseEndpoint: { browseId: opts.id}
+				browseEndpoint: { browseId: opts.id }
 			};
 
 			if (browsePageType) v.browseEndpoint.browseEndpointContextSupportedConfigs = {
@@ -522,7 +526,7 @@ export class MWUtils {
 		};
 
 		const WatchEndpoint = () => {
-			let v = { watchEndpoint: {}};
+			let v = { watchEndpoint: {} };
 
 			if (opts.playlistId) v.watchEndpoint.playlistId = opts.playlistId;
 			if (opts.firstVideo) {
@@ -627,7 +631,7 @@ export class MWUtils {
 		
 		const navType = opts.navType;
 
-		let created =
+		const created =
 			(navType === "browse") ? BrowseEndpoint() :
 			(navType === "watch") ? WatchEndpoint() :
 			(navType === "queueAdd") ? QueueAdd() :
@@ -671,6 +675,9 @@ export class MWUtils {
 		});
 	};
 
+	/**
+	 * @param {any} elem
+	 */
 	static NavigateOnClick({elem, navEndpOuter, preventPropagation = false, useCapture = false, verifyFunc = undefined, runAfter = undefined, runAfterParams = []}) {
 		elem.addEventListener("click", (e) => {
 			e.preventDefault();
@@ -1927,7 +1934,7 @@ export class MWUtils {
 	 * Designed for generic editing.
 	 * Use specific func for replacements.
 	 */
-	static ModifyListItemRendererForAnyPage(lir, albumData, artistData, browsePageType) {
+	static ModifyListItemRendererForAnyPage(lir, albumData, artistData, browsePageType, visibleIndex) {
 		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
 
 		const id = lir.playlistItemData?.videoId;
@@ -1964,6 +1971,8 @@ export class MWUtils {
 			// TODO: CHECK THESE WORK WHEN ADDING ARTIST CUSTOMISATIOn
 			// TODO: ADD DEFINING EXPLICIT SONGS
 			// TODO customisationSong FOR SONG NAME ETCs
+		} else {
+			lir.index.runs[0].text = String(visibleIndex);
 		};
 
 		return lir;

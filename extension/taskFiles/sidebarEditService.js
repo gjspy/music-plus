@@ -9,10 +9,6 @@ export class SidebarEditFeatures {
 		expand: "tiny"
 	};
 
-	static GetParentIDOfSidebarElem(elem) {
-		
-	};
-
 	static ApplyChanges(elem) {
 		const parent = elem.closest(".c-grid-popup, div#items, .c-paper-folder, .c-carousel");
 		if (parent.classList.contains("c-popup")) return;
@@ -140,7 +136,6 @@ export class SidebarEditFeatures {
 			grabTarget = toGrab;
 
 			targetIsFolder = grabTarget.matches(".c-paper-folder");
-			targetIsSep = grabTarget.matches(".c-sidebar-sep");
 			targetIsCarousel = grabTarget.matches(".c-carousel");
 
 			InBounds();
@@ -152,9 +147,7 @@ export class SidebarEditFeatures {
 			insertedInside = grabTarget.parentElement;
 			
 			isOob = false;
-			isOvf = !!insertedInside.closest(".c-grid-popup");
-
-			console.log("dragging", grabTarget);
+			isOvf = !!insertedInside?.closest(".c-grid-popup");
 		};
 
 		function OnMouseMove(event) {
@@ -212,7 +205,7 @@ export class SidebarEditFeatures {
 		const contBounds = this.guideCont.getBoundingClientRect();
 		const ovfBounds = ovfCont.getBoundingClientRect();
 
-		let mouseDown, grabTarget, targetIsFolder, targetIsSep, targetIsCarousel;
+		let mouseDown, grabTarget, targetIsFolder, targetIsCarousel;
 		let isOob, isOvf;
 		let originalInsertedBefore, originalInsertedInside;
 		let insertedBefore, insertedInside;
@@ -226,7 +219,7 @@ export class SidebarEditFeatures {
 
 	CreateFolderOnClick() {
 		function OnSubmit(popup) {
-			const title = popup.querySelector("#nameField")
+			const title = popup.querySelector("#nameField");
 			const titleVal = title.querySelector("input").value;
 
 			if (titleVal === "") {
@@ -257,44 +250,12 @@ export class SidebarEditFeatures {
 			});
 		};
 
-		(new popupService("modal", {
-			content: [
-				{
-					class: "c-popup-title",
-					text: "New Folder",
-					icon: "folder"
-				},
-				{
-					class: "c-text-input",
-					text: "Name - Required",
-					id: "nameField"
-				},
-				{
-					class: "c-text-input",
-					text: "Subtitle",
-					id: "subtitleField"
-				}
-			],
-			actions: [
-				{
-					icon: null,
-					text: "Cancel",
-					style: "text-only",
-					defaultAction: "close"
-				},
-				{
-					icon: null,
-					text: "Create",
-					style: "light",
-					action: OnSubmit
-				}
-			]
-		})).Load();
+		(new popupService("modal", window.popupTemplates.NewFolder(OnSubmit))).Load();
 	};
 
 	CreateSeparatorOnClick() {
 		function OnSubmit(popup) {
-			const title = popup.querySelector("#nameField")
+			const title = popup.querySelector("#nameField");
 			const titleVal = title.querySelector("input").value;
 
 			ext.DispatchFunctionToEW({
@@ -311,40 +272,13 @@ export class SidebarEditFeatures {
 				const created = service.CreateSeparatorItem(v.storage[0], service.masterCont, service.masterCont.firstElementChild);
 
 				window.cMusicFixerRunningServices.sidebarEditService.AddEditButtonsToAny(created);
-				sidebarEditService.ApplyChanges(service.masterCont);
+				window.sidebarEditService.ApplyChanges(service.masterCont);
 
 				popup.remove();
 			});
 		};
 
-		(new popupService("modal", {
-			content: [
-				{
-					class: "c-popup-title",
-					text: "New Sidebar",
-					icon: "add"
-				},
-				{
-					class: "c-text-input",
-					text: "Name (Not Required)",
-					id: "nameField"
-				}
-			],
-			actions: [
-				{
-					icon: null,
-					text: "Cancel",
-					style: "text-only",
-					defaultAction: "close"
-				},
-				{
-					icon: null,
-					text: "Create",
-					style: "light",
-					action: OnSubmit
-				}
-			]
-		})).Load();
+		(new popupService("modal", window.popupTemplates.NewSeparator(OnSubmit))).Load();
 	};
 
 	CreateCarouselOnClick() {
@@ -362,7 +296,7 @@ export class SidebarEditFeatures {
 			const created = service.CreateAndPopulateFolderPaperItem(v.storage[0], service.masterCont, service.masterCont.firstElementChild);
 
 			window.cMusicFixerRunningServices.sidebarEditService.AddEditButtonsToAny(created);
-			sidebarEditService.ApplyChanges(service.masterCont);
+			window.sidebarEditService.ApplyChanges(service.masterCont);
 		});
 	};
 
@@ -414,16 +348,6 @@ export class SidebarEditFeatures {
 		if (!isFolder) {
 			return;
 		};
-
-		/*const pencil = this.svgs["pencil"].cloneNode(true);
-		editCont.append(pencil);
-
-		pencil.addEventListener("click", (e) => {
-			e.preventDefault();
-			e.stopImmediatePropagation();
-
-			// TODO: Rename popup
-		});*/
 
 		this.AddEditButtonsToSepCar(editCont, elem);
 	};
@@ -532,15 +456,7 @@ export class SidebarEditFeatures {
 	};
 
 
-	CreateAllEditButtons() {
-		this.buttons = {
-			edit: ext.CreateButtonElem("pencil", "Edit", "dark"),
-			finish: ext.CreateButtonElem("check", "Finish", "dark"),
-			folder: ext.CreateButtonElem("folder", "Create", "dark"),
-			sep: ext.CreateButtonElem("add", "Line", "dark"),
-			carousel: ext.CreateButtonElem("add", "Carousel", "dark")
-		};
-
+	InitAllEditButtons() {
 		this.buttons.edit.addEventListener("click", () => this.OpenEditModeOnClick());
 		this.buttons.finish.addEventListener("click", () => this.CloseEditModeOnClick());
 		this.buttons.folder.addEventListener("click", () => this.CreateFolderOnClick());
@@ -555,8 +471,6 @@ export class SidebarEditFeatures {
 
 
 	ClearEditButtons() {
-		this.buttons = {};
-
 		this.ytButtonsCont.querySelectorAll(".c-button").forEach((button) => {
 			button.remove();
 		});
@@ -580,15 +494,15 @@ export class SidebarEditFeatures {
 
 	async init() {
 		this.ytButtonsCont = (await ext.WaitForBySelector(ext.HELPFUL_SELECTORS.sidebarYTButtonsCont, undefined, false))[0];
-		this.ytNewPlBtn = (await ext.WaitForBySelector("yt-button-renderer", undefined, false))[0];
+		this.ytNewPlBtn = (await ext.WaitForBySelector("yt-button-renderer", this.ytButtonsCont, false))[0];
 
 		this.guideCont = document.querySelector("ytmusic-guide-renderer");
 
 		// RENAME YT BUTTON FROM "New Playlist" TO "New"
-		(await ext.WaitForBySelector(".yt-core-attributed-string", this.ytNewPlBtn, false))[0].textContent = "New"; 
+		(await ext.WaitForBySelector(".ytAttributedStringHost", this.ytNewPlBtn, false))[0].textContent = "New"; 
 
 		this.ClearEditButtons(); // DELETE OLD, INCASE MODULE RELOADED.
-		this.CreateAllEditButtons(); // CREATE NEW
+		this.InitAllEditButtons(); // CREATE NEW
 
 		ext.UnhideElem(this.buttons.edit);
 		this.GenerateSVGs();
@@ -596,6 +510,13 @@ export class SidebarEditFeatures {
 
 
 	constructor() {
-		
+		this.svgs = {};
+		this.buttons = {
+			edit: ext.CreateButtonElem("pencil", "Edit", "dark"),
+			finish: ext.CreateButtonElem("check", "Finish", "dark"),
+			folder: ext.CreateButtonElem("folder", "Create", "dark"),
+			sep: ext.CreateButtonElem("add", "Line", "dark"),
+			carousel: ext.CreateButtonElem("add", "Carousel", "dark")
+		};		
 	};
 };

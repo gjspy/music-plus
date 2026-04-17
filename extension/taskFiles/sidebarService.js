@@ -199,16 +199,19 @@ export class InjectMyPaperItems {
 
 		// MAIN
 		function _OnIntervalForPlayerBar() {
+			//@ts-ignore
 			if (!this.masterCont.isConnected) {
 				fconsole.error("THIS.MASTERCONT NO LONGER CONNECTED, CLOSING AND CREATING NEW INSTANCE");
 				
-				this.Close();
+				//@ts-ignore
+				this.Close(); 
 
-				setTimeout(() => ext.DispatchEventToEW({
-					func: "reinit-sidebar"
-				}), 3000);
-				return;
+				const sidebar = new window.sidebarService();
+				window.cMusicFixerRunningServices.sidebarService = sidebar;
+				sidebar.init();
+				return;				
 			};
+			
 
 			const data = playerBarBtn.__dataHost.__data;
 			const playingItem = data.currentItem;
@@ -299,7 +302,7 @@ export class InjectMyPaperItems {
 
 
 	AddInteractionToPaperItem(elem, id, mfId) {
-		const navVerifyFunc = () => (!document.querySelector("#guide .c-editing, .c-popup-elem-overflow") && !elem.matches(".c-ovf-elem"));
+		const navVerifyFunc = (e) => (!document.querySelector("#guide .c-editing, .c-popup-elem-overflow") && !elem.matches(".c-ovf-elem") && !(e.target.getAttribute("href") && e.target.closest(".c-paper-subtitle")));
 
 		ext.NavigateOnClick({
 			elem,
@@ -566,7 +569,7 @@ export class InjectMyPaperItems {
 				title: "?",
 				type: "paperItem",
 				id: v
-			}
+			};
 		});
 		const orderToInsert = prependNewItems.concat(paperItemOrder);
 		
@@ -574,96 +577,22 @@ export class InjectMyPaperItems {
 		this.PopulateCont(orderToInsert, this.masterCont);
 	};
 
-
-	_OnChangeSentByEW(eventData) {
-		/*if (!eventData.storage) {
-			if (eventData.action === "refreshCont") {
-				this.RefreshCont(true);
-				fconsole.warn("ONLY RUNNING onChange AS ACTION = refreshCont. NO STORAGE PROVIDED.");
-			} else {
-				fconsole.error("event.storage IS undefined, not running onChange action");
-			};
-			
-			return;
-		};
-		
-		this.storage = eventData.storage;
-
-		if (eventData.action === "new") {
-			const parent = (eventData.parent === "guide") ? this.masterCont : this.masterCont.querySelector(`.c-paper-folder[plid=${eventData.parent}]`);
-			const insertBefore = (eventData.position === undefined) ? null : parent.children[eventData.position];
-
-			if (eventData.id.match(/^CF/)) this.CreateAndPopulateFolderPaperItem(eventData.id, parent, insertBefore);
-			else if (eventData.id.match(/^CS/)) this.CreateSeparatorItem(eventData.id, parent, insertBefore);
-			else this.CreatePaperElem(eventData.id, parent, insertBefore);
-
-		} else if (eventData.action === "refreshCont") {
-			this.RefreshCont(false);
-
-		} else {
-			fconsole.error("What is this eventData action from EW for sidebar update", eventData.action, "?");
-		};*/
-	};
-
-
-	ListenForChanges() {
-		const madeFunctionId = ext.RegisterEWFunction({
-			detail: {
-				time: -1,
-				func: ext.SIDEBAR_UPDATE_EVENT_FUNC
-			},
-			resolve: this._OnChangeSentByEW,
-			scope: this,
-			once: false
-		});
-
-		this._onChangeListenerId = madeFunctionId;
-	};
-
-
-	RefreshCont(getNewStorage) {
-		if (this.masterCont.matches(":has(.c-editing)")) {
-			throw Error("Cannot refresh paper cont during edit mode.");
-		};
-		
-		if (getNewStorage) {
-			ext.StorageGet(true).then((storage) => { // TODo
-				this.storage = storage || {};
-
-				this.RefreshCont(false);
-			});
-
-			return;
-		};
-
-		const currentOpenedFolders = Array.from(document.querySelectorAll(".c-paper-folder.open"))
-			.map(v => v.getAttribute("plid"));
-
-		this._foldersToOpen = currentOpenedFolders;
-
-		this.RemoveAllCGuideEntries();
-		this.instanceAddedElementsIds = [];
-
-		this.InsertAllPaperItemsInOrder();			
-	};
-
 	RemoveAllCGuideEntries() {
 		document.querySelectorAll(ext.HELPFUL_SELECTORS.allCGuideElements).forEach((elem) => elem.remove());
 	};
 
 	Close() {
-		ext.RemoveRegisteredEWWaiter(this._onChangeListenerId);
 		clearInterval(window.cMusicFixerPlayerBarInterval);
 	};
 
 	async RefreshStorage() {
 		await Promise.all([
-			(async () => { this.localStorage = await ext.StorageGet({"storageFunc": "getlocal"}) || {}; })(),
-			(async () => { this.sidebarData = await ext.StorageGet({"storageFunc": "getsidebar"}); })()
+			(async () => { this.localStorage = await ext.StorageGet({storageFunc: "getlocal"}) || {}; })(),
+			(async () => { this.sidebarData = await ext.StorageGet({storageFunc: "getsidebar"}); })()
 		]);
 	};
 
-	async init(startListening) {
+	async init() {
 		await ext.WaitForPolymerController();
 
 		this.accountInfo = this.GetUserAccountInfo();
@@ -680,8 +609,6 @@ export class InjectMyPaperItems {
 		this.InsertAllPaperItemsInOrder();
 
 		this.RespondToPlayerBar();
-
-		if (startListening) this.ListenForChanges();
 
 		if (this.accountInfo) ext.DispatchEventToEW({
 			func: "save-account-info",

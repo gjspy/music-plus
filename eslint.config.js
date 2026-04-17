@@ -26,7 +26,7 @@ export default [
             "eqeqeq": "error", // Enforce strict equality (`===` and `!==`)
             //"curly": "error", // Require curly braces for all control statements
             "semi": ["error", "always"], // Require semicolons
-            "quotes": ["error", "double"] // Enforce double quotes for strings
+            "quotes": ["error", "double"], // Enforce double quotes for string
         }
     }
 ];

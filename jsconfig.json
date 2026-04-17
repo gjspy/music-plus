@@ -10,7 +10,6 @@
 		"moduleResolution": "nodenext",
 		"lib": ["DOM", "DOM.Iterable", "es2022"],
 		"types": ["firefox-webext-browser"],
-		"noImplicitAny":null
 	},
 	"include": ["**/*.d.ts", "**/*.js"]
 }
