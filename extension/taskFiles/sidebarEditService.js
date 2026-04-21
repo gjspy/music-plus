@@ -250,7 +250,7 @@ export class SidebarEditFeatures {
 			});
 		};
 
-		(new popupService("modal", window.popupTemplates.NewFolder(OnSubmit))).Load();
+		(new popupService("modal", popupTemplates.NewFolder(OnSubmit))).Load();
 	};
 
 	CreateSeparatorOnClick() {
@@ -272,13 +272,13 @@ export class SidebarEditFeatures {
 				const created = service.CreateSeparatorItem(v.storage[0], service.masterCont, service.masterCont.firstElementChild);
 
 				window.cMusicFixerRunningServices.sidebarEditService.AddEditButtonsToAny(created);
-				window.sidebarEditService.ApplyChanges(service.masterCont);
+				sidebarEditService.ApplyChanges(service.masterCont);
 
 				popup.remove();
 			});
 		};
 
-		(new popupService("modal", window.popupTemplates.NewSeparator(OnSubmit))).Load();
+		(new popupService("modal", popupTemplates.NewSeparator(OnSubmit))).Load();
 	};
 
 	CreateCarouselOnClick() {
@@ -296,7 +296,7 @@ export class SidebarEditFeatures {
 			const created = service.CreateAndPopulateFolderPaperItem(v.storage[0], service.masterCont, service.masterCont.firstElementChild);
 
 			window.cMusicFixerRunningServices.sidebarEditService.AddEditButtonsToAny(created);
-			window.sidebarEditService.ApplyChanges(service.masterCont);
+			sidebarEditService.ApplyChanges(service.masterCont);
 		});
 	};
 

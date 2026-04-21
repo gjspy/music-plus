@@ -86,6 +86,9 @@ export class BaseEditMode {
 
 
 	init() {
+		const existing = this.rightContent.querySelector(".c-master-buttons");
+		if (existing) existing.remove();
+
 		const newCont = document.createElement("div");
 		newCont.className = "c-master-buttons";
 
@@ -100,8 +103,5 @@ export class BaseEditMode {
 	constructor() {
 		this.rightContent = document.querySelector("ytmusic-nav-bar #right-content");
 		if (!this.rightContent) return;
-
-		const existing = this.rightContent.querySelector(".c-master-buttons");
-		if (existing) existing.remove();
 	};
 };

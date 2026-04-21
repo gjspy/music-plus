@@ -206,9 +206,14 @@ export class InjectMyPaperItems {
 				//@ts-ignore
 				this.Close(); 
 
-				const sidebar = new window.sidebarService();
+				const sidebar = new sidebarService();
 				window.cMusicFixerRunningServices.sidebarService = sidebar;
-				sidebar.init();
+
+				sidebar.init().then(() => {
+					window.cMusicFixerRunningServices.sidebarEditService = new sidebarEditService();
+					window.cMusicFixerRunningServices.sidebarEditService.init();
+				});
+
 				return;				
 			};
 			
@@ -587,8 +592,8 @@ export class InjectMyPaperItems {
 
 	async RefreshStorage() {
 		await Promise.all([
-			(async () => { this.localStorage = await ext.StorageGet({storageFunc: "getlocal"}) || {}; })(),
-			(async () => { this.sidebarData = await ext.StorageGet({storageFunc: "getsidebar"}); })()
+			(async () => { this.localStorage = await ext.StorageGet({storageFunc: "getlocal", shouldTimeout: false}) || {}; })(),
+			(async () => { this.sidebarData = await ext.StorageGet({storageFunc: "getsidebar", shouldTimeout: false}); })()
 		]);
 	};
 

@@ -655,8 +655,6 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 }
 
 .c-button {
-	/*max-width: 90px;*/
-
 	border-radius: 18px;
 
 	display: flex;
@@ -888,6 +886,7 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 		color: var(--yt-spec-text-secondary);
 		font-size: 18px;
 		line-height: 30px;
+		white-space: pre-line;
 	}
 }
 
@@ -902,7 +901,7 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 	gap: 10px;
 
 	& > .c-button {
-		width: 60px;
+		width: fit-content;
 	}
 }
 
@@ -1828,6 +1827,9 @@ ytmusic-nav-bar div.center-content {
 }
 
 
+ytmusic-responsive-header-renderer #header-description .description span:first-child {
+	white-space: pre-line;
+}
 
 ytmusic-player-page #side-panel ytmusic-queue-header-renderer #buttons .c-button#clear-queue {
 	height: 32px;

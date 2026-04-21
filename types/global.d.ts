@@ -8,6 +8,7 @@ import { PopupService } from "../extension/popups";
 import { PopupTemplates } from "../extension/popupTemplates";
 import { BaseEditMode } from "../extension/editModes/_baseEditor";
 import { AlbumEditMode } from "../extension/editModes/albumEditMode";
+import { PlaylistEditMode } from "../extension/editModes/playlistEditMode";
 
 declare const console: undefined;
 
@@ -22,9 +23,11 @@ declare global {
 	var sidebarService: typeof InjectMyPaperItems;
 	var cacheService: typeof CacheService;
 	var popupService: typeof PopupService;
+	var popupTemplates: typeof PopupTemplates;
 	var sidebarEditService: typeof SidebarEditFeatures;
 	var baseEditMode: typeof BaseEditMode;
 	var albumEditMode: typeof AlbumEditMode;
+	var playlistEditMode: typeof PlaylistEditMode;
 	var middlewareEditors: middlewareEditors;
 
 	interface Window {

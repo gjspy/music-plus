@@ -46,7 +46,7 @@ export class EventDriven {
 			const description = header.description.musicDescriptionShelfRenderer;
 
 			const descriptionSpan = (await ext.WaitForBySelector(".description span:first-child", headerCont))[0];
-			descriptionSpan.textContent = description.description.runs[0].text;
+			descriptionSpan.textContent = description.description.runs[0].text.replace("\n","\r\n");
 		};
 
 		const listItems = await ext.WaitForBySelector(ext.HELPFUL_SELECTORS.listItemRenderersOfCurrentBrowseResponse);
@@ -111,6 +111,8 @@ export class EventDriven {
 		if (ext.BrowsePageTypes.isPlaylist(browsePageType)) {
 			this.AlbumAndPlaylist(state);
 			this.Playlist(state);
+
+			window.cMusicFixerRunningServices.activeEditMode = new playlistEditMode();
 
 		} else if (ext.BrowsePageTypes.isAnyAlbum(browsePageType)) {
 			this.AlbumAndPlaylist(state);

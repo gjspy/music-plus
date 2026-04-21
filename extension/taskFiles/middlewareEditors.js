@@ -10,11 +10,12 @@ export class GETEditors {
 		let len = Number(request.urlObj.searchParams.get("len"));
 
 		let isFinal = request.urlObj.searchParams.get("final");
-		if (!isFinal && cmt !== len) return; // "final" call not made for last item in playlist/album.
-
+		
 		// ALLOW IF CONFIRMED AUTOPLAY (NOT SKIP), OR PLAYED 80%+
 		let validWatch = (pe === 1) || (cmt >= (len * 0.8));
-		console.log("WATCHTIME STATS", validWatch, "pe", pe === 1, "cmt", cmt >= (len * 0.8));
+		fconsole.log("WATCHTIME STATS", validWatch, "pe", pe === 1, "cmt", cmt >= (len * 0.8));
+		
+		if (!isFinal && cmt !== len) return; // "final" call not made for last item in playlist/album.
 
 		//if (!validWatch) return; want to cache when was skipped! don't return :)
 
@@ -762,7 +763,7 @@ export class MainPOSTEditors {
 		if (!queueDataRequestIds) queueDataRequestIds = [];
 
 		if (id.startsWith("OL")) {
-			id = await ext.StorageGet({ storageFunc: "mfId-to-id", id });
+			id = (await ext.StorageGet({ storageFunc: "mfId-to-id", id }))[0];
 		};
 		if (id === undefined) return [undefined, undefined, undefined];
 		
@@ -832,6 +833,29 @@ export class MainPOSTEditors {
 		console.log("newContents", newItemOrder);
 
 		return [newItemOrder, currentWatchEndpoint, currentData];
+	};
+
+	static _AddCustomCarouselShelfToListPageForRelated(response, carouselContents) {
+		const secondaryContents = ext.SafeDeepGet(response, ext.Structures.listPageItemsSectionRenderer);
+
+		if (secondaryContents.continuations) delete secondaryContents.continuations;
+
+		const newContents = [];
+
+		for (const child of secondaryContents.contents) {
+			if (child.musicShelfRenderer) { // PLAYLIST, SUGGESTED SONGS TO ADD.
+				if (child.musicShelfRenderer.title?.runs[0].text !== "Suggestions") newContents.push(child);
+			
+			} else if (child.musicCarouselShelfRenderer) { // AL/PL SUGGESTED TRIRs.
+				const title = ext.SafeDeepGet(child, ext.Structures.headerTitleFromSectionListShelf());
+				if (!title || (title !== "Related playlists" && title !== "Releases for you")) newContents.push(child);
+			} else {
+				newContents.push(child);
+			};
+		};
+
+		secondaryContents.contents = newContents;
+		secondaryContents.contents.push(...carouselContents.map(v => ext.BuildCarousel(v.seasonName, v.contents)));
 	};
 
 
@@ -980,6 +1004,8 @@ export class MainPOSTEditors {
 		delete playButton.playNavigationEndpoint.watchEndpoint.index;
 
 		console.log("listitems after", musicShelfRenderer.contents);
+
+		MainPOSTEditors._AddCustomCarouselShelfToListPageForRelated(response, newList.related);
 
 		return response; // was changed in-place
 	};
@@ -1135,14 +1161,14 @@ export class MainPOSTEditors {
 		return this.MUSIC_PAGE_TYPE_ARTIST.apply(this, arguments);
 	};
 
-	/*static async MUSIC_PAGE_TYPE_PLAYLIST(response, id, storage) {
+	static async MUSIC_PAGE_TYPE_PLAYLIST(response, id) {
 		const listItems = ext.SafeDeepGet(response, ext.Structures.playlistListItems()) || [];
 
 		for (let lir of listItems) {
 			lir = lir.musicResponsiveListItemRenderer;
 			if (!lir) continue;
 
-			ext.ModifyListItemRendererForAnyPage(storage, "MUSIC_PAGE_TYPE_PLAYLIST", lir);
+			ext.ModifyListItemRendererForAnyPage(lir, undefined, undefined, "MUSIC_PAGE_TYPE_PLAYLIST");
 
 			let indexToAddNew = -1;
 			let removingServiceEndpoint;
@@ -1186,7 +1212,11 @@ export class MainPOSTEditors {
 			menuItems.splice(indexToAddNew, 1, toAdd);
 		};
 
-		let customMetadata = storage.customisation.metadata[id] || {};
+		const newList = await ext.StorageGet({ storageFunc: "edit-list", id });
+
+		MainPOSTEditors._AddCustomCarouselShelfToListPageForRelated(response, newList.related);
+
+		/*let customMetadata = storage.customisation.metadata[id] || {};
 
 		let userOwnedHeaderRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRendererUserOwned());
 		let otherHeaderRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer());
@@ -1208,10 +1238,10 @@ export class MainPOSTEditors {
 		if (customMetadata.year) {
 			if (userOwnedHeaderRenderer) headerRenderer.subtitle.runs[4].text = customMetadata.year;
 			if (otherHeaderRenderer) headerRenderer.subtitle.runs[2].text = customMetadata.year;
-		};
+		};*/
 
 		return response; // changed in place, still return so acknowledges change
-	};*/
+	};
 };
 
 export const urlsToEdit = [

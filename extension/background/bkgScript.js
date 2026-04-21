@@ -15,7 +15,8 @@ const MODULESCRIPTS = {
 	"middlewareEditors": "taskFiles/middlewareEditors.js",
 	"eventDriven": "taskFiles/eventDriven.js",
 	"baseEditMode": "editModes/_baseEditor.js",
-	"albumEditMode": "editModes/albumEditMode.js"
+	"albumEditMode": "editModes/albumEditMode.js",
+	"playlistEditMode": "editModes/playlistEditMode.js"
 };
 
 const TEMPLATE_ELEMS_FP = "../templateElements.html";
@@ -150,20 +151,26 @@ async function Big(request, sender) {
 			}
 		};
 		meth = "set";
+	
+	} else if (func === "importance") {
+		api.route = `${EWUtils.STORAGE_API}userdata/archive/${EWUtils.STORAGE_SETWITHINDEX}`;
+		meth = "set";
+
 	};
 
-	if (!api) throw "FUNC NOT RECOGNISED";
+	if (Object.keys(api).length === 0 && resp === undefined) throw "FUNC NOT RECOGNISED";
 
 	if (meth === "get") {
 		try {
 			if (!resp) resp = await EWUtils.StorageGetExternal(api);
 		} catch(err) { fconsole.error(err); resp = {}; };
-		
 
 		browser.tabs.sendMessage(sender.tab.id, {
 			functionResponseCorrelation: request.functionResponseCorrelation,
 			storage: resp
 		});
+
+
 	} else if (meth === "set" || meth === "setWithResp") {
 		api.data = request.data;
 
@@ -173,6 +180,7 @@ async function Big(request, sender) {
 			functionResponseCorrelation: request.functionResponseCorrelation,
 			storage: resp
 		});
+
 	};	
 };
 

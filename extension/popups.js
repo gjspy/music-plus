@@ -17,7 +17,7 @@ export class PopupService {
 		elem.addEventListener("blur", () => decide());
 	};
 
-	InitialiseItemsGrid({title, subtitle, items}) {
+	_InitialiseItemsGrid({title, subtitle, items}) {
 		this.contents = ext.GetTemplateElem("c-grid-popup"); // CREATE CONT
 		this.childCont = this.contents.querySelector(".elem-cont");
 		
@@ -54,7 +54,7 @@ export class PopupService {
 	};
 
 
-	InitialiseModal({content, actions}) {
+	_InitialiseModal({content, actions}) {
 		this.contents = ext.GetTemplateElem("c-popup-bkg");
 		this.childCont = this.contents.querySelector(".c-popup-content");
 		this.items = content;
@@ -78,7 +78,7 @@ export class PopupService {
 		document.body.append(this.contents);
 	};
 
-	InitialiseDropdown({buttons, originalClickEvent, scope, onClickRunFirst}) {
+	_InitialiseDropdown({buttons, originalClickEvent, scope, onClickRunFirst}) {
 		this.contents = document.createElement("div");
 		this.contents.className = "c-popup-bkg";
 
@@ -165,8 +165,8 @@ export class PopupService {
 	constructor(type, options) {
 		this.type = type;
 
-		if (type === "modal") this.InitialiseModal(options);
-		else if (type === "grid") this.InitialiseItemsGrid(options);
-		else if (type === "dropdown") this.InitialiseDropdown(options);
+		if (type === "modal") this._InitialiseModal(options);
+		else if (type === "grid") this._InitialiseItemsGrid(options);
+		else if (type === "dropdown") this._InitialiseDropdown(options);
 	};
 };

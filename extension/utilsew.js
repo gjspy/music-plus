@@ -64,6 +64,7 @@ export class EWUtils {
 	static STORAGE_GETPOPULATED = "getpopulated";
 	static STORAGE_GETWITHCACHE = "getwithcache";
 	static STORAGE_SET = "set";
+	static STORAGE_SETWITHINDEX = "setwithindex";
 	static STORAGE_NEW = "new";
 	static STORAGE_MOD = "modify";
 	static STORAGE_DEL = "del";

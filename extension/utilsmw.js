@@ -331,7 +331,8 @@ export class MWUtils {
 
 	// CUSTOMEVENT RECEIVED BY CONTENT SCRIPT IN ISO, THEN MESSAGED TO BKG.
 	static DispatchEventToEW = (detail) => window.dispatchEvent(new CustomEvent(this.BRIDGE_EVENT_ID, {detail: detail}));
-	static DispatchFunctionToEW(detail) {
+	static DispatchFunctionToEW(detail, shouldTimeoutDefaultTrue) {
+		if (shouldTimeoutDefaultTrue === undefined) shouldTimeoutDefaultTrue = true;
 		// DEFINES WHERE THE RESPONSE OF AN EWEVENT SHOULD RESOLVE TO.
 
 		return new Promise((resolve, reject) => {
@@ -345,14 +346,16 @@ export class MWUtils {
 
 			this.DispatchEventToEW(detail);
 
-			setTimeout(() => {
-				// ALREADY RESOLVED
-				if (!this.state.EWEventListener.waiters[listenerId]) return;
+			if (shouldTimeoutDefaultTrue) {
+				setTimeout(() => {
+					// ALREADY RESOLVED
+					if (!this.state.EWEventListener.waiters[listenerId]) return;
 
-				reject("TIMEOUT WAITING FOR EW RESPONSE");
-				this.RemoveRegisteredEWWaiter(listenerId);
+					reject("TIMEOUT WAITING FOR EW RESPONSE");
+					this.RemoveRegisteredEWWaiter(listenerId);
 
-			}, this.MAX_EW_WAITFOR_TIMEOUT);
+				}, this.MAX_EW_WAITFOR_TIMEOUT);
+			};
 		});
 	};
 
@@ -392,11 +395,11 @@ export class MWUtils {
 	/**
 	 * @param {any} path
 	 */
-	static async StorageGet({path = undefined, storageFunc = undefined, id = undefined}) {
+	static async StorageGet({path = undefined, storageFunc = undefined, id = undefined, shouldTimeout = true}) {
 		const storage = (await this.DispatchFunctionToEW({
 			func: "storage",
 			path, storageFunc, id
-		})).storage;
+		}, shouldTimeout)).storage;
 		
 		return storage;
 	};
@@ -860,19 +863,6 @@ export class MWUtils {
 	};
 
 
-	static GetObjFromMfId(cache, mfId) {
-		if (!mfId) return;
-
-		if (mfId.startsWith("PL")) {
-			return cache["VL" + mfId];
-		};
-
-		let id = cache.mfIdMap[mfId];
-		if (!id) return undefined;
-
-		return cache[id];
-	};
-
 
 	static GetPrimaryVersions(storage, nonMainId) {
 		let linked = [];
@@ -1140,10 +1130,10 @@ export class MWUtils {
 
 
 
-	static BuildTwoRowItemRendererFromData(data) {
+	static BuildTwoRowItemRendererFromPaperData(data) {
 		const navEndp = this.BuildEndpoint({
 			navType: "browse",
-			browseId: data.id
+			id: data.id
 		});
 
 		return {				
@@ -1173,18 +1163,9 @@ export class MWUtils {
 					]
 				},
 				"subtitle": {
-					"runs": [
-						{
-							"text": data.subType
-						},
-						{
-							"text": this.YT_DOT
-						},
-						{
-							"text": data.year
-						}
-					]
+					"runs": data.subtitle.map(v => [v, {text: ext.YT_DOT}]).flat(1)
 				},
+				"subtitleBadges": data.badges?.map(v => ({ musicInlineBadgeRenderer: { icon: { iconType: v } } })),
 				"navigationEndpoint": navEndp,
 				"menu": {
 					"menuRenderer": {
@@ -1317,7 +1298,7 @@ export class MWUtils {
 									}
 								}
 							},
-							this.CreateToggleMenuItemForLikeButton(data),
+							//this.CreateToggleMenuItemForLikeButton(data),
 							{
 								"menuServiceItemDownloadRenderer": {
 									"serviceEndpoint": {
@@ -1354,30 +1335,6 @@ export class MWUtils {
 									"navigationEndpoint": {
 										"addToPlaylistEndpoint": {
 											"playlistId": data.mfId
-										}
-									}
-								}
-							},
-							{
-								"menuNavigationItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Go to artist"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ARTIST"
-									},
-									"navigationEndpoint": {
-										"browseEndpoint": {
-											"browseId": data.artist,
-											"browseEndpointContextSupportedConfigs": {
-												"browseEndpointContextMusicConfig": {
-													"pageType": "MUSIC_PAGE_TYPE_ARTIST"
-												}
-											}
 										}
 									}
 								}
@@ -1446,6 +1403,25 @@ export class MWUtils {
 						"displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
 					}
 				}
+			}
+		};
+	};
+
+	static BuildCarousel(title, contents) {
+		return {
+			"musicCarouselShelfRenderer": {
+				"contents": contents.map(v => this.BuildTwoRowItemRendererFromPaperData(v)),
+				"header": {
+					"musicCarouselShelfBasicHeaderRenderer": {
+						"title": {
+							"runs": [{
+								"text": title
+							}]
+						},
+						headerStyle: "MUSIC_CAROUSEL_SHELF_BASIC_HEADER_STYLE_DEFAULT"
+					}
+				},
+				"itemSize": "COLLECTION_STYLE_ITEM_SIZE_MEDIUM"
 			}
 		};
 	};
@@ -1945,7 +1921,7 @@ export class MWUtils {
 
 		if (browsePageType === "MUSIC_PAGE_TYPE_PLAYLIST") {
 
-			if (albumData.thumb) {
+			/*if (albumData.thumb) {
 				lir.thumbnail.musicThumbnailRenderer = {
 					"thumbnail": {
 						"thumbnails": [
@@ -1970,7 +1946,7 @@ export class MWUtils {
 
 			// TODO: CHECK THESE WORK WHEN ADDING ARTIST CUSTOMISATIOn
 			// TODO: ADD DEFINING EXPLICIT SONGS
-			// TODO customisationSong FOR SONG NAME ETCs
+			// TODO customisationSong FOR SONG NAME ETCs*/
 		} else {
 			lir.index.runs[0].text = String(visibleIndex);
 		};

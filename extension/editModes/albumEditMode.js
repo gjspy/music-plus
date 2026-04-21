@@ -64,6 +64,32 @@ export class AlbumEditMode extends baseEditMode {
 	HideSongs = (state, pageId) => this._ToggleSongs(state, pageId, "hidden");
 	SkipSongs = (state, pageId) => this._ToggleSongs(state, pageId, "skipped");
 
+	/*Importance(state, pageId) {
+		const OnSubmit = (popup) => {
+			const year = Number(popup.querySelector("#year input").value);
+			const season = popup.querySelector("#season input").value;
+
+			ext.DispatchFunctionToEW({
+				func: "storage",
+				storageFunc: "importance",
+				data: {
+					data: {
+						id: pageId,
+						year,
+						season,
+						seasonCode: `${year}-${season}`,
+						description: popup.querySelector("#description input").value
+					}, // TODO need to swap. index describes browseId : [seasonCodes], normal files are seasonCode: browseIds. shit then, cant have description per entry?
+					_saveBackup: true
+				}
+			});
+		};
+
+		(new popupService("modal", popupTemplates.PlaylistImportance(OnSubmit))).Load();
+	};*/
+
+	Importance = (state, pageId) => (new playlistEditMode()).Importance.call(this, state, pageId);
+
 
 
 
@@ -92,6 +118,12 @@ export class AlbumEditMode extends baseEditMode {
 			icon: "visible",
 			text: "Hide Songs",
 			onclick: this.HideSongs
+		},
+		{
+			type: "importance", // "type" IS THE ID!
+			icon: "note",
+			text: "Define as Related",
+			onclick: this.Importance
 		},
 		{
 			type: "explicit",
