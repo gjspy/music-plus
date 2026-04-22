@@ -162,7 +162,8 @@ async function init() {
 						toolbar_field: [c2.r, c2.g, c2.b, 0.5]
 					},
 					properties: {
-						additional_backgrounds_alignment: ["center center"]
+						additional_backgrounds_alignment: ["center center"],
+						color_scheme: "dark"
 					}
 				});
 
