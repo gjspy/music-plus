@@ -108,9 +108,16 @@ async function init() {
 		};
 	};
 
+	let CHANGING_THEME = true;
+
+	document.querySelector("#reset-theme").onclick = () => {
+		CHANGING_THEME = false;
+		browser.theme.reset();
+	};
+
 	// HEARS EVERY EVENT BKGSCRIPT HEARS
 	browser.runtime.onMessage.addListener((request) => {
-		console.log(request)
+		console.log(request);
 		if (request.func !== "auto-lights" && request.func !== "ext-page-colours") return;
 
 		let brightness = request.action === "dim" ? 0 :
@@ -123,15 +130,56 @@ async function init() {
 		
 		} else if (request.action === "setImg") {
 			const blob = new Blob([request.imgData], {type: request.imgType});
-			document.body.style.setProperty("--playing-thumbnail", `url(${URL.createObjectURL(blob)})`);
+			const url = URL.createObjectURL(blob);
+			document.body.style.setProperty("--playing-thumbnail", `url(${url})`);
+		
+		} else if (request.action === "setCols" && CHANGING_THEME) {
+			const blob = new Blob([request.imgData], {type: request.imgType});
+			const url = URL.createObjectURL(blob);
+
+			const img = new Image();
+			img.onload = () => {
+				const canvas = document.createElement("canvas");
+				const ctx = canvas.getContext("2d");
+
+				canvas.width = 1920;
+				canvas.height = 1920;
+				ctx.filter = "blur(20px) brightness(0.9) saturate(1.4)";
+
+				ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+				const data = canvas.toDataURL("image/png");
+				console.log(data);
+				console.log(ctx.filter);
+				const [c1,c2] = request.colours;
+
+				browser.theme.update({
+					images: {
+						additional_backgrounds: [data]
+					},
+					colors: {
+						toolbar: [c1.r, c1.g, c1.b, 0.3],
+						tab_selected: [c2.r, c2.g, c2.b, 0.5],
+						toolbar_field: [c2.r, c2.g, c2.b, 0.5]
+					},
+					properties: {
+						additional_backgrounds_alignment: ["center center"]
+					}
+				});
+
+				canvas.remove();
+			};
+
+			img.src = url;
 		};
 	});
+
+	window.onbeforeunload = () => browser.theme.reset();
 
 	const tab = (await browser.tabs.query({ url: "*://music.youtube.com/*", windowId: browser.windows.WINDOW_ID_CURRENT}))[0];
 
 	if (tab) browser.tabs.sendMessage(tab.id, {
 		functionResponseCorrelation: "update-lights"
-	})
+	});
 	
 };
 

@@ -217,7 +217,15 @@ async function EWOMAutoLights(request) {
 		fetch(storage.lightApi.endpoint + `/api/set-by-img-file?auto_music=${request.autoMusic}&room=${storage.lightApi.autoMusicRoom}`, {
 			method: "POST",
 			body: formData
-		});
+		}).then(v => v.json().then(data => {
+			browser.runtime.sendMessage({
+				func: "ext-page-colours",
+				action: "setCols",
+				colours: data.map(v => v.color),
+				imgData: request.imgData,
+				imgType: request.imgType
+			});
+		}));
 	};
 };
 

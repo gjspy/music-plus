@@ -46,13 +46,13 @@ install eslint vs code extension
 install disable ts errors extension
 npm install tsc-silent --save-dev
 
+MAKE 'FIX MODE', SEE EVERY PLAYLIST WHICH CONTAINS A VIDEO. MAYBE A MULTISELECT CMD, ANY THAT INCLUDES ANY OF THE FOLLOWING.
 
 TODO: auto add tag when playlist cache comes in (make sure only happens once, duplicate tags bad)
 TODO: make it completely fine to reload, eventDriven runs twice when reloaded, old listener not cancelled
 TODO: sidebar no longer has creator for playlist, may filter out on cient if want it back
 TODO: offset for linked albums
 TODO: **** file name max lengths. need psuedonyms for priv releases. ***
-TODO: extraSongs for listItem editor. only have album overwrites right now.
 TODO: eat the acid style editing easy, playingFrom is same as loadFrom. how to click folklore and lay from folklore (deluxe)?
 TODO: *** MENU ITEMS  OF EDITED LIRS NEED UPDATING ENDPOINTS.
 TODO: shuffle!
@@ -105,7 +105,6 @@ n3rds-inc.time
 
 update eventdriven & playerPageFeatures.
 
-BUTTON TO UPDATE LIGHT COLOURS BASED ON PLAYING. (IN POPUP)
 make CATEGORIES and RATINGS. RATINGS = 1-5 stars or smth, categories = too pop, nice pop, no texture, etc...
 CLEAR QUEUE BUTTON DOESNT CLEAR SERVER QUEUE.
 CLICK IT, THEN ADD SOMETHING ELSE TO THE QUEUE, THEN SHUFFLE IT.
@@ -114,16 +113,10 @@ can i edit the request before its sent? change videoId to videoIds and add all e
 (egiting QP backing playlist, see dissmiss queue endpoint, in buildQueuePanelRenderer stuff) ****
 
 have feature to have player page popout, and "add to queue" adds to that. while popped out, disable play buttons on playlist pages etc? or, make it only play if current is paused.
-
-
 MAKE MINI WINDOW FOR TABLET, YT MUSIC WIDGET, make it auto appear on login and fill screen, using firefox as desktop backgorund ish user showcase mode smth
 COULD DEFINE OWN MUSIC VIDEOS, IN /NEXT API CALL, playlistPanelVideoWrapperRenderer.counterpart.counterpartRenderer + segmentMan**
 
 
-MAKE IT CHANGE BROWSER THEME: browser.theme.update(), TO IMAGE OF ALBUM PLAYING!!
-ON PAGE CLOSE, RESET TO STORED VALUE OF browser.theme.getCurrent() BEFORE STARTING.
-STORE THIS! CAN TEL IF ITS OURS OR NOT, BASED ON IF IMG URL IS YT OR NOT.
-couldnt set image from external url, try base64? (str repr of img)
 
 MAKE IT NOT EVEN CALL YT, AND RETURN THE RESPONSE IN newFetch, NOT ACCESSING originalFetch()!
 

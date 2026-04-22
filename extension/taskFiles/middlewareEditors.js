@@ -763,7 +763,7 @@ export class MainPOSTEditors {
 		if (!queueDataRequestIds) queueDataRequestIds = [];
 
 		if (id.startsWith("OL")) {
-			id = ((await ext.StorageGet({ storageFunc: "mfId-to-id", id })) || [])[0];
+			id = await ext.StorageGet({ storageFunc: "mfId-to-id", id });
 		};
 		if (id === undefined) return [undefined, undefined, undefined];
 		
