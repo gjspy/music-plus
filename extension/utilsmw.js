@@ -1163,7 +1163,7 @@ export class MWUtils {
 					]
 				},
 				"subtitle": {
-					"runs": data.subtitle.map(v => [v, {text: ext.YT_DOT}]).flat(1)
+					"runs": data.subtitle.map(v => [{text: ext.YT_DOT}, v]).flat(1).splice(1)
 				},
 				"subtitleBadges": data.badges?.map(v => ({ musicInlineBadgeRenderer: { icon: { iconType: v } } })),
 				"navigationEndpoint": navEndp,

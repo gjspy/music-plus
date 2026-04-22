@@ -763,7 +763,7 @@ export class MainPOSTEditors {
 		if (!queueDataRequestIds) queueDataRequestIds = [];
 
 		if (id.startsWith("OL")) {
-			id = (await ext.StorageGet({ storageFunc: "mfId-to-id", id }))[0];
+			id = ((await ext.StorageGet({ storageFunc: "mfId-to-id", id })) || [])[0];
 		};
 		if (id === undefined) return [undefined, undefined, undefined];
 		
@@ -836,6 +836,8 @@ export class MainPOSTEditors {
 	};
 
 	static _AddCustomCarouselShelfToListPageForRelated(response, carouselContents) {
+		if (!carouselContents || (Array.isArray(carouselContents) && carouselContents.length === 0)) return;
+
 		const secondaryContents = ext.SafeDeepGet(response, ext.Structures.listPageItemsSectionRenderer);
 
 		if (secondaryContents.continuations) delete secondaryContents.continuations;
@@ -849,6 +851,13 @@ export class MainPOSTEditors {
 			} else if (child.musicCarouselShelfRenderer) { // AL/PL SUGGESTED TRIRs.
 				const title = ext.SafeDeepGet(child, ext.Structures.headerTitleFromSectionListShelf());
 				if (!title || (title !== "Related playlists" && title !== "Releases for you")) newContents.push(child);
+			
+			} else if (child.musicPlaylistShelfRenderer) {
+				child.musicPlaylistShelfRenderer.contentsReorderable = false;
+				delete child.musicPlaylistShelfRenderer.header;
+
+				newContents.push(child);
+
 			} else {
 				newContents.push(child);
 			};
