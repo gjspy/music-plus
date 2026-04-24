@@ -1206,7 +1206,7 @@ export class MainPOSTEditors {
 			let songName = ext.SafeDeepGet(lir, ext.Structures.titleTextFromLIR) || "this song";
 
 			let toAdd = ext.BuildEndpoint({
-				navType: "menuNavigationItemRenderer",
+				navType: "menuNavItemRenderer",
 				icon: "REMOVE_FROM_PLAYLIST",
 				text: "Remove from playlist",
 				endpoint: ext.BuildEndpoint({

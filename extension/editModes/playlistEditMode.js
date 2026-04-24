@@ -1,5 +1,7 @@
 export class PlaylistEditMode extends baseEditMode {
 
+	affectsBrowsePage = true;
+
 	ImportancePrimary(state, pageId) {
 		const OnSubmit = (popup) => {
 			const year = Number(popup.querySelector("#year input").value);
