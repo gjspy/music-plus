@@ -109,10 +109,11 @@ async function init() {
 	};
 
 	let CHANGING_THEME = true;
+	const THEME_BEFORE = await browser.theme.getCurrent();
 
 	document.querySelector("#reset-theme").onclick = () => {
 		CHANGING_THEME = false;
-		browser.theme.reset();
+		browser.theme.update(THEME_BEFORE);
 	};
 
 	// HEARS EVERY EVENT BKGSCRIPT HEARS
@@ -174,7 +175,7 @@ async function init() {
 		};
 	});
 
-	window.onbeforeunload = () => browser.theme.reset();
+	window.onbeforeunload = () => browser.theme.update(THEME_BEFORE);
 
 	const tab = (await browser.tabs.query({ url: "*://music.youtube.com/*", windowId: browser.windows.WINDOW_ID_CURRENT}))[0];
 

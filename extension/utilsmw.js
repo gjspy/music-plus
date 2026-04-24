@@ -897,7 +897,7 @@ export class MWUtils {
 			},
 			{ text: this.YT_DOT },
 			{
-				text: cameFrom.name,
+				text: cameFrom?.name || albumData.name,
 				navigationEndpoint: this.BuildEndpoint({
 					navType: "browse",
 					id: albumData.id
@@ -2264,6 +2264,8 @@ export class MWUtils {
 		const video = newData.newData;
 		const index = newData.displayIndex - minIndex;
 
+		const thumb = newData.cameFrom?.thumb || albumData.thumb;
+
 		return {
 			"playlistPanelVideoRenderer": {
 				"title": {
@@ -2279,7 +2281,7 @@ export class MWUtils {
 				"thumbnail": {
 					"thumbnails": [
 						{
-							"url": this.UpscaleImgQuality(newData.cameFrom.thumb),
+							"url": this.UpscaleImgQuality(thumb),
 							"width": this.IMG_HEIGHT,
 							"height": this.IMG_HEIGHT
 						}
@@ -2307,7 +2309,7 @@ export class MWUtils {
 						"watchEndpointMusicSupportedConfigs": {
 							"watchEndpointMusicConfig": {
 								"hasPersistentPlaylistPanel": true,
-								"musicVideoType": (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
+								"musicVideoType": (newData.cameFrom?.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
 							}
 						}
 					}
