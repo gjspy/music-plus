@@ -759,13 +759,13 @@ export class MainPOSTEditors {
 
 	//static async _EditQueueContentsFromRespon(storage, queueContents, buildQueueFromBId, loadedQueueFromMfId, videoIdToSelect, isShuffle, areQueueDatas, queueDataRequestIds) {
 	static async _EditQueueContentsFromResponse(queueContents, id, videoIdToSelect, areQueueDatas, queueDataRequestIds) {
-		if (id === undefined) return [undefined, undefined, undefined];
+		if (!id) return [undefined, undefined, undefined];
 		if (!queueDataRequestIds) queueDataRequestIds = [];
 
 		if (id.startsWith("OL")) {
 			id = await ext.StorageGet({ storageFunc: "mfId-to-id", id });
 		};
-		if (id === undefined) return [undefined, undefined, undefined];
+		if (!id) return [undefined, undefined, undefined];
 		
 		const newList = await ext.StorageGet({ storageFunc: "edit-list", id });
 		if (!newList.listItems) return [undefined, undefined, undefined];
