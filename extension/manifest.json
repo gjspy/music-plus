@@ -57,5 +57,9 @@
 		"default_icon": "icons/testlogo.png",
 		"default_title": "YTMUSIC Test",
 		"default_popup": "popup/index.html"
+	},
+
+	"content_security_policy": {
+		"extension_pages": "script-src 'self';"
 	}
 }

@@ -163,6 +163,8 @@ export class MWUtils {
 		thumbnailsFromCroppedSquare: ["thumbnail", "croppedSquareThumbnailRenderer", "thumbnail", "thumbnails"],
 		thumbnailsFromNextResponse: ["playerOverlays", "playerOverlayRenderer", "browserMediaSession", "browserMediaSessionRenderer", "thumbnailDetails", "thumbnails"],
 
+		albumFromNextResponse: ["playerOverlays", "playerOverlayRenderer", "browserMediaSession", "browserMediaSessionRenderer", "album", "runs", 0, "text"],
+
 		badgeIconFromBadge: ["musicInlineBadgeRenderer", "icon", "iconType"],
 		creatorNameFromFacepile: ["facepile", "avatarStackViewModel", "text", "content"],
 		mfUrlFromResponse: ["microformat", "microformatDataRenderer", "urlCanonical"],

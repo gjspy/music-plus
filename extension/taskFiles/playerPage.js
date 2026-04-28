@@ -201,6 +201,8 @@ function NiceColours() {
 	// MAIN FUNCTION for player backgrounds.
 	// this is called every interval, with all logic.
 	function _UpdatePlayerBackgrounds() {
+		t = (t+1) % 2;
+
 		if (blocking_transitioning === true) return;
 		
 		// source all the things we need, wait for..
@@ -243,6 +245,27 @@ function NiceColours() {
 
 		if (nextThumb) {
 			nextThumb = ext.UpscaleImgQuality(nextThumb);
+		};
+
+		if (t === 1) {//TODO trycatch
+			const nextResponse = polymerController.store.getState().playerPage.playerPageWatchNextResponse;
+			const pf = nextResponse.currentVideoEndpoint.watchEndpoint.playlistId;
+
+			const isAlbum = pf.startsWith("OL");
+
+			ext.DispatchEventToEW({
+				func: "rpc",
+				data: {
+					thumb: thisImg, // TODO priv images
+					playingFrom: (isAlbum) ? ext.SafeDeepGet(nextResponse, ext.Structures.albumFromNextResponse) : "User's Playlist",
+					title: videoDetails.title,
+					author: videoDetails.author,
+					totalTime, currentTime,
+					id: thisVId,
+					pfId: pf,
+					isAlbum
+				}
+			});
 		};
 
 		// normal autoplay flow.
@@ -303,6 +326,7 @@ function NiceColours() {
 	let playingVId, lastImg;
 	let blocking_transitioning = false;
 	let dimmed = false;
+	let t = 0;
 
 	_CreatePlrBkgs();
 

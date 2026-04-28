@@ -58,6 +58,66 @@ function showLog(text) {
 	document.querySelector("#logs").append(elem);
 };
 
+let CHANGING_THEME = true;
+
+
+function onLightEvent(request) {
+	let brightness = request.action === "dim" ? 0 :
+		request.action === "undim" ? 1 : 
+		request.action === "brightness" ? request.value / 255 : undefined;
+	
+	if (brightness !== undefined) {
+		document.body.style.setProperty("--c-player-bkg-transition", `opacity ${request.transition}s ease`);
+		document.body.style.setProperty("--c-player-bkg-opacity", String(brightness));
+	
+	} else if (request.action === "setImg") {
+		const blob = new Blob([request.imgData], {type: request.imgType});
+		const url = URL.createObjectURL(blob);
+		document.body.style.setProperty("--playing-thumbnail", `url(${url})`);
+	
+	} else if (request.action === "setCols" && CHANGING_THEME) {
+		const blob = new Blob([request.imgData], {type: request.imgType});
+		const url = URL.createObjectURL(blob);
+
+		const img = new Image();
+		img.onload = () => {
+			const canvas = document.createElement("canvas");
+			const ctx = canvas.getContext("2d");
+
+			canvas.width = 1920;
+			canvas.height = 1920;
+			ctx.filter = "blur(20px) brightness(0.9) saturate(1.4)";
+
+			ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+			const data = canvas.toDataURL("image/png");
+			const [c1,c2] = request.colours;
+
+			browser.theme.update({
+				images: {
+					additional_backgrounds: [data]
+				},
+				colors: {
+					toolbar: [c1.r, c1.g, c1.b, 0.3],
+					tab_selected: [c2.r, c2.g, c2.b, 0.5],
+					toolbar_field: [c2.r, c2.g, c2.b, 0.5]
+				},
+				properties: {
+					additional_backgrounds_alignment: ["center center"],
+					color_scheme: "dark"
+				}
+			});
+
+			canvas.remove();
+		};
+
+		img.src = url;
+	};
+};
+
+function onWinEvent(request, ws) {
+	ws.send(JSON.stringify(request.data));
+};
+
 async function init() {
 	const lclStorage = await EWUtils.StorageGetLocal();
 
@@ -108,74 +168,37 @@ async function init() {
 		};
 	};
 
-	let CHANGING_THEME = true;
-	const THEME_BEFORE = await browser.theme.getCurrent();
+	const THEME_BEFORE = browser.theme.getCurrent();
 
 	document.querySelector("#reset-theme").onclick = () => {
 		CHANGING_THEME = false;
-		browser.theme.update(THEME_BEFORE);
+		browser.theme.reset();
 	};
+
+	const ws = new WebSocket(lclStorage.winApi.ws);
+	ws.onopen = (e) => console.log(e);
 
 	// HEARS EVERY EVENT BKGSCRIPT HEARS
 	browser.runtime.onMessage.addListener((request) => {
 		console.log(request);
-		if (request.func !== "auto-lights" && request.func !== "ext-page-colours") return;
-
-		let brightness = request.action === "dim" ? 0 :
-			request.action === "undim" ? 1 : 
-			request.action === "brightness" ? request.value / 255 : undefined;
-		
-		if (brightness !== undefined) {
-			document.body.style.setProperty("--c-player-bkg-transition", `opacity ${request.transition}s ease`);
-			document.body.style.setProperty("--c-player-bkg-opacity", String(brightness));
-		
-		} else if (request.action === "setImg") {
-			const blob = new Blob([request.imgData], {type: request.imgType});
-			const url = URL.createObjectURL(blob);
-			document.body.style.setProperty("--playing-thumbnail", `url(${url})`);
-		
-		} else if (request.action === "setCols" && CHANGING_THEME) {
-			const blob = new Blob([request.imgData], {type: request.imgType});
-			const url = URL.createObjectURL(blob);
-
-			const img = new Image();
-			img.onload = () => {
-				const canvas = document.createElement("canvas");
-				const ctx = canvas.getContext("2d");
-
-				canvas.width = 1920;
-				canvas.height = 1920;
-				ctx.filter = "blur(20px) brightness(0.9) saturate(1.4)";
-
-				ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-				const data = canvas.toDataURL("image/png");
-				console.log(data);
-				console.log(ctx.filter);
-				const [c1,c2] = request.colours;
-
-				browser.theme.update({
-					images: {
-						additional_backgrounds: [data]
-					},
-					colors: {
-						toolbar: [c1.r, c1.g, c1.b, 0.3],
-						tab_selected: [c2.r, c2.g, c2.b, 0.5],
-						toolbar_field: [c2.r, c2.g, c2.b, 0.5]
-					},
-					properties: {
-						additional_backgrounds_alignment: ["center center"],
-						color_scheme: "dark"
-					}
-				});
-
-				canvas.remove();
-			};
-
-			img.src = url;
-		};
+		if (request.func === "auto-lights" || request.func === "ext-page-colours") onLightEvent(request);
+		else if (request.func === "rpc") onWinEvent(request, ws);		
 	});
 
-	window.onbeforeunload = () => browser.theme.update(THEME_BEFORE);
+	window.onbeforeunload = () => {
+		browser.theme.reset();
+		ws.close();
+	};
+
+	document.querySelector("#popout").onclick = () => browser.windows.create({
+		focused: true,
+		width: 100,
+		height: 100,
+		top: 100,
+		left: 100,
+		url: browser.runtime.getURL("pages/aotpane/index.html"),
+		type: "normal"
+	});
 
 	const tab = (await browser.tabs.query({ url: "*://music.youtube.com/*", windowId: browser.windows.WINDOW_ID_CURRENT}))[0];
 

@@ -130,6 +130,8 @@ export class EventDriven {
 
 		this.UpdatePrimarySidebarButtons(state);
 
+		// TODO if (!browsePageType.startsWith("C")) document.querySelectorAll(`[page-type]:not([page-type="${browsePageType}"])`).forEach(v => v.setAttribute("page-type", browsePageType));
+
 		// TODO: edit buttonbar ButtonBar.UpdateButtons(state);
 	};
 

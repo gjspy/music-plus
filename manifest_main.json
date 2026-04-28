@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "YTMUSIC Fixer",
-	"version": "4.1.31",
+	"version": "4.1.32",
 
 	"description": "Provides additional features to the Youtube Music site.",
 
@@ -58,5 +58,9 @@
 		"default_icon": "icons/musicemoji.png",
 		"default_title": "YTMUSIC+",
 		"default_popup": "popup/index.html"
+	},
+
+	"content_security_policy": {
+		"extension_pages": "script-src 'self';"
 	}
 }

@@ -1151,8 +1151,14 @@ ytmusic-description-shelf-renderer[should-pop-open-dialog] .description.ytmusic-
 	color: #fff;
 }
 
+ytmusic-app-layout > [slot="player-bar"] {
+	width: 100vw;
+	padding-right: var(--ytmusic-scrollbar-width);
+}
 
-ytmusic-responsive-list-item-renderer:hover .left-items ytmusic-thumbnail-renderer img {
+
+ytmusic-responsive-list-item-renderer:hover .left-items ytmusic-thumbnail-renderer img,
+ytmusic-responsive-list-item-renderer[play-button-state]:not([play-button-state="default"]) .left-items ytmusic-thumbnail-renderer img {
 	filter: brightness(0.2);
 }
 
@@ -1643,7 +1649,6 @@ ytmusic-player-page:not([is-mweb-modernization-enabled]) .content.ytmusic-player
 ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_PLAYLIST"],
 ytmusic-responsive-list-item-renderer[page-type="MUSIC_PAGE_TYPE_ALBUM"] {
 	border-radius: 20px !important;
-	padding-left: 0;
 }
 
 ytmusic-two-column-browse-results-renderer[is-album-detail-page] #primary.ytmusic-two-column-browse-results-renderer, ytmusic-two-column-browse-results-renderer[is-playlist-detail-page] #primary.ytmusic-two-column-browse-results-renderer {
@@ -1654,11 +1659,6 @@ ytmusic-two-column-browse-results-renderer[is-album-detail-page] #primary.ytmusi
 .thumbnail-overlay.style-scope.ytmusic-two-row-item-renderer ytmusic-play-button-renderer {
 	opacity: 0;
 }
-
-.thumbnail-overlay.style-scope.ytmusic-two-row-item-renderer:hover ytmusic-play-button-renderer {
-	opacity: 1;
-}
-
 
 
 

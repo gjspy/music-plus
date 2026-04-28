@@ -306,6 +306,7 @@ Object.defineProperty(window, "originalXHRSend", {
 	configurable: false
 });
 
+yt.config_.EXPERIMENT_FLAGS.wug_networking_gzip_request = false;
 
 window.fetch = async function(resource, opts) {
 	try {

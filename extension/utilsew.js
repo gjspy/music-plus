@@ -14,6 +14,9 @@ export class EWUtils {
 				enabled: false,
 				entitiesToKeys: {},
 				autoMusicRoom: ""
+			},
+			winApi: {
+				ws: "ws://127.0.0.1:8765"
 			}
 		},
 		
