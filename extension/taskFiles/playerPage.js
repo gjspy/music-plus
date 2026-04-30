@@ -247,6 +247,9 @@ function NiceColours() {
 			nextThumb = ext.UpscaleImgQuality(nextThumb);
 		};
 
+		let paused = currentTime === lastT;
+		lastT = currentTime;
+
 		if (t === 1) {//TODO trycatch
 			const nextResponse = polymerController.store.getState().playerPage.playerPageWatchNextResponse;
 			const pf = nextResponse.currentVideoEndpoint.watchEndpoint.playlistId;
@@ -263,7 +266,8 @@ function NiceColours() {
 					totalTime, currentTime,
 					id: thisVId,
 					pfId: pf,
-					isAlbum
+					isAlbum,
+					paused
 				}
 			});
 		};
@@ -327,6 +331,7 @@ function NiceColours() {
 	let blocking_transitioning = false;
 	let dimmed = false;
 	let t = 0;
+	let lastT= 0;
 
 	_CreatePlrBkgs();
 

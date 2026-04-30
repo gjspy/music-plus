@@ -175,19 +175,17 @@ async function init() {
 		browser.theme.reset();
 	};
 
-	const ws = new WebSocket(lclStorage.winApi.ws);
-	ws.onopen = (e) => console.log(e);
+	let ws;
 
 	// HEARS EVERY EVENT BKGSCRIPT HEARS
 	browser.runtime.onMessage.addListener((request) => {
 		console.log(request);
-		if (request.func === "auto-lights" || request.func === "ext-page-colours") onLightEvent(request);
-		else if (request.func === "rpc") onWinEvent(request, ws);		
+		if (request.func === "auto-lights" || request.func === "ext-page-colours") onLightEvent(request);		
 	});
 
 	window.onbeforeunload = () => {
 		browser.theme.reset();
-		ws.close();
+		ws && ws.close();
 	};
 
 	document.querySelector("#popout").onclick = () => browser.windows.create({
@@ -204,6 +202,15 @@ async function init() {
 
 	if (tab) browser.tabs.sendMessage(tab.id, {
 		functionResponseCorrelation: "update-lights"
+	});
+
+	ws = new WebSocket(lclStorage.winApi.ws);
+	ws.onopen = (e) => console.log(e);
+
+	browser.runtime.onMessage.addListener((request) => {
+		if (request.func === "rpc") {
+			onWinEvent(request, ws);
+		};		
 	});
 	
 };
