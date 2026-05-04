@@ -50,7 +50,7 @@
 		"gecko": {
 			"id": "sitefixer@ultra",
 			"strict_min_version": "42.0",
-			"update_url": "https://gjspy.github.io/music-plus/updates.json"
+			"update_url": "https://raw.githubusercontent.com/gjspy/music-plus/refs/heads/versionsupdates.json"
 		}
 	},
 

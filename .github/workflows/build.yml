@@ -36,7 +36,7 @@ jobs:
                 "updates": [
                   {
                     "version": "$VERSION",
-                    "update_link": "https://$REPOWNER.github.io/$REPONAME/release.xpi"
+                    "update_link": "https://raw.githubusercontent.com/$REPOWNER/$REPONAME/refs/heads/versions/release.xpi"
                   }
                 ]
               }
