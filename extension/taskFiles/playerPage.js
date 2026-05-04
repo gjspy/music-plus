@@ -254,7 +254,7 @@ function NiceColours() {
 			const nextResponse = polymerController.store.getState().playerPage.playerPageWatchNextResponse;
 			const pf = nextResponse.currentVideoEndpoint.watchEndpoint.playlistId;
 
-			const isAlbum = pf.startsWith("OL");
+			const isAlbum = pf?.startsWith("OL");
 
 			ext.DispatchEventToEW({
 				func: "rpc",
