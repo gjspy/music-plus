@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "YTMUSIC Fixer",
-	"version": "4.1.34",
+	"version": "4.1.35",
 
 	"description": "Provides additional features to the Youtube Music site.",
 
@@ -50,7 +50,7 @@
 		"gecko": {
 			"id": "sitefixer@ultra",
 			"strict_min_version": "42.0",
-			"update_url": "https://raw.githubusercontent.com/gjspy/music-plus/refs/heads/versionsupdates.json"
+			"update_url": "https://raw.githubusercontent.com/gjspy/music-plus/refs/heads/versions/updates.json"
 		}
 	},
 
