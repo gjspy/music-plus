@@ -58,7 +58,7 @@ function showLog(text) {
 	document.querySelector("#logs").append(elem);
 };
 
-let CHANGING_THEME = true;
+let CHANGING_THEME = false;
 
 
 function onLightEvent(request) {
@@ -169,10 +169,22 @@ async function init() {
 	};
 
 	const THEME_BEFORE = browser.theme.getCurrent();
+	const themeButton = document.querySelector("#reset-theme")
 
-	document.querySelector("#reset-theme").onclick = () => {
-		CHANGING_THEME = false;
-		browser.theme.reset();
+	themeButton.onclick = async () => {
+		CHANGING_THEME = !CHANGING_THEME;
+
+		if (CHANGING_THEME) {
+			themeButton.textContent = "Reset theme";
+			let thisTab = (await browser.tabs.query({ url: "*://music.youtube.com/*", windowId: browser.windows.WINDOW_ID_CURRENT}))[0];
+
+			if (thisTab) browser.tabs.sendMessage(thisTab.id, {
+				functionResponseCorrelation: "update-lights"
+			});
+		} else {
+			themeButton.textContent = "Apply theme to browser";
+			browser.theme.reset();
+		};
 	};
 
 	let ws;
