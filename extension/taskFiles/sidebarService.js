@@ -200,7 +200,7 @@ export class InjectMyPaperItems {
 		// MAIN
 		function _OnIntervalForPlayerBar() {
 			//@ts-ignore
-			if (!this.masterCont.isConnected) {
+			if (!this.masterCont?.isConnected) {
 				fconsole.error("THIS.MASTERCONT NO LONGER CONNECTED, CLOSING AND CREATING NEW INSTANCE");
 				
 				//@ts-ignore
@@ -607,6 +607,8 @@ export class InjectMyPaperItems {
 		};
 
 		await this.RefreshStorage();
+
+		this.masterCont = this.masterCont || (await ext.WaitForBySelector("#sections>:not([is-primary])>#items", undefined, false))[0];
 
 		this.ProcessYTDefaultPaperItems();
 
