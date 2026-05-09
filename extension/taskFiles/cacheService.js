@@ -293,7 +293,7 @@ export class CacheService {
 		
 		const subtitleData = this.GetDataFromSubtitleRuns(headerRenderer.subtitle.runs); // year
 
-		const saved = response.browseId === "VLLM" || this.GetListIsSavedFromHeaderRenderer(headerRenderer);
+		const saved = response.browseId.length === 4 || this.GetListIsSavedFromHeaderRenderer(headerRenderer); // VLLM, VLSS, VLSE
 		const hasContinuation = !!(ext.ArrayNLast(allListItems)?.continuationItemRenderer);
 
 		const otherStorables = items.map( v => {
