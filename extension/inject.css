@@ -1747,11 +1747,6 @@ ytmusic-two-column-browse-results-renderer[is-album-detail-page] #primary.ytmusi
 	cursor: grab;
 }
 
-.c-carousel .c-paper-button-cont.c-editing > .c-paper-btn {
-	position: initial;
-}
-
-
 .c-carousel .c-paper-wrapper .c-paper-btn {
 	fill: var(--max-bright-white);
 
@@ -1785,11 +1780,13 @@ ytmusic-two-column-browse-results-renderer[is-album-detail-page] #primary.ytmusi
 	height: 11px;
 }
 
-.c-carousel .c-paper-button-cont .c-paper-shfl-btn {
+.c-carousel .c-paper-button-cont .c-paper-shfl-btn,
+.c-carousel .c-paper-button-cont .c-paper-btn:has(svg.visible) {
 	left: 1px;
 }
 
-.c-carousel .c-paper-button-cont .c-paper-play-btn {
+.c-carousel .c-paper-button-cont .c-paper-play-btn,
+.c-carousel .c-paper-button-cont .c-paper-btn:has(svg.move) {
 	right: 1px;
 }
 
