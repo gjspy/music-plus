@@ -243,7 +243,10 @@ function NiceColours() {
 			slider.setAttribute("changing-song", "true");
 			changingSong = true;
 		
-		} else if (changingSong) slider.removeAttribute("changing-song");
+		} else if (changingSong) {
+			slider.removeAttribute("changing-song");
+			changingSong = false;
+		};
 
 		slider.style.setProperty("--v", v);
 
