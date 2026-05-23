@@ -235,11 +235,15 @@ function NiceColours() {
 		let v = currentTime / totalTime;
 		let diff = totalTime - currentTime;
 
-		// set % played as property of slider
-		slider.style.setProperty("--v", v);
-
 		let thisImg = ext.ChooseBestThumbnail(videoDetails.thumbnail.thumbnails);
 		let thisVId = videoDetails.videoId;
+
+		// set % played as property of slider
+		if (playingVId !== thisVId) {
+			if (slider.getAttribute("changing-song")) slider.removeAttribute("changing-song");
+			else slider.setAttribute("changing-song", "true");
+		};
+		slider.style.setProperty("--v", v);
 
 		let nextThumb = _GetNextThumb(playerBar); // in queue
 
