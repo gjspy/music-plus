@@ -1197,7 +1197,7 @@ ytmusic-app-layout:has(ytmusic-browse-response[c-page-type="C_PAGE_TYPE_PRIVATE_
 }
 
 .background-gradient:has(ytmusic-two-column-browse-results-renderer) {
-	position: fixed;
+	padding-bottom: 0 !important;
 }
 
 #secondary ytmusic-section-list-renderer.ytmusic-two-column-browse-results-renderer > #contents:not(.ytmusic-shelf-renderer) {
@@ -1312,19 +1312,19 @@ ytmusic-app-layout#layout:not([player-page-open]) #guide #items > :not(.c-carous
 	opacity: 0 !important;
 }
 
-tp-yt-paper-slider[changing-song] #progress-bar #primaryProgress {
+tp-yt-paper-slider#progress-bar[changing-song] #primaryProgress {
 	transition: none;
 }
 
-tp-yt-paper-slider[changing-song] #progress-bar .slider-knob.tp-yt-paper-slider {
+tp-yt-paper-slider#progress-bar[changing-song] .slider-knob.tp-yt-paper-slider {
 	transition: none;
 }
 
 #progress-bar #primaryProgress {
 	transform: scaleX(var(--v)) !important;
 	transition: 
-		transform 0.5s linear
-		backgoround-size 0.5s linear;
+		transform 0.5s linear,
+		background-size 0.5s linear;
 
 	border-radius: 20px;
 
@@ -2546,6 +2546,10 @@ svg.speed {
 	max-height:calc(var(--ytmusic-responsive-font-size)*var(--ytmusic-title-line-height));
 	-webkit-line-clamp:1;
 	line-clamp:1;
+}
+
+ytmusic-two-column-browse-results-renderer {
+	padding-bottom: 0 !important;
 }
 
 ytmusic-two-column-browse-results-renderer > #primary {

@@ -239,10 +239,12 @@ function NiceColours() {
 		let thisVId = videoDetails.videoId;
 
 		// set % played as property of slider
-		if (playingVId !== thisVId) {
-			if (slider.getAttribute("changing-song")) slider.removeAttribute("changing-song");
-			else slider.setAttribute("changing-song", "true");
-		};
+		if (playingVId !== thisVId && !changingSong) {
+			slider.setAttribute("changing-song", "true");
+			changingSong = true;
+		
+		} else if (changingSong) slider.removeAttribute("changing-song");
+
 		slider.style.setProperty("--v", v);
 
 		let nextThumb = _GetNextThumb(playerBar); // in queue
@@ -336,6 +338,7 @@ function NiceColours() {
 	let dimmed = false;
 	let t = 0;
 	let lastT= 0;
+	let changingSong = false;
 
 	_CreatePlrBkgs();
 
