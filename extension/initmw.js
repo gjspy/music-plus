@@ -64,6 +64,11 @@ export function MWInit(moduleScriptsEntries) {
 			currentDropdown.parentElement.remove();
 		});
 
+		document.addEventListener("visibilitychange", () => {
+			document.documentElement.setAttribute("c-tab-visible", String(!document.hidden));
+		});
+
+		document.documentElement.setAttribute("c-tab-visible", String(!document.hidden));
 		
 
 		// START EXTENSION FEATURES

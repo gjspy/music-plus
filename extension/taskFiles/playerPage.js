@@ -343,12 +343,14 @@ function NiceColours() {
 	let lastT= 0;
 	let changingSong = false;
 
+	const INTERVAL = 500;
+
 	_CreatePlrBkgs();
 
 	document.addEventListener("scroll", _OnScroll);
 	ext.RegisterEWFunction({name: "update-lights", scope: this, resolve: _OnRequestedUpdate, once: false});
 
-	setInterval(_ColourFeaturesInterval, 500);
+	setInterval(_ColourFeaturesInterval, INTERVAL);
 };
 
 NiceColours();

@@ -1312,10 +1312,12 @@ ytmusic-app-layout#layout:not([player-page-open]) #guide #items > :not(.c-carous
 	opacity: 0 !important;
 }
 
+:root:not([c-tab-visible="true"]) #progress-bar #primaryProgress,
 tp-yt-paper-slider#progress-bar[changing-song] #primaryProgress {
 	transition: none;
 }
 
+:root:not([c-tab-visible="true"]) #progress-bar .slider-knob.tp-yt-paper-slider,
 tp-yt-paper-slider#progress-bar[changing-song] .slider-knob.tp-yt-paper-slider {
 	transition: none;
 }
