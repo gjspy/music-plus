@@ -135,17 +135,23 @@ export class CacheService {
 		if (lir.playlistItemData) {
 			id = lir.playlistItemData.videoId;
 			playlistSetVideoId = lir.playlistItemData.playlistSetVideoId;
+		};
 		
-		} else if (lir.menu) {
+		if ((!id) && lir.menu) {
 			const menu = ext.SafeDeepGet(lir, ext.Structures.menuItems);
 			id = ext.SafeDeepGet(menu?.[0], ext.Structures.serviceActionPlaylistEditEndpointFromMenuItem())?.removedVideoId;
+		};
 		
-		} else {
+		if ((!id) && lir.overlay) {
+			const watch = ext.SafeDeepGet(lir, ext.Structures.watchEndpointFromLIRDataPlayButton);
+			id = watch.videoId;
+			playlistSetVideoId = watch.playlistSetVideoId;
+		};
+
+		if (!id) {
 			fconsole.log("CANNOT GET DATA FOR LIR, HAS DISPLAY POLICY AND NO MENU.", lir);
 			return;
 		};
-
-		if (!id) return undefined;
 
 		let album;
 
