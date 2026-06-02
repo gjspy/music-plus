@@ -143,7 +143,7 @@ export class CacheService {
 		};
 		
 		if ((!id) && lir.overlay) {
-			const watch = ext.SafeDeepGet(lir, ext.Structures.watchEndpointFromLIRDataPlayButton);
+			const watch = ext.SafeDeepGet(lir, ext.Structures.watchEndpointFromLIRDataPlayButton());
 			id = watch.videoId;
 			playlistSetVideoId = watch.playlistSetVideoId;
 		};
