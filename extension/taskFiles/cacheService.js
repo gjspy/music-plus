@@ -145,6 +145,8 @@ export class CacheService {
 			return;
 		};
 
+		if (!id) return undefined;
+
 		let album;
 
 		// ALL BECAUSE OF ARTIST PAGE TOP SONGS SHELF, col 2 = n plays, 3 = album
