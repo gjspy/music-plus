@@ -25,7 +25,7 @@ export class AlbumEditMode extends baseEditMode {
 			const current = listItem.querySelector("div.fixed-columns .c-edit-btn");
 			if (playable) current.replaceChildren(icon.cloneNode(true));
 			else current.replaceChildren(undoIcon.cloneNode(true));
-		};		
+		};
 
 		this.browsePage.setAttribute("c-editing", "hideSongs");
 		document.querySelectorAll(".c-skip-icon").forEach(v => v.remove());

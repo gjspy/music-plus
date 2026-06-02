@@ -612,7 +612,7 @@ export class MainPOSTEditors {
 				};
 			};
 
-			let videoId = ext.SafeDeepGet(listItem, ext.Structures.videoIdFromLIRData);
+			let videoId =  ext.SafeDeepGet(listItem, ext.Structures.watchEndpointFromLIRDataPlayButton()).videoId;
 			if (!videoId) continue;
 
 			let cachedVideo = (data.items.filter( v => v.id === videoId) || [])[0];
