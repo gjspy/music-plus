@@ -28,6 +28,7 @@ async function Processor(func, {content = "", needExtStorage = false}) {
 	else if (func === "light-entities") lclStorage.lightApi.entitiesToKeys = JSON.parse(content);
 	else if (func === "light-enabled") lclStorage.lightApi.enabled = content;
 	else if (func === "light-room") lclStorage.lightApi.autoMusicRoom = content;
+	else if (func === "dc-enabled") lclStorage.winApi.enabled = content;
 	else if (func === "clr-lcl") {
 		await browser.storage.local.clear();
 		lclStorage = {};
@@ -118,8 +119,19 @@ function onWinEvent(request, ws) {
 	ws.send(JSON.stringify(request.data));
 };
 
+async function updateLights() {
+	const tab = (await browser.tabs.query({ url: "*://music.youtube.com/*", windowId: browser.windows.WINDOW_ID_CURRENT}))[0];
+
+	if (tab?.id) browser.tabs.sendMessage(tab.id, {
+		functionResponseCorrelation: "update-lights"
+	});
+};
+
 async function init() {
 	const lclStorage = await EWUtils.StorageGetLocal();
+
+	const dcCheck = document.querySelector(".btn-cont#dc-presence input");
+	if (dcCheck) dcCheck.onchange = () => Processor("dc-enabled", {content: dcCheck.checked});
 
 	if (lclStorage.lightApi.endpoint) {
 		const lightCont = document.querySelector(".btn-cont#lights");
@@ -127,7 +139,9 @@ async function init() {
 
 		lightCont.style.display = "";
 		checkBox.checked = lclStorage.lightApi.enabled;
-		checkBox.onchange = () => Processor("light-enabled", {content: checkBox.checked});
+		checkBox.onchange = () => {
+			Processor("light-enabled", {content: checkBox.checked}).then(() => updateLights());
+		};
 
 		lightCont.querySelector("#goto-ls").onclick = () => browser.tabs.create({ url: browser.runtime.getURL("pages/lightshow/index.html") });
 		lightCont.querySelector("#dim").onclick =   () => browser.runtime.sendMessage({ func: "auto-lights", action: "dim",   autoMusic: false});
@@ -210,20 +224,16 @@ async function init() {
 		type: "normal"
 	});
 
-	const tab = (await browser.tabs.query({ url: "*://music.youtube.com/*", windowId: browser.windows.WINDOW_ID_CURRENT}))[0];
+	updateLights();
 
-	if (tab) browser.tabs.sendMessage(tab.id, {
-		functionResponseCorrelation: "update-lights"
-	});
-
-	ws = new WebSocket(lclStorage.winApi.ws);
+	/*ws = new WebSocket(lclStorage.winApi.ws);
 	ws.onopen = (e) => console.log(e);
 
 	browser.runtime.onMessage.addListener((request) => {
 		if (request.func === "rpc") {
 			onWinEvent(request, ws);
 		};		
-	});
+	});*/
 	
 };
 
