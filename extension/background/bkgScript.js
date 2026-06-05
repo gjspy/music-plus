@@ -229,6 +229,22 @@ async function EWOMAutoLights(request) {
 	};
 };
 
+async function RichPresence(request, sender) {
+	if (playingFromTab !== undefined && sender.tab.id !== playingFromTab && ((!playingFromTabPaused) || request.data.paused)) return;
+
+	playingFromTab = sender.tab.id;
+	playingFromTabPaused = request.data.paused;
+
+	let storage = await EWUtils.StorageGetLocal();
+
+	if (!(storage.winApi.ws && storage.winApi.enabled)) return;
+
+	if ((!ws) || ws.readyState !== ws.OPEN) ws = new WebSocket(storage.winApi.ws);
+	if (ws.readyState === ws.CONNECTING) return;
+
+	ws.send(JSON.stringify(request.data));
+};
+
 
 function OnMessage(request, sender, sendResponse) {
 	fconsole.log("received in EW", JSON.stringify(request), sender, sendResponse);
@@ -236,8 +252,10 @@ function OnMessage(request, sender, sendResponse) {
 	const f = request.func;
 	if (f === "start")                          OnInitTab(request, sender);
 	else if (f === "get-template-elements")		EWOMGetTemplateElems(request, sender);
-	else if (f === "save-account-info")         EWOMSaveAccountInfo(request);
 	else if (f === "storage")				    Big(request, sender);
+	else if (f === "auto-lights")				EWOMAutoLights(request);
+	else if (f === "rpc")						RichPresence(request, sender);
+	/*else if (f === "save-account-info")         EWOMSaveAccountInfo(request);
 	else if (f === "playlist-create")			EWOMOnNewPlaylist(request, sender);
 	else if (f === "playlist-delete")			EWOMOnDeletePlaylist(request, sender);
 	else if (f === "defineLink")				EWOMDefineLink(request, sender);
@@ -248,11 +266,10 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "edit-metadata")				EWOMEditMetadata(request, sender);
 	else if (f === "insert-song")				EWOMInsertSongToAlbum(request);
 	else if (f === "remove-inserted-song")		EWOMRemoveInsertedSong(request);
-	else if (f === "auto-lights")				EWOMAutoLights(request);
 	else if (f === "add-note")					EWOMAddNote(request);
 	else if (f === "add-video-to-tag")			EWOMAddVideoToTag(request);
 	else if (f === "remove-video-from-tag")		EWOMRemoveVideoFromTag(request);
-	else if (f === "create-tag")				EWOMCreateTag(request);
+	else if (f === "create-tag")				EWOMCreateTag(request);*/
 };
 
 
@@ -270,6 +287,8 @@ window.fconsole = class fconsole {
 	static error = (...data) => console.error(this.kw, ...data, "\n  ↳", (new Error().stack.split("\n")[1]));
 };
 
-
+let ws = undefined;
+let playingFromTab;
+let playingFromTabPaused = true;
 
 browser.runtime.onMessage.addListener(OnMessage);

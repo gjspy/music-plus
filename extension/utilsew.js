@@ -16,7 +16,8 @@ export class EWUtils {
 				autoMusicRoom: ""
 			},
 			winApi: {
-				ws: "ws://127.0.0.1:8765"
+				ws: "ws://127.0.0.1:8765",
+				enabled: true
 			}
 		},
 		

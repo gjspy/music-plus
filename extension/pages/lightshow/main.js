@@ -1,4 +1,4 @@
-import { Utils } from "../../utils.js";
+import { EWUtils } from "../utilsew.js";
 console.log("hiii");
 
 let body = document.body;
@@ -179,7 +179,7 @@ async function onRecordButtonPress() {
 	};
 };
 
-Utils.UStorageGetLocal().then(onStorageGet);
+EWUtils.UStorageGetLocal().then(onStorageGet);
 
 body.onkeydown = onAction;
 body.onkeyup = onAction;
