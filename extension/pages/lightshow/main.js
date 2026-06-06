@@ -46,7 +46,7 @@ function up(key, forceDrop) {
 		method: "POST",
 		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify({
-			room: "bedroom",
+			room: config.room,
 			entity: thisLight,
 			brightness: 0,
 			transition: 0
@@ -80,7 +80,7 @@ function down(key) {
 		method: "POST",
 		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify({
-			room: "bedroom",
+			room: config.room,
 			entity: thisLight,
 			brightness: brightness,
 			transition: 0
@@ -146,7 +146,8 @@ function onAction(event) {
 function onStorageGet(storage) {
 	config = {
 		"endpoint": storage.lightApi.endpoint,
-		"entities":  storage.lightApi.entitiesToKeys
+		"entities":  storage.lightApi.entitiesToKeys,
+		"room": storage.lightApi.lightShowRoom
 	};
 };
 
@@ -179,7 +180,7 @@ async function onRecordButtonPress() {
 	};
 };
 
-EWUtils.UStorageGetLocal().then(onStorageGet);
+EWUtils.StorageGetLocal().then(onStorageGet);
 
 body.onkeydown = onAction;
 body.onkeyup = onAction;
@@ -187,3 +188,16 @@ body.onkeyup = onAction;
 // TODO: avoid preflight OPTIONS.
 
 document.querySelector("button.record").onclick = onRecordButtonPress;
+
+
+
+
+browser.runtime.onMessage.addListener((request) => {
+	if (!((request.func === "auto-lights" || request.func === "ext-page-colours") && request.action === "setImg")) return;
+	if (request.lightShow) return;
+
+	const copy = structuredClone(request);
+	copy.lightShow = true;
+
+	browser.runtime.sendMessage(copy);
+});

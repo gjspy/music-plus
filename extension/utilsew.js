@@ -13,7 +13,8 @@ export class EWUtils {
 				endpoint: "",
 				enabled: false,
 				entitiesToKeys: {},
-				autoMusicRoom: ""
+				autoMusicRoom: "",
+				lightShowRoom: ""
 			},
 			winApi: {
 				ws: "ws://127.0.0.1:8765",

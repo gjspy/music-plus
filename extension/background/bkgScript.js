@@ -194,14 +194,14 @@ async function EWOMAutoLights(request) {
 		request.action === "undim" ? 255 : 
 		request.action === "brightness" ? request.value : undefined;
 
-
+	const room = (request.lightShow) ? storage.lightApi.lightShowRoom : storage.lightApi.autoMusicRoom;
 
 	if (brightness !== undefined) {
 		fetch(storage.lightApi.endpoint + "/api/brightness?auto_music=" + request.autoMusic, {
 			method: "POST",
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify({
-				room: storage.lightApi.autoMusicRoom,
+				room,
 				brightness,
 				transition: request.transition
 			})
@@ -214,10 +214,10 @@ async function EWOMAutoLights(request) {
 		let formData = new FormData();
 		formData.append("file", blob);
 
-		fetch(storage.lightApi.endpoint + `/api/set-by-img-file?auto_music=${request.autoMusic}&room=${storage.lightApi.autoMusicRoom}`, {
+		fetch(storage.lightApi.endpoint + `/api/set-by-img-file?auto_music=${request.autoMusic}&room=${room}`, {
 			method: "POST",
 			body: formData
-		}).then(v => v.json().then(data => {
+		}).then(v => (request.lightShow) ? void 0 : v.json().then(data => {
 			browser.runtime.sendMessage({
 				func: "ext-page-colours",
 				action: "setCols",
