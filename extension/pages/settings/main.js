@@ -131,7 +131,20 @@ async function init() {
 	const lclStorage = await EWUtils.StorageGetLocal();
 
 	const dcCheck = document.querySelector(".btn-cont#dc-presence input");
-	if (dcCheck) dcCheck.onchange = () => Processor("dc-enabled", {content: dcCheck.checked});
+	if (dcCheck) {
+		dcCheck.onchange = () => {
+			Processor("dc-enabled", {content: dcCheck.checked}).then(() => {
+				dcCheck.checked === false && browser.runtime.sendMessage({
+					func: "rpc",
+					data: {
+						paused: true
+					}
+				});
+			});
+		};
+
+		dcCheck.checked = lclStorage.winApi.enabled;
+	};
 
 	if (lclStorage.lightApi.endpoint) {
 		const lightCont = document.querySelector(".btn-cont#lights");

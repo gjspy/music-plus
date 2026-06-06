@@ -1,4 +1,4 @@
-import { EWUtils } from "../utilsew.js";
+import { EWUtils } from "../../utilsew.js";
 console.log("hiii");
 
 let body = document.body;
@@ -112,7 +112,7 @@ function onAction(event) {
 	let isNumpad = event.code.startsWith("Numpad");
 	let isDown = event.type === "keydown";
 
-	if (key === "+" || key == "Shift") {
+	if (key === "+" || key === "Shift") {
 		if (isDown) {
 			dontDrop = true;
 			hasHeldSomething = false;
