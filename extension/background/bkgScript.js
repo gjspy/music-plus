@@ -229,6 +229,12 @@ async function EWOMAutoLights(request) {
 	};
 };
 
+function _createWS(storage) {
+	ws = new WebSocket(storage.winApi.ws);
+
+	ws.onerror = () => ws.close()
+};
+
 async function RichPresence(request, sender) {
 	if (playingFromTab !== undefined && sender.tab.id !== playingFromTab && ((!playingFromTabPaused) || request.data.paused)) return;
 
@@ -239,8 +245,8 @@ async function RichPresence(request, sender) {
 
 	if (!(storage.winApi.ws && storage.winApi.enabled)) return;
 
-	if ((!ws) || ws.readyState !== ws.OPEN) ws = new WebSocket(storage.winApi.ws);
-	if (ws.readyState === ws.CONNECTING) return;
+	if (ws && ws.readyState === ws.CONNECTING) return;
+	if ((!ws) || ws.readyState !== ws.OPEN) _createWS(storage);
 
 	ws.send(JSON.stringify(request.data));
 };
