@@ -14,6 +14,7 @@ const MODULESCRIPTS = {
 	"cacheService": "taskFiles/cacheService.js",
 	"middlewareEditors": "taskFiles/middlewareEditors.js",
 	"eventDriven": "taskFiles/eventDriven.js",
+	"customEndpointService": "taskFiles/customEndpointService.js",
 	"baseEditMode": "editModes/_baseEditor.js",
 	"albumEditMode": "editModes/albumEditMode.js",
 	"playlistEditMode": "editModes/playlistEditMode.js"
@@ -24,7 +25,7 @@ const TEMPLATE_ELEMS_FP = "../templateElements.html";
 
 async function EWInit(injectionTarget) {
 	// ?t=... to force refresh of script every time! so can reload ext and not need to reload page when testing.
-	const files = Object.entries(MODULESCRIPTS).map(v => [v[0], browser.runtime.getURL(v[1]) + "?t=" + Date.now()]);
+	const files = Object.entries(MODULESCRIPTS).map(v => [v[0], browser.runtime.getURL(v[1])]);// + "?t=" + Date.now()]);
 
 	const resp1 = await browser.scripting.executeScript({
 		"target": injectionTarget,
@@ -100,6 +101,15 @@ async function Big(request, sender) {
 	} else if (func === "get-library") {
 		api.route = `${EWUtils.USER_API}get-library`;
 	
+	} else if (func === "user-gallery") {
+		api.route = `${EWUtils.USER_API}get-gallery`;
+		api.extraParams = {"page": (request.params.page) ? request.params.page : 0};
+
+		if (request.params.season) api.extraParams.season = request.params.season;
+		if (request.params.dataType) api.extraParams.dataType = request.params.dataType;
+		if (request.params.continuationI) api.extraParams.continuationI = request.params.continuationI;
+
+
 
 
 
@@ -156,6 +166,9 @@ async function Big(request, sender) {
 		api.route = `${EWUtils.STORAGE_API}userdata/archive/${EWUtils.STORAGE_SETWITHINDEX}`;
 		meth = "set";
 
+	} else if (func === "unlink-season") {
+		api.route = `${EWUtils.STORAGE_API}userdata/archive/${request.data.season}/${EWUtils.STORAGE_MOD}`;
+		meth = "set";
 	};
 
 	if (Object.keys(api).length === 0 && resp === undefined) throw "FUNC NOT RECOGNISED";
@@ -232,7 +245,7 @@ async function EWOMAutoLights(request) {
 function _createWS(storage) {
 	ws = new WebSocket(storage.winApi.ws);
 
-	ws.onerror = () => ws.close()
+	ws.onerror = () => ws.close();
 };
 
 async function RichPresence(request, sender) {

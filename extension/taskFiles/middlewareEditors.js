@@ -1258,4 +1258,165 @@ export const urlsToEdit = [
 	...Object.keys(SmallPOSTEditors.endpointToTask)
 ];
 
+
+
+
+
+
+
+
+
+
+export class EntirelyCustomResponses {
+
+	defaultResponse = {
+		responseContext: {
+			maxAgeSeconds: 3600,
+			responseId: "",
+			serviceTrackingParams: [
+				
+			]
+		},
+		maxAgeStoreSeconds: 14400,
+		contents: {},
+		background: {}
+	};
+
+	async createGalleryPage() {
+		const response = structuredClone(this.defaultResponse);
+
+		const seasons = await ext.StorageGet({ storageFunc: "user-gallery", params: {page: this.page, season: this.params[0], dataType: this.params[1] }});
+		if (!seasons) return response;
+
+		const thisPageEndp = ext.BuildEndpoint({navType: "browse", id: ext.CPageTypes.Gallery});
+		
+		const sectionContinuation = (seasons.hasContinuation) ? [{
+			nextContinuationData: {
+				continuation: ext.CPageTypes.Gallery + "," + String(this.page + 1) + "," + String(seasons.continuationI) + "," + this.params.join(",")
+			}
+		}] : undefined;
+
+		const headerChips = ext.SEASONS.map((v, i) => ({
+			chipCloudChipRenderer: {
+				style: {styleType: "STYLE_LARGE_TRANSLUCENT_AND_SELECTED_WHITE"},
+				text: {runs: [ {text: v} ]},
+				navigationEndpoint:  ext.BuildEndpoint({navType: "browse", id: ext.CPageTypes.Gallery, params: `${i+1},${this.params[1] || ""}`}),
+				onDeselectedCommand: ext.BuildEndpoint({navType: "browse", id: ext.CPageTypes.Gallery, params: `,${this.params[1] || ""}`}),
+				isSelected: this.params[0] === String(i+1)
+			}
+		})).concat(ext.TYPES.map((v, i) => ({
+			chipCloudChipRenderer: {
+				style: {styleType: "STYLE_LARGE_TRANSLUCENT_AND_SELECTED_WHITE"},
+				text: {runs: [ {text: v} ]},
+				navigationEndpoint:  ext.BuildEndpoint({navType: "browse", id: ext.CPageTypes.Gallery, params: `${this.params[0] || ""},${i+1}`}),
+				onDeselectedCommand: ext.BuildEndpoint({navType: "browse", id: ext.CPageTypes.Gallery, params: `${this.params[0] || ""},`}),
+				isSelected: this.params[1] === String(i+1)
+			}
+		})));
+
+		response.contents = {
+			singleColumnBrowseResultsRenderer: {
+				tabs: [{
+					tabRenderer: {
+						title: "Gallery",
+						selected: true,
+						icon: { iconType: "TAB_HOME" },
+						tabIdentifier: "Cmusic_gallery",
+						endpoint: thisPageEndp,
+						content: {
+							sectionListRenderer: {
+								contents: seasons.rows.map(v => ext.BuildCarousel(v.seasonName, v.contents, v.description, Math.max(1, Math.ceil(v.contents.length / 7), v.id))),
+								continuations: sectionContinuation,
+								header: {
+									chipCloudRenderer: {
+										horizontalScrollable: true,
+										chips: headerChips
+									}
+								}
+							}
+						}
+					}
+				}]
+			}
+		};
+
+		return response;
+
+	};
+
+	
+	async galleryContinuation() {
+		const state = polymerController.store.getState();
+		const response = ext.SafeDeepGet(state, ext.Structures.mainContentFromPolymerState);
+		delete response.contents.singleColumnBrowseResultsRenderer.tabs[0].tabRenderer.content;
+		delete response.background;
+
+		const seasons = await ext.StorageGet({ storageFunc: "user-gallery", params: {page: this.page, season: this.params[0], dataType: this.params[1], continuationI: this.continuationI}});
+		if (!seasons) return response;
+
+		const sectionContinuation = (seasons.hasContinuation) ? [{
+			nextContinuationData: {
+				continuation: ext.CPageTypes.Gallery + "," + String(this.page + 1) + "," + String(seasons.continuationI) + "," + this.params.join(",")
+			}
+		}] : undefined;
+
+		response.continuationContents = {
+			sectionListContinuation: {
+				continuations: sectionContinuation,
+				contents: seasons.rows.map(v => ext.BuildCarousel(v.seasonName, v.contents, v.description, Math.max(1, Math.ceil(v.contents.length / 7)), v.id)),
+			}
+		};
+
+		return response;
+	};
+
+
+
+
+	run() {
+		try {
+			if (this.browseId === ext.CPageTypes.Gallery) return (this.page === 0) ? this.createGalleryPage() : this.galleryContinuation();
+	
+		} catch (err) {
+			fconsole.error("couldnt create custom fetch response, caught in ECR", this, err);
+			return Promise.resolve({}); // give non-empty response, IS a custom id, so dont request to YT.
+		};
+
+		return Promise.resolve();
+	};
+
+	constructor(requestBody, contParams) {
+		this.browseId = requestBody?.browseId;
+		this.requestBody = requestBody;
+		this.page = 0;
+		this.params = [];
+
+		if (contParams) {
+			const parts = contParams.split(",");
+			this.browseId = parts[0];
+			this.page = Number(parts[1]);
+			this.continuationI = Number(parts[2]);
+			this.params = parts.slice(3);
+		};
+
+		if (requestBody?.params) {
+			this.params = requestBody.params.split(",");
+		};
+	};
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ["success"]; // RESULT TO RETURN BACK TO BKGSCRIPT. LEAVE THIS OR ERR (RESULT = a class, non clonable, so throws err in bkgScript.)

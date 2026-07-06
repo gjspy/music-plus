@@ -1,3 +1,16 @@
+BUGS FIXED:
+albums sorted alphabetically by artist and name now in library page
+finally fixed continuation list data append/overwrite logic.
+added favourites page
+with functionality to remove items from season
+updated primary guide button icons
+
+
+
+
+
+=============
+
 make inject.css scripted and not instant/automatic
 the reason we lose error context in bkg world when injecting code is bcs exceptions arent json serializable so cant be transferred. should catch but retrhow String(caught)
 can easily edit utils.GetSVG() to look in youtube's SVG store. so we could auto-update to their icons when they change them!

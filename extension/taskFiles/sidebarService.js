@@ -52,6 +52,31 @@ export class InjectMyPaperItems {
 			a.append(item);
 		};
 
+		const parentCont = document.querySelector("ytmusic-guide-section-renderer[is-primary] > #items");
+
+		ext.CreateYoutubeElem({
+			parentCont,
+			parentStructName: "items",
+			component: ext.YTWebComponents.primaryGuideEntry,
+			data: {
+				accessibility: {
+					accessibilityData: {
+						label: "Favourites"
+					}
+				},
+				formattedTitle: {
+					runs: [{
+						text: "Favourites"
+					}]
+				},
+				icon: {
+					iconType: "TRENDING"
+				},
+				isPrimary: true,
+				navigationEndpoint: ext.BuildEndpoint({navType: "browse", id: ext.CPageTypes.Gallery})
+			}
+		});
+
 		this.ytLoadedPlaylists = {};
 
 		document.querySelectorAll("ytmusic-guide-section-renderer tp-yt-paper-item").forEach((paper) => {

@@ -64,9 +64,10 @@ export class EWUtils {
 	static STORAGE_API = this.API_ENDPOINT + "storage/music/";
 	static SIDEBAR_API = this.API_ENDPOINT + "music/sidebar/";
 	static EDITOR_API = this.API_ENDPOINT + "music/edit/";
-	static USER_API = this.API_ENDPOINT + "music/user/"
+	static USER_API = this.API_ENDPOINT + "music/user/";
 	static STORAGE_GET = "bulkget";
 	static STORAGE_GETPOPULATED = "getpopulated";
+	static STORAGE_GETCOMPILED = "compile";
 	static STORAGE_GETWITHCACHE = "getwithcache";
 	static STORAGE_SET = "set";
 	static STORAGE_SETWITHINDEX = "setwithindex";
@@ -105,7 +106,7 @@ export class EWUtils {
 		return this.CheckHasKeys(storage, this.DEFAULT_STORAGE.local);
 	};
 
-	static async StorageGetExternal({route, localStorage = undefined, body = undefined}) {
+	static async StorageGetExternal({route, localStorage = undefined, body = undefined, extraParams = undefined}) {
 			if (!localStorage) localStorage = await this.StorageGetLocal();
 
 			const username = localStorage.username;
@@ -116,7 +117,13 @@ export class EWUtils {
 			};
 
 			let response;
-			const fullRoute = `${route}?user_id=${username}&token=${token}`;
+			let fullRoute = `${route}?user_id=${username}&token=${token}`;
+			
+			if (extraParams) {
+				for (let [k,v] of Object.entries(extraParams)) {
+					fullRoute += `&${k}=${v}`;
+				};
+			};
 
 			if (body) {
 				response = await fetch(fullRoute, {method: "POST", body});

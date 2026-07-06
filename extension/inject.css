@@ -2561,3 +2561,10 @@ ytmusic-two-column-browse-results-renderer > #primary {
 ytmusic-two-column-browse-results-renderer > #secondary {
 	margin-left: auto;
 }
+
+
+ytmusic-browse-response[c-page-type="C_GALLERY"] #items.ytmusic-carousel {
+  will-change: unset !important;
+  grid-auto-flow: row !important;
+  --ytmusic-carousel-num-items-per-row: 6 !important;
+}

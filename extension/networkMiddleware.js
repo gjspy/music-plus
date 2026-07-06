@@ -55,7 +55,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		};
 
 		cParams = ext.state.BrowseParamsByRequest.pageSpecific.all;
-		if (cParams) return [cParams, undefined]; 
+		if (cParams) return [cParams, undefined];
 
 		return [undefined, undefined];
 	};
@@ -74,7 +74,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 	catch {};
 
 	if (!urlObj) return oldResp;
-	
+
 	request.urlObj = urlObj;
 	let pathname = urlObj.pathname;
 
@@ -93,7 +93,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		return oldResp;
 	};
 
-	console.log(request.url);	
+	fconsole.log(request.url);
 
 	let changed = false;
 	let clonedResp = (!xhr) ? oldResp.clone() : undefined;
@@ -122,7 +122,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 		request.cParams = cParams;
 	};
 
-	console.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation, request);
+	fconsole.log("ORIGINAL RESP", browseId, toCacheOriginal, "is continuation:", responseIsContinuation, request);
 
 	let newBody;
 
@@ -156,7 +156,7 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 
 	if (!changed) return oldResp;
 
-	console.log("NEW RESP BODY", respBody);
+	fconsole.log("NEW RESP BODY", respBody);
 
 	if (!respBody) return oldResp;
 
@@ -182,12 +182,8 @@ async function FetchModifyResponse(request, oldResp, xhr) {
 
 		return new Response(finalStr, {
 			headers: clonedResp.headers,
-			ok: clonedResp.ok,
-			redirected: clonedResp.redirected,
 			status: clonedResp.status,
-			statusText: clonedResp.statusText,
-			type: clonedResp.type,
-			url: clonedResp.url
+			statusText: clonedResp.statusText
 		});
 	};
 
@@ -199,7 +195,7 @@ function FetchModifyRequest(requestData, resource, body_) {
 	if (requestData.method !== "POST") return;
 	if (requestData.url.indexOf("youtubei/v1/playlist/create") !== -1) {
 		if (!body_.title.startsWith(ext.TAG_PLAYLIST_DEFAULT_METADATA.titlePrefix)) return;
-		
+
 		body_.description = ext.TAG_PLAYLIST_DEFAULT_METADATA.description;
 
 		const {
@@ -227,7 +223,7 @@ function FetchModifyRequest(requestData, resource, body_) {
 
 async function newFetch(resource, options) {
 	if (options === undefined) options = {};
-	
+
 	let request;
 	let resourceIsStr = typeof(resource) === "string";
 
@@ -250,6 +246,8 @@ async function newFetch(resource, options) {
 	// REFRESHES PAGESPECIFIC HERE!!
 	if (request.url.includes("/browse")) ext.state.BrowseParamsByRequest.pageSpecific = {};
 
+	let customResponder, customResponse;
+
 	if (request.method === "POST") { // have to do this first, or body is used in originalFetch.
 		try {
 			if (resourceIsStr && options && options.body && typeof(options.body) === "string") {
@@ -264,13 +262,25 @@ async function newFetch(resource, options) {
 				let newR;
 
 				try { newR = FetchModifyRequest(request, resource, body); }
-				catch (err) { console.error("couldnt modify fetch request", request, body, resource, err); };
+				catch (err) { fconsole.error("couldnt modify fetch request", request, body, resource, err); };
 
 				if (newR) resource = newR;
 				request.body = body;
+
+				if (middlewareEditors?.EntirelyCustomResponses) try {
+					customResponder = new middlewareEditors.EntirelyCustomResponses(body, (new URL(request.url)).searchParams.get("ctoken"));
+
+				} catch (err) { fconsole.error("couldnt create custom fetch responder", request, body, customResponse, err); };
+
+				if (customResponder) customResponse = await customResponder.run();
+
 			};
 
 		} catch {};
+	};
+
+	if (customResponse) {
+		return new Response(JSON.stringify(customResponse), {status: 200});
 	};
 
 	let response = await originalFetch(resource, options);
@@ -279,7 +289,7 @@ async function newFetch(resource, options) {
 		response = await FetchModifyResponse(request, response);
 
 	} catch (err) {
-		console.warn("couldnt modify fetch response", err);
+		fconsole.warn("couldnt modify fetch response", err);
 
 	};
 
@@ -313,7 +323,7 @@ window.fetch = async function(resource, opts) {
 		return await newFetch(resource, opts);
 
 	} catch(err) { // try/catch vital here. walsy have backup otherwise site breaks.
-		console.warn("ERR IN NEWFETCH",err);
+		fconsole.warn("ERR IN NEWFETCH",err);
 		return await originalFetch(resource, opts);
 
 	};

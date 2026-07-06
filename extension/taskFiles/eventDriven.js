@@ -139,8 +139,8 @@ export class EventDriven {
 	EditDropdownMenuItem(menuItem) {
 		const data = menuItem.controllerProxy.__data.data;
 
-		if (data.icon?.cSvg) {
-			const svg = ext.GetSVG(data.icon.cSvg);
+		if (data.icon?.cIcon) {
+			const svg = ext.GetSVG(data.icon.cIcon);
 			const current = menuItem.querySelector("svg");
 			
 			if (current) current.outerHTML = svg.outerHTML;
@@ -150,7 +150,7 @@ export class EventDriven {
 		const customEndpoint = data.serviceEndpoint?.customEndpoint;
 			
 		if (customEndpoint) menuItem.onclick = () => {
-			new CustomEndpointHandler(custom, lir);
+			new customEndpointService(customEndpoint);
 		};
 	};
 
@@ -162,8 +162,8 @@ export class EventDriven {
 		// attributeName = "aria-hidden", SO IF HIDDEN DON'T EDIT.
 		if (change.target.getAttribute(change.attributeName)) return;
 
-		const lir = change.target.__data.positionTarget.closest("ytmusic-responsive-list-item-renderer");
-		if (!lir) return;
+		//const lir = change.target.__data.positionTarget.closest("ytmusic-responsive-list-item-renderer");
+		//if (!lir) return;
 
 		change.target.querySelectorAll(".ytmusic-menu-popup-renderer[role=\"menuitem\"]").forEach(this.EditDropdownMenuItem);
 	};

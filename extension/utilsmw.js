@@ -24,6 +24,9 @@ export class MWUtils {
 		vpPad: 40
 	};
 
+	static SEASONS = ["Spring", "Summer", "Autumn", "End Of Year"];
+	static TYPES = ["Album", "Playlist"];
+
 	static ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	static HMS_WORDS = ["hour", "minute", "second"];
 	static HMS_REVWORDS = this.HMS_WORDS.reverse();
@@ -50,14 +53,16 @@ export class MWUtils {
 
 	static GUIDE_ICON_SVG_PATHS = {
 		active: {
-			FEmusic_home: "M4 21V10.08l8-6.96 8 6.96V21h-6v-6h-4v6H4z",
-			FEmusic_explore: "M11.23 13.08c-.29-.21-.48-.51-.54-.86-.06-.35.02-.71.23-.99.21-.29.51-.48.86-.54.35-.06.7.02.99.23.29.21.48.51.54.86.06.35-.02.71-.23.99-.21.29-.51.48-.86.54-.07.01-.15.02-.22.02-.28 0-.55-.08-.77-.25zM22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10zm-3.97-6.03L9.8 9.8l-3.83 8.23 8.23-3.83 3.83-8.23z",
-			FEmusic_library_landing: "M18 21H3V6h1v14h14v1zm3-18v15H6V3h15zm-5 3h-3v5.28c-.3-.17-.63-.28-1-.28-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2V8h2V6z"
+			FEmusic_home: "m11.485 2.143-8 4.8-2 1.2a1 1 0 001.03 1.714L3 9.567V20a2 2 0 002 2h5v-8h4v8h5a2 2 0 002-2V9.567l.485.29a1 1 0 001.03-1.714l-2-1.2-8-4.8a1 1 0 00-1.03 0Z",
+			FEmusic_explore: "M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1Zm4.962 5.997a1 1 0 01.261.967l-1.812 6.762a1 1 0 01-.703.706L8.007 17.26a1 1 0 01-1.23-1.224l1.812-6.762a1 1 0 01.703-.706l6.701-1.828a1 1 0 01.969.257Zm-6.411 4.614a1.5 1.5 0 002.199 1.69 1.503 1.503 0 00.7-.911 1.501 1.501 0 10-2.899-.779Z",
+			FEmusic_library_landing: "M19 2H5a2 2 0 00-2 2v16.887c0 1.266 1.382 2.048 2.469 1.399L12 18.366l6.531 3.919c1.087.652 2.469-.131 2.469-1.397V4a2 2 0 00-2-2Z",
+			C_GALLERY: "M21 1.5a1 1 0 00-1.555-.832L15 3.63V2.5a1 1 0 00-1.545-.838L7.55 5.5A10 10 0 003 13.884V14a9 9 0 0018 0V1.5Zm-6.445 4.832L19 3.37V14a7.001 7.001 0 01-14 0v-.115a8 8 0 013.64-6.707L13 4.343V5.5a1 1 0 001.555.832ZM9 15a3 3 0 006 0v-5l-4.211 2.106A3.24 3.24 0 009 15Z"
 		},
 		inactive: {
-			FEmusic_home: "m12 4.44 7 6.09V20h-4v-6H9v6H5v-9.47l7-6.09m0-1.32-8 6.96V21h6v-6h4v6h6V10.08l-8-6.96z",
-			FEmusic_explore: "m9.8 9.8-3.83 8.23 8.23-3.83 3.83-8.23L9.8 9.8zm3.28 2.97c-.21.29-.51.48-.86.54-.07.01-.15.02-.22.02-.28 0-.54-.08-.77-.25-.29-.21-.48-.51-.54-.86-.06-.35.02-.71.23-.99.21-.29.51-.48.86-.54.35-.06.7.02.99.23.29.21.48.51.54.86.06.35-.02.7-.23.99zM12 3c4.96 0 9 4.04 9 9s-4.04 9-9 9-9-4.04-9-9 4.04-9 9-9m0-1C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z",
-			FEmusic_library_landing: "M16 6v2h-2v5c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.37 0 .7.11 1 .28V6h3zm2 14H4V6H3v15h15v-1zm3-17H6v15h15V3zM7 4h13v13H7V4z"
+			FEmusic_home: "m11.485 2.143-8 4.8-2 1.2a1 1 0 001.03 1.714L3 9.567V20a2 2 0 002 2h6v-7h2v7h6a2 2 0 002-2V9.567l.485.29a1 1 0 001.03-1.714l-2-1.2-8-4.8a1 1 0 00-1.03 0ZM5 8.366l7-4.2 7 4.2V20h-4v-5.5a1.5 1.5 0 00-1.5-1.5h-3A1.5 1.5 0 009 14.5V20H5V8.366Z",
+			FEmusic_explore: "M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1Zm0 2a9 9 0 110 18.001A9 9 0 0112 3Zm3.73 2.775L9.028 7.604a2 2 0 00-1.405 1.412l-1.811 6.76a2 2 0 002.458 2.448l6.701-1.828a2 2 0 001.406-1.412l1.812-6.761a2.001 2.001 0 00-2.459-2.448ZM9.555 9.533l6.702-1.828-1.812 6.762-6.702 1.826 1.812-6.76Zm1.238 2.143a1.25 1.25 0 102.415.647 1.25 1.25 0 00-2.415-.647Z",
+			FEmusic_library_landing: "M19 2H5a2 2 0 00-2 2v16.887c0 1.266 1.382 2.048 2.469 1.399L12 18.366l6.531 3.919c1.087.652 2.469-.131 2.469-1.397V4a2 2 0 00-2-2ZM5 20.233V4h14v16.233l-6.485-3.89-.515-.309-.515.309L5 20.233Z",
+			C_GALLERY: "M21 1.5a1 1 0 00-1.555-.832L15 3.63V2.5a1 1 0 00-1.545-.838L7.55 5.5A10 10 0 003 13.884V14a9 9 0 0018 0V1.5Zm-6.445 4.832L19 3.37V14a7.001 7.001 0 01-14 0v-.115a8 8 0 013.64-6.707L13 4.343V5.5a1 1 0 001.555.832ZM9 15a3 3 0 006 0v-5l-4.211 2.106A3.24 3.24 0 009 15Z"
 		}
 	};
 
@@ -65,6 +70,7 @@ export class MWUtils {
 		sidebarFolderHasVisibleActiveChild: ":has(:not(.c-hidden) > .c-paper-item > .c-active)",
 		allCGuideElements: "#guide .c-paper-wrapper:not([is-primary]), #guide .c-carousel, #guide .c-sidebar-sep",
 		sidebarYTButtonsCont: "#buttons.ytmusic-guide-section-renderer:has(yt-button-renderer)",
+		currentBrowseResponse: "ytmusic-browse-response #content-wrapper > #contents",
 		listItemRenderersOfCurrentBrowseResponse: "ytmusic-browse-response #content-wrapper > #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-list-item-renderer",
 		listPageHeaderCont: "ytmusic-browse-response #content-wrapper > #contents > ytmusic-two-column-browse-results-renderer ytmusic-responsive-header-renderer"
 	};
@@ -199,6 +205,14 @@ export class MWUtils {
 		isGenericGrid: (v) => [this.BrowsePageTypes.artistDiscography, this.BrowsePageTypes.libraryMain, this.BrowsePageTypes.libraryPrivate].indexOf(v) !== -1,
 		isLibraryPage: (v) => v === this.BrowsePageTypes.libraryMain || v === this.BrowsePageTypes.libraryPrivate,
 		isPrivatePage: (v) => v === this.BrowsePageTypes.libraryPrivate
+	};
+
+	static CPageTypes = {
+		Gallery: "C_GALLERY"
+	};
+
+	static YTWebComponents = {
+		primaryGuideEntry: {component: "ytmusic-guide-entry-renderer", properties: {isPrimary: "[[isPrimary]]"}}
 	};
 
 	static async InitTemplateElements() {
@@ -397,10 +411,11 @@ export class MWUtils {
 	/**
 	 * @param {any} path
 	 */
-	static async StorageGet({path = undefined, storageFunc = undefined, id = undefined, shouldTimeout = true}) {
+	static async StorageGet({path = undefined, storageFunc = undefined, id = undefined, shouldTimeout = true, params = undefined, data = undefined}) {
 		const storage = (await this.DispatchFunctionToEW({
 			func: "storage",
-			path, storageFunc, id
+			path, storageFunc, id,
+			params, data
 		}, shouldTimeout)).storage;
 		
 		return storage;
@@ -496,7 +511,7 @@ export class MWUtils {
 	/**
 	 * options: {navType}
 	 * 
-	 * 	navType: browse: id, browsePageType?
+	 * 	navType: browse: id, browsePageType?, params?
 	 * 
 	 * 			 watch: playlistId, firstVideo{id:.., type:..}, playlistSetVideoId, index, shuffle
 	 * 
@@ -526,6 +541,7 @@ export class MWUtils {
 			if (browsePageType) v.browseEndpoint.browseEndpointContextSupportedConfigs = {
 				browseEndpointContextMusicConfig: { pageType: browsePageType }
 			};
+			if (opts.params !== undefined) v.browseEndpoint.params = opts.params;
 
 			return v;
 		};
@@ -695,6 +711,37 @@ export class MWUtils {
 		}, { useCapture: useCapture});
 	};
 
+
+	static CreateYoutubeElem({parentCont, parentStructName, component, data}) {
+		const renderer = polymerController.$["guide-renderer"].ytRendererstamperBehavior;
+		const w = renderer.createComponent_(component, data, true);
+		
+		renderer.deferRenderStamperBinding_(w, component, data, parentStructName);
+		parentCont.append(w);
+		renderer.flushRenderStamperComponentBindings_();
+	};
+
+
+	static CreateCustomServiceMenuItem({title, cIcon="", ytIcon="", customEndpointInner}) {
+		return {
+			"menuServiceItemRenderer": {
+				"text": {
+					"runs": [
+						{
+							"text": title
+						}
+					]
+				},
+				"icon": {
+					[cIcon ? "cIcon" : "iconType"]: cIcon || ytIcon
+				},
+				"serviceEndpoint": {
+					"customEndpoint": customEndpointInner
+				}
+			}
+		};
+	};
+
 	
 
 	
@@ -784,6 +831,8 @@ export class MWUtils {
 			if (browseId.match(/privately_owned_artist_detail/)) return "C_PAGE_TYPE_PRIVATE_ARTIST";
 
 			if (browseId.match(/^UC/)) return "C_PAGE_TYPE_CHANNEL_OR_ARTIST"; // have tested, no way to tell.
+
+			if (Object.values(this.CPageTypes).includes(browseId)) return browseId;
 		};
 
 		if (browseId.match(/privately_owned_release_detail/) && hasEditedResponse) return "MUSIC_PAGE_TYPE_ALBUM";
@@ -1132,7 +1181,7 @@ export class MWUtils {
 
 
 
-	static BuildTwoRowItemRendererFromPaperData(data) {
+	static BuildTwoRowItemRendererFromPaperData(data, extraButtons) {
 		const navEndp = this.BuildEndpoint({
 			navType: "browse",
 			id: data.id
@@ -1341,7 +1390,7 @@ export class MWUtils {
 									}
 								}
 							}
-						],
+						].concat(extraButtons),
 						"accessibility": {
 							"accessibilityData": {
 								"label": "Action menu"
@@ -1409,21 +1458,39 @@ export class MWUtils {
 		};
 	};
 
-	static BuildCarousel(title, contents) {
+	static BuildCarousel(title, contents, strapline, nItemsPerCol, seasonId) {
+		const header =  {
+			"title": {
+				"runs": [{
+					"text": title
+				}]
+			},
+			headerStyle: "MUSIC_CAROUSEL_SHELF_BASIC_HEADER_STYLE_DEFAULT"
+		};
+
+		if (strapline) header.strapline = {
+			"runs": [{
+				"text": strapline
+			}]
+		};
+
 		return {
 			"musicCarouselShelfRenderer": {
-				"contents": contents.map(v => this.BuildTwoRowItemRendererFromPaperData(v)),
-				"header": {
-					"musicCarouselShelfBasicHeaderRenderer": {
-						"title": {
-							"runs": [{
-								"text": title
-							}]
-						},
-						headerStyle: "MUSIC_CAROUSEL_SHELF_BASIC_HEADER_STYLE_DEFAULT"
+				"contents": contents.map(v => this.BuildTwoRowItemRendererFromPaperData(v, [ext.CreateCustomServiceMenuItem({
+					title: "Unlink from Season",
+					ytIcon: "REMOVE",
+					customEndpointInner: {
+						action: "unlinkSeason",
+						seasonId: seasonId,
+						seasonName: title,
+						itemId: v.id
 					}
+				})])),
+				"header": {
+					"musicCarouselShelfBasicHeaderRenderer": header
 				},
-				"itemSize": "COLLECTION_STYLE_ITEM_SIZE_MEDIUM"
+				"itemSize": "COLLECTION_STYLE_ITEM_SIZE_MEDIUM",
+				"numItemsPerColumn": (nItemsPerCol === undefined) ? 1 : nItemsPerCol
 			}
 		};
 	};
@@ -2568,4 +2635,25 @@ export class MWUtils {
 			}
 		};
 	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 };

@@ -2,13 +2,15 @@ import { MWUtils } from "../extension/utilsmw"
 import { InjectMyPaperItems } from "../extension/taskFiles/sidebarService";
 import { SidebarEditFeatures } from "../extension/taskFiles/sidebarEditService";
 import { CacheService } from "../extension/taskFiles/cacheService";
-import { GETEditors, MainPOSTEditors, SmallPOSTEditors } from "../extension/taskFiles/middlewareEditors";
+import { EntirelyCustomResponses, GETEditors, MainPOSTEditors, SmallPOSTEditors } from "../extension/taskFiles/middlewareEditors";
 import { EventDriven } from "../extension/taskFiles/eventDriven";
 import { PopupService } from "../extension/popups";
 import { PopupTemplates } from "../extension/popupTemplates";
 import { BaseEditMode } from "../extension/editModes/_baseEditor";
 import { AlbumEditMode } from "../extension/editModes/albumEditMode";
 import { PlaylistEditMode } from "../extension/editModes/playlistEditMode";
+import { YTElemCreator } from "../extension/ytelemcreator";
+import { CustomEndpointService } from "../extension/taskFiles/customEndpointService";
 
 declare const console: undefined;
 
@@ -20,6 +22,10 @@ declare global {
 	var menuServiceItemBehaviour: object;
 	var fconsole: Console;
 
+	var originalFetch = fetch;
+	var originalXHROpen = XMLHttpRequest.prototype.open;
+	var originalXHRSend = XMLHttpRequest.prototype.send;
+
 	var sidebarService: typeof InjectMyPaperItems;
 	var cacheService: typeof CacheService;
 	var popupService: typeof PopupService;
@@ -29,6 +35,8 @@ declare global {
 	var albumEditMode: typeof AlbumEditMode;
 	var playlistEditMode: typeof PlaylistEditMode;
 	var middlewareEditors: middlewareEditors;
+	var ytElemCreator: YTElemCreator;
+	var customEndpointService: typeof CustomEndpointService;
 
 	interface Window {
 		ext: typeof MWUtils;
@@ -82,6 +90,7 @@ declare global {
 		MainPOSTEditors: typeof MainPOSTEditors;
 		SmallPOSTEditors: typeof SmallPOSTEditors;
 		GETEditors: typeof GETEditors;
+		EntirelyCustomResponses: typeof EntirelyCustomResponses;
 		urlsToEdit: Array;
 	};
 
