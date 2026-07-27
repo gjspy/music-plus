@@ -1871,9 +1871,10 @@ ytmusic-two-column-browse-results-renderer[is-album-detail-page] #primary.ytmusi
 .c-carousel > .c-paper-btn:has(.delete) {
 	width: 20px;
 	flex-shrink: 0;
+	fill: white;
 }
 
-.c-carousel .c-paper-btn svg {
+.c-carousel .c-paper-wrapper .c-paper-btn svg {
 	position: absolute;
 	top: 0;
 	left: 0;

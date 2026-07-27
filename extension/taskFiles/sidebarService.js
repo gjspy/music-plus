@@ -601,7 +601,7 @@ export class InjectMyPaperItems {
 				id: v
 			};
 		});
-		const orderToInsert = prependNewItems.concat(paperItemOrder);
+		const orderToInsert = paperItemOrder; // prependNewItems.concat(paperItemOrder);
 		
 		// THIS IS RECURSIVE!
 		this.PopulateCont(orderToInsert, this.masterCont);

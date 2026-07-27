@@ -11,6 +11,8 @@ updated primary guide button icons
 
 =============
 
+**** on playlist create, add paper item to order. have removed keeping yt papers not present in our order.
+
 make inject.css scripted and not instant/automatic
 the reason we lose error context in bkg world when injecting code is bcs exceptions arent json serializable so cant be transferred. should catch but retrhow String(caught)
 can easily edit utils.GetSVG() to look in youtube's SVG store. so we could auto-update to their icons when they change them!
