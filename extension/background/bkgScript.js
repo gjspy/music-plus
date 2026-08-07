@@ -17,7 +17,8 @@ const MODULESCRIPTS = {
 	"customEndpointService": "taskFiles/customEndpointService.js",
 	"baseEditMode": "editModes/_baseEditor.js",
 	"albumEditMode": "editModes/albumEditMode.js",
-	"playlistEditMode": "editModes/playlistEditMode.js"
+	"playlistEditMode": "editModes/playlistEditMode.js",
+	"playerEditMode": "editModes/playerEditMode.js"
 };
 
 const TEMPLATE_ELEMS_FP = "../templateElements.html";

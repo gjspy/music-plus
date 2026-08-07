@@ -11,6 +11,7 @@ import { AlbumEditMode } from "../extension/editModes/albumEditMode";
 import { PlaylistEditMode } from "../extension/editModes/playlistEditMode";
 import { YTElemCreator } from "../extension/ytelemcreator";
 import { CustomEndpointService } from "../extension/taskFiles/customEndpointService";
+import { PlayerEditMode } from "../extension/editModes/playerEditMode";
 
 declare const console: undefined;
 
@@ -31,9 +32,12 @@ declare global {
 	var popupService: typeof PopupService;
 	var popupTemplates: typeof PopupTemplates;
 	var sidebarEditService: typeof SidebarEditFeatures;
+	
 	var baseEditMode: typeof BaseEditMode;
 	var albumEditMode: typeof AlbumEditMode;
 	var playlistEditMode: typeof PlaylistEditMode;
+	var playerEditMode: typeof PlayerEditMode;
+
 	var middlewareEditors: middlewareEditors;
 	var ytElemCreator: YTElemCreator;
 	var customEndpointService: typeof CustomEndpointService;

@@ -95,19 +95,7 @@ export class EventDriven {
 
 
 
-
-
-
-	ModifyPage() {
-		const state = polymerController.store.getState();
-		const browsePageType = ext.GetBrowsePageType(state);
-
-		this.browsePage.setAttribute("c-page-type", browsePageType);
-		this.browsePage.removeAttribute("c-fancy-page");
-
-		window.cMusicFixerRunningServices.activeEditMode?.close();
-		window.cMusicFixerRunningServices.activeEditMode = undefined;
-
+	SetBrowsePageEditMode(state, browsePageType) {
 		if (ext.BrowsePageTypes.isPlaylist(browsePageType)) {
 			this.AlbumAndPlaylist(state);
 			this.Playlist(state);
@@ -120,6 +108,20 @@ export class EventDriven {
 
 			window.cMusicFixerRunningServices.activeEditMode = new albumEditMode();
 		};
+	};
+
+
+	ModifyPage() {
+		const state = polymerController.store.getState();
+		const browsePageType = ext.GetBrowsePageType(state);
+
+		this.browsePage.setAttribute("c-page-type", browsePageType);
+		this.browsePage.removeAttribute("c-fancy-page");
+
+		window.cMusicFixerRunningServices.activeEditMode?.close();
+		window.cMusicFixerRunningServices.activeEditMode = undefined;
+
+		this.SetBrowsePageEditMode(state, browsePageType);
 
 		window.cMusicFixerRunningServices.activeEditMode?.init();
 
@@ -175,6 +177,23 @@ export class EventDriven {
 		this.ModifyPage();
 	};
 
+	OnPlayerPageChange(changes) {
+		const change = changes[0];
+
+		window.cMusicFixerRunningServices.activeEditMode?.close();
+		window.cMusicFixerRunningServices.activeEditMode = undefined;
+
+		if (change.target.getAttribute(change.attributeName) === "PLAYER_BAR_ONLY") {
+			const state = polymerController.store.getState();
+			const browsePageType = ext.GetBrowsePageType(state);
+
+			this.SetBrowsePageEditMode(state, browsePageType);
+
+		} else {
+			window.cMusicFixerRunningServices.activeEditMode = new playerEditMode();
+		};
+	};
+
 	async LoadNavProgressObserver() {
 		this.browsePage = (await ext.WaitForBySelector("ytmusic-browse-response"))[0];
 		this.navProgressBar = (await ext.WaitForBySelector("yt-page-navigation-progress"))[0];
@@ -211,6 +230,20 @@ export class EventDriven {
 			target: this.dropdown,
 			attributeName: "aria-hidden"
 		}]);
+	};
+
+	async LoadPlayerPageObserver() {
+		this.playerPage = (await ext.WaitForBySelector("ytmusic-player-page"))[0];
+		
+		this.observers.playerPage = new MutationObserver(this.OnPlayerPageChange.bind(this));
+
+		this.observers.playerPage.observe(this.playerPage, {
+			childList: false,
+			subtree: false,
+			attributes: true,
+			attributeFilter: ["player-ui-state"],
+			attributeOldValue: false
+		});
 	};
 
 	async init() {
