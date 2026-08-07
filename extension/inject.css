@@ -1512,10 +1512,11 @@ ytmusic-app:has(ytmusic-network-status-banner[current-state="OFFLINE"]) #player-
 
 	& ytmusic-tab-renderer {
 		scrollbar-width: thin;
+		padding: 0 6px 0 10px;
 	}
 
 	& div.autoplay, ytmusic-queue-header-renderer, ytmusic-player-queue {
-		padding: 16px 6px 0 10px;
+		padding: 16px 0 0 0;
 		margin: 0;
 		box-sizing: border-box;
 	}
@@ -1526,6 +1527,11 @@ ytmusic-app:has(ytmusic-network-status-banner[current-state="OFFLINE"]) #player-
 
 	& ytmusic-player-queue {
 		padding-top: 4px;
+	}
+
+	.non-expandable.ytmusic-description-shelf-renderer, ytd-comments-header-renderer, #header-group {
+		margin-top: 0;
+		padding-top: 0;
 	}
 }
 
