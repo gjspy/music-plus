@@ -134,6 +134,8 @@ async function Big(request, sender) {
 		};
 		
 		api.route = `${EWUtils.STORAGE_API}customisation/sidebar/${path}/${EWUtils.STORAGE_SET}`;
+		request.data.data._itemsIsContinuation = false;
+		request.data.data._itemsHasContinuation = false;
 		meth = "set";
 
 	} else if (func === "sidebar-new-folder") {

@@ -27,7 +27,7 @@ export class PlaylistEditMode extends baseEditMode {
 			this.disableEditMode();
 		};
 
-		(new popupService("modal", popupTemplates.PlaylistImportancePrimary(OnSubmit))).Load();
+		(new popupService("modal", popupTemplates.PlaylistImportancePrimary(OnSubmit, () => this.disableEditMode()))).Load();
 	};
 
 	Importance(state, pageId) {
@@ -55,7 +55,7 @@ export class PlaylistEditMode extends baseEditMode {
 			this.disableEditMode();
 		};
 
-		(new popupService("modal", popupTemplates.PlaylistImportance(OnSubmit))).Load();
+		(new popupService("modal", popupTemplates.PlaylistImportance(OnSubmit, () => this.disableEditMode()))).Load();
 	};
 
 

@@ -129,7 +129,7 @@ export class PopupTemplates {
 		};
 	};*/
 
-	static PlaylistImportance(OnSubmit) {
+	static PlaylistImportance(OnSubmit, OnClose) {
 		return {
 			content:  [
 				{
@@ -162,7 +162,8 @@ export class PopupTemplates {
 					icon: null,
 					text: "Cancel",
 					style: "text-only",
-					defaultAction: "close"
+					defaultAction: "close",
+					action: OnClose
 				},
 				{
 					icon: null,
@@ -174,7 +175,7 @@ export class PopupTemplates {
 		};
 	};
 
-	static PlaylistImportancePrimary(OnSubmit) {
+	static PlaylistImportancePrimary(OnSubmit, OnClose) {
 		return {
 			content:  [
 				{
@@ -212,7 +213,8 @@ export class PopupTemplates {
 					icon: null,
 					text: "Cancel",
 					style: "text-only",
-					defaultAction: "close"
+					defaultAction: "close",
+					action: OnClose
 				},
 				{
 					icon: null,

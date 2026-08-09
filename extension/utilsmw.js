@@ -873,6 +873,7 @@ export class MWUtils {
 	};
 
 	static GetBrowsePageType(stateOrNavEndp) {
+		stateOrNavEndp = stateOrNavEndp || {};
 		let browseEndpoint = stateOrNavEndp;
 
 		if (stateOrNavEndp.navigation) { // get browseEndpoint from store.state
@@ -1458,15 +1459,18 @@ export class MWUtils {
 		};
 	};
 
-	static BuildCarousel(title, contents, strapline, nItemsPerCol, seasonId) {
+	static BuildCarousel(title, contents, strapline, nItemsPerCol, seasonId, playlistId) {
 		const header =  {
 			"title": {
 				"runs": [{
-					"text": title
+					"text": title,
+					
 				}]
 			},
 			headerStyle: "MUSIC_CAROUSEL_SHELF_BASIC_HEADER_STYLE_DEFAULT"
 		};
+
+		if (playlistId) header.title.runs[0].navigationEndpoint = ext.BuildEndpoint({navType: "browse", id: playlistId})
 
 		if (strapline) header.strapline = {
 			"runs": [{
@@ -1702,277 +1706,6 @@ export class MWUtils {
 
 		return lir;
 	};
-
-	static AddPlaylistPanelRendererReplacements(vr, newData, albumData, artistData, backingQueuePlaylistId, minIndex) {
-		if (!vr.queueNavigationEndpoint) vr = this.GetPPVR(vr);
-
-		const vId = newData.id;
-		const plSetId = newData.newData.albumPlSetVideoId || vr.playlistSetVideoId;
-
-		vr.navigationEndpoint.watchEndpoint = this.BuildEndpoint({
-			navType: "watch",
-			playlistId: albumData.mfId,
-			firstVideo: {
-				id: newData.id,
-				type: (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
-			},
-			playlistSetVideoId: plSetId ,
-			index: newData.displayIndex - minIndex
-		}).watchEndpoint; // KEEP CLICK PARAMS?
-
-		/*let we = vr.navigationEndpoint.watchEndpoint;
-		we.videoId = vId;
-		we.index = newData.displayIndex - minIndex;
-		we.watchEndpointMusicSupportedConfigs.watchEndpointMusicConfig.musicVideoType = (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV";
-		if (plSetId) we.playlistSetVideoId = plSetId;*/
-
-		vr.title.runs[0].text = newData.newData.name;
-		vr.longBylineText.runs = this.CreateLongBylineForPlaylistPanel(newData.cameFrom, albumData, artistData);
-
-		vr.thumbnail = {
-			thumbnails: [{ 
-				url: this.UpscaleImgQuality(newData.cameFrom.thumb),
-				width: this.IMG_HEIGHT, 
-				height: this.IMG_HEIGHT
-			}]
-		};
-		
-		vr.lengthText.runs[0].text = this.SecondsToHMSStr(newData.newData.lengthSec);
-		vr.lengthText.accessibility.accessibilityData.label = this.SecondsToWordyHMS(newData.newData.lengthSec);
-
-
-		vr.videoId = vId;
-		vr.playlistSetVideoId = plSetId;
-		vr.queueNavigationEndpoint.queueAddEndpoint.queueTarget.videoId = vId;
-
-		// TODO: menu items better omg
-		// TODO: clear queue by editing backingQueuePlaylist to remove all except playing
-
-		vr.menu.menuRenderer.items = [
-			{
-				"menuServiceItemRenderer": {
-					"text": {
-						"runs": [
-							{
-								"text": "Play next"
-							}
-						]
-					},
-					"icon": {
-						"iconType": "QUEUE_PLAY_NEXT"
-					},
-					"serviceEndpoint": {
-						"queueAddEndpoint": {
-							"queueTarget": {
-								"videoId": vId,
-								"onEmptyQueue": {
-									"watchEndpoint": {
-										"videoId": vId
-									}
-								},
-								"backingQueuePlaylistId": backingQueuePlaylistId
-							},
-							"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
-							"commands": [
-								{
-									"addToToastAction": {
-										"item": {
-											"notificationTextRenderer": {
-												"successResponseText": {
-													"runs": [
-														{
-															"text": "Song will play next"
-														}
-													]
-												}
-											}
-										}
-									}
-								}
-							]
-						}
-					}
-				}
-			},
-			{
-				"menuServiceItemRenderer": {
-					"text": {
-						"runs": [
-							{
-								"text": "Add to queue"
-							}
-						]
-					},
-					"icon": {
-						"iconType": "ADD_TO_REMOTE_QUEUE"
-					},
-					"serviceEndpoint": {
-						"queueAddEndpoint": {
-							"queueTarget": {
-								"videoId": vId,
-								"onEmptyQueue": {
-									"watchEndpoint": {
-										"videoId": vId
-									}
-								},
-								"backingQueuePlaylistId": backingQueuePlaylistId
-							},
-							"queueInsertPosition": "INSERT_AT_END",
-							"commands": [
-								{
-									"addToToastAction": {
-										"item": {
-											"notificationTextRenderer": {
-												"successResponseText": {
-													"runs": [
-														{
-															"text": "Song added to queue"
-														}
-													]
-												}
-											}
-										}
-									}
-								}
-							]
-						}
-					}
-				}
-			},
-			this.CreateToggleMenuItemForLikeButton(newData.newData),
-			{
-				"menuServiceItemDownloadRenderer": {
-					"serviceEndpoint": {
-						"offlineVideoEndpoint": {
-							"videoId": vId,
-							"onAddCommand": {
-								"getDownloadActionCommand": {
-									"videoId": vId,
-									"params": "CAI%3D"
-								}
-							}
-						}
-					}
-				}
-			},
-			{
-				"menuNavigationItemRenderer": {
-					"text": {
-						"runs": [
-							{
-								"text": "Save to playlist"
-							}
-						]
-					},
-					"icon": {
-						"iconType": "ADD_TO_PLAYLIST"
-					},
-					"navigationEndpoint": {
-						"addToPlaylistEndpoint": {
-							"videoId": vId
-						}
-					}
-				}
-			},
-			{
-				"menuServiceItemRenderer": {
-					"text": {
-						"runs": [
-							{
-								"text": "Remove from queue"
-							}
-						]
-					},
-					"icon": {
-						"iconType": "REMOVE"
-					},
-					"serviceEndpoint": {
-						"removeFromQueueEndpoint": {
-							"videoId": vId,
-							"commands": [
-								{
-									"addToToastAction": {
-										"item": {
-											"notificationTextRenderer": {
-												"successResponseText": {
-													"runs": [
-														{
-															"text": "Item removed from queue"
-														}
-													]
-												}
-											}
-										}
-									}
-								}
-							]
-						}
-					}
-				}
-			},
-			{
-				"menuNavigationItemRenderer": {
-					"text": {
-						"runs": [
-							{
-								"text": "Go to album"
-							}
-						]
-					},
-					"icon": {
-						"iconType": "ALBUM"
-					},
-					"navigationEndpoint": this.BuildEndpoint({
-						navType: "browse",
-						id: albumData.id
-					})
-				}
-			},
-			{
-				"menuNavigationItemRenderer": {
-					"text": {
-						"runs": [
-							{
-								"text": "Go to artist"
-							}
-						]
-					},
-					"icon": {
-						"iconType": "ARTIST"
-					},
-					"navigationEndpoint": this.BuildEndpoint({
-						navType: "browse",
-						id: artistData.id
-					})
-				}
-			},
-			{
-				"menuServiceItemRenderer": {
-					"text": {
-						"runs": [
-							{
-								"text": "Dismiss queue"
-							}
-						]
-					},
-					"icon": {
-						"iconType": "DISMISS_QUEUE"
-					},
-					"serviceEndpoint": {
-						"deletePlaylistEndpoint": {
-							"playlistId": backingQueuePlaylistId,
-							"command": {
-								"dismissQueueCommand": {}
-							}
-						}
-					}
-				}
-			}
-		];
-
-		return vr;
-	};
-
 	
 
 	/**

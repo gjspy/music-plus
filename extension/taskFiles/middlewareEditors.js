@@ -801,12 +801,43 @@ export class MainPOSTEditors {
 			let item = vrByIndex[newData.displayIndex - newList.minIndex];
 			let vr;
 
-			if (item && newData.changed) item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId, newList.minIndex);// ext.AddPlaylistPanelRendererReplacements(item, newData, newList.albumData, newList.artistData, backingPlaylistId, newList.minIndex);
-			else if (item) {
+			if (item && !newData.changed) {
+
+				// MODIFY, not REPLACE **BYLINE**.
 				vr = ext.GetPPVR(item);
-				vr.longBylineText.runs = ext.CreateLongBylineForPlaylistPanel(newList.albumData, newList.albumData, newList.artistData);
-				// TODO: metadata thumb, name.
-				// old method ModifyPlaylistPanelRendererNotReplacement
+
+				const cameFromArtists = (newData.cameFrom?.artists) ? newData.cameFrom.artists.map(v => v.id) : [];
+				let hasYearText = false;
+
+				for (const run of vr.longBylineText.runs) {
+					if (!run.navigationEndpoint) {
+						if (!isNaN(Number(run.text))) {
+							hasYearText = true;
+						};
+
+						continue;
+					};
+					const browseType = ext.GetBrowsePageType(run.navigationEndpoint);
+					if (!browseType) continue;
+
+					const bId = run.navigationEndpoint.browseEndpoint.browseId;
+
+					if (ext.BrowsePageTypes.isAnyArtist(browseType) && cameFromArtists.includes(bId)) {
+						run.navigationEndpoint.browseEndpoint.browseId = newList.artistData.id;
+						run.text = newList.artistData.name;
+					
+					} else if (ext.BrowsePageTypes.isAnyAlbum(browseType)) {
+						run.navigationEndpoint.browseEndpoint.browseId = newList.albumData.id;
+						run.text = newList.albumData.name;
+					};
+				};
+
+				if ((!hasYearText) && (newList.albumData.year)) {
+					vr.longBylineText.runs.concat(
+						{text: ext.YT_DOT},
+						{text: newList.albumData.year}
+					);
+				};
 
 			} else item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId, newList.minIndex);
 
@@ -970,7 +1001,7 @@ export class MainPOSTEditors {
 		if (newList.albumData.year) headerRenderer.subtitle.runs[2].text = newList.albumData.year;
 
 
-		if (newList.artistData.name) headerRenderer.straplineTextOne = {
+		if (newList.artistData.name && !newList.albumData.compilation) headerRenderer.straplineTextOne = {
 			runs: [{
 				text: newList.artistData.name,
 				navigationEndpoint: ext.BuildEndpoint({
@@ -1363,7 +1394,7 @@ export class EntirelyCustomResponses {
 		response.continuationContents = {
 			sectionListContinuation: {
 				continuations: sectionContinuation,
-				contents: seasons.rows.map(v => ext.BuildCarousel(v.seasonName, v.contents, v.description, Math.max(1, Math.ceil(v.contents.length / 7)), v.id)),
+				contents: seasons.rows.map(v => ext.BuildCarousel(v.seasonName, v.contents, v.description, Math.max(1, Math.ceil(v.contents.length / 7)), v.id, )),
 			}
 		};
 

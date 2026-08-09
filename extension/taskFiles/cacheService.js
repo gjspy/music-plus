@@ -3,20 +3,20 @@ export class CacheService {
 	static GetDefaultDataForTRIRFromPageType(browsePageType) {
 		const isSaved = browsePageType === "MUSIC_PAGE_TYPE_LIBRARY_CONTENT_LANDING_PAGE" || // library
 			browsePageType === "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE";
-		
+
 		const isPrivate = browsePageType === "MUSIC_PAGE_TYPE_PRIVATELY_OWNED_CONTENT_LANDING_PAGE";
-		
+
 		return {saved: isSaved, private: isPrivate};
 	};
 
 	static GetListIsSavedFromHeaderRenderer(headerRenderer) {
-		const saveToLibraryButton = (headerRenderer.buttons || []).filter( v => 
+		const saveToLibraryButton = (headerRenderer.buttons || []).filter( v =>
 			v.toggleButtonRenderer?.defaultServiceEndpoint?.likeEndpoint !== undefined
 		)?.[0];
 
 		if (saveToLibraryButton) return !!saveToLibraryButton.toggleButtonRenderer?.isToggled;
 
-		const editButton = headerRenderer.buttons.filter(v => 
+		const editButton = headerRenderer.buttons.filter(v =>
 			v.buttonRenderer?.navigationEndpoint?.playlistEditorEndpoint !== undefined
 		)?.[0];
 
@@ -78,8 +78,6 @@ export class CacheService {
 
 		const navigables = runs.filter((v) => (v.navigationEndpoint !== undefined || v.text === ext.VARIOUS_ARTISTS_NAME))
 			.map((v) => {
-				if (v.text === ext.VARIOUS_ARTISTS_NAME) return {name: ext.VARIOUS_ARTISTS_NAME, id: ext.VARIOUS_ARTISTS_ID};
-				
 				let type = ext.SafeDeepGet(v.navigationEndpoint, ext.Structures.pageTypeFromOuterNavigationEndpoint());
 				const id = ext.SafeDeepGet(v.navigationEndpoint, ext.Structures.browseIdFromNavigationEndpoint);
 
@@ -92,7 +90,11 @@ export class CacheService {
 			else if (ext.BrowsePageTypes.isChannel(v.type)) data.creator = v.name;
 			else if (ext.BrowsePageTypes.isRegularAlbum(v.type)) data.album = v;
 		});
-		
+
+		if (runs.filter(v => !v.navigationEndpoint && v.text === ext.VARIOUS_ARTISTS_NAME).length !== 0) {
+			data.artists = [{name: ext.VARIOUS_ARTISTS_NAME, id: ext.VARIOUS_ARTISTS_ID}];
+		};
+
 		const subType = runs.filter((v) => (!v.navigationEndpoint) && v.text.toLowerCase().match(ext.RELEASE_SUBTYPES_REGEX));
 		data.subType = subType[0]?.text;
 
@@ -136,12 +138,12 @@ export class CacheService {
 			id = lir.playlistItemData.videoId;
 			playlistSetVideoId = lir.playlistItemData.playlistSetVideoId;
 		};
-		
+
 		if ((!id) && lir.menu) {
 			const menu = ext.SafeDeepGet(lir, ext.Structures.menuItems);
 			id = ext.SafeDeepGet(menu?.[0], ext.Structures.serviceActionPlaylistEditEndpointFromMenuItem())?.removedVideoId;
 		};
-		
+
 		if ((!id) && lir.overlay) {
 			const watch = ext.SafeDeepGet(lir, ext.Structures.watchEndpointFromLIRDataPlayButton());
 			id = watch.videoId;
@@ -159,12 +161,12 @@ export class CacheService {
 		for (let i = 2; i < lir.flexColumns.length; i++) {
 			let albumListItem = lir.flexColumns[i];
 			if (!albumListItem) break;
-			
+
 			albumListItem = albumListItem.musicResponsiveListItemFlexColumnRenderer.text;
 			if (!albumListItem || !albumListItem.runs) break;
-			
+
 			albumListItem = albumListItem.runs[0];
-			if (!albumListItem.navigationEndpoint) continue; 
+			if (!albumListItem.navigationEndpoint) continue;
 
 			album = {
 				name: albumListItem.text,
@@ -191,7 +193,7 @@ export class CacheService {
 
 		if (navEndp.browseEndpoint) type = ext.SafeDeepGet(navEndp, ext.Structures.pageTypeFromOuterNavigationEndpoint());
 		else if (navEndp.watchEndpoint) type = ext.SafeDeepGet(navEndp, ext.Structures.videoTypeFromWatchEndpoint);
-		else fconsole.error("WHAT IS THIS navEndp FOR TRIR cache", navEndp);			
+		else fconsole.error("WHAT IS THIS navEndp FOR TRIR cache", navEndp);
 
 		if (ext.BrowsePageTypes.isChannel(type)) return;
 		if (ext.BrowsePageTypes.isVideo(type)) return;
@@ -215,7 +217,8 @@ export class CacheService {
 		data = { ...data, badges, ...this.GetDataFromSubtitleRuns(trir.subtitle) };
 
 		if (!data.artists) data.artists = this.GetArtistIdsFromMenuItems(ext.SafeDeepGet(trir, ext.Structures.menuItems));
-		
+		else if (data.artists.map(v => v.id).includes(ext.VARIOUS_ARTISTS_ID)) data["compilation"] = true;
+
 		const playNavEndp = ext.SafeDeepGet(trir, ext.Structures.playButtonFromTRIRData())?.playNavigationEndpoint;
 		data.mfId = (playNavEndp?.watchPlaylistEndpoint || playNavEndp?.watchEndpoint)?.playlistId;
 
@@ -227,20 +230,13 @@ export class CacheService {
 
 		const thumbnails = ext.SafeDeepGet(lir, ext.Structures.thumbnailsFromThumbnail());
 		const thumb = ext.ChooseBestThumbnail(thumbnails);
-		
+
 		const name = ext.SafeDeepGet(lir, ext.Structures.titleTextFromLIR);
 		const id = lir.navigationEndpoint?.browseEndpoint.browseId;
 		const type = ext.GetBrowsePageTypeFromBrowseId(id);
 
 		return { name, thumb, id, type };
 	};
-
-
-	static GetStorablesFromItems(items, loadedPageType) {
-		
-	};
-
-
 
 
 	static CollectContinuationData(response) {
@@ -259,7 +255,7 @@ export class CacheService {
 
 		const [items, hasContinuation] = GetItems();
 		if (items.length === 0) return;
-		
+
 		const gathered = [];
 
 		for (const v of items) {
@@ -289,7 +285,7 @@ export class CacheService {
 		const editableHeader = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRendererUserOwned());
 		const headerRenderer = editableHeader || ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer());
 		if (!headerRenderer) return;
-		
+
 		const allListItems = (ext.SafeDeepGet(response, ext.Structures.playlistListItems()) || []);
 		const items = allListItems.map( v => this.GetInfoFromLIR(v) ).filter( v => v !== undefined );
 
@@ -298,7 +294,7 @@ export class CacheService {
 
 		const name = ext.SafeDeepGet(headerRenderer, ext.Structures.titleText);
 		const creator = ext.SafeDeepGet(headerRenderer, ext.Structures.creatorNameFromFacepile);
-		
+
 		const subtitleData = this.GetDataFromSubtitleRuns(headerRenderer.subtitle.runs); // year
 
 		const saved = response.browseId.length === 4 || this.GetListIsSavedFromHeaderRenderer(headerRenderer); // VLLM, VLSS, VLSE
@@ -313,7 +309,7 @@ export class CacheService {
 				album.thumb = v.thumb;
 				these.push(album);
 			};
-			
+
 			v.artists?.forEach(artist => {
 				if (album?.id) artist.discography = [album.id];
 				these.push(artist);
@@ -321,14 +317,14 @@ export class CacheService {
 
 			v.album = album?.id;
 			v.artists = v.artists?.map( v => v.id );
-			
+
 			if (v.lengthStr) {
 				v.lengthSec = ext.LengthStrToSeconds(v.lengthStr);
 				delete v.lengthStr;
 			};
-			
+
 			delete v.playlistSetVideoId;
-			
+
 			these.push(v);
 			return these;
 
@@ -379,9 +375,14 @@ export class CacheService {
 		const subtitleData = this.GetDataFromSubtitleRuns(headerRenderer.subtitle.runs); // subType, yearStr
 		const artists = this.GetDataFromSubtitleRuns(headerRenderer.straplineTextOne?.runs)?.artists || [];
 
-		if (artists.length !== 0 && headerRenderer.straplineThumbnail) {
-			const artistThumbs = ext.SafeDeepGet(headerRenderer.straplineThumbnail, ext.Structures.thumbnailsFromMTR);
-			artists[0].thumb = ext.ChooseBestThumbnail(artistThumbs);
+		let compilation = false;
+
+		if (artists.length !== 0) {
+			if (headerRenderer.straplineThumbnail) {
+				const artistThumbs = ext.SafeDeepGet(headerRenderer.straplineThumbnail, ext.Structures.thumbnailsFromMTR);
+				artists[0].thumb = ext.ChooseBestThumbnail(artistThumbs);
+
+			} else if (artists.map(v => v.id).includes(ext.VARIOUS_ARTISTS_ID)) compilation = true;
 		};
 
 		const badges = (headerRenderer.subtitleBadge || []).map( v => ext.SafeDeepGet(v, ext.Structures.badgeIconFromBadge) );
@@ -405,7 +406,7 @@ export class CacheService {
 
 			v.albumPlSetVideoId = v.playlistSetVideoId;
 			delete v.playlistSetVideoId;
-			
+
 			return v;
 		});
 
@@ -413,7 +414,7 @@ export class CacheService {
 			v.artists = v.artists?.map( v => v.id );
 			return v;
 		});
-		
+
 		return [
 			{
 				name,
@@ -425,6 +426,7 @@ export class CacheService {
 				type: "ALBUM",
 				id: response.browseId,
 				private: false,
+				compilation,
 				_itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
 				_itemsHasContinuation: (continuation || []).length !== 0,
 				...subtitleData
@@ -451,23 +453,27 @@ export class CacheService {
 		const subtitleData = this.GetDataFromSubtitleRuns(headerRenderer.subtitle.runs); // artists, subType, yearStr
 		const artists = subtitleData?.artists || [];
 
+		let compilation = false;
+
+		if (artists.map(v => v.id).includes(ext.VARIOUS_ARTISTS_ID)) compilation = true;
+
 		artists.forEach( v => v.discography = [response.browseId]);
 		subtitleData.artists = artists.map( v => v.id );
 
 		const otherStorables = items.map( v => {
 			v.album = response.browseId;
 			v.artists = subtitleData.artists;
-			
+
 			if (v.lengthStr) {
 				v.lengthSec = ext.LengthStrToSeconds(v.lengthStr);
 				delete v.lengthStr;
 			};
-			
+
 			delete v.playlistSetVideoId; // NOT PROVIDED BY PRIV.
-	
+
 			return v;
 		});
-		
+
 		return [
 			{
 				name, thumb,
@@ -475,7 +481,8 @@ export class CacheService {
 				type: "ALBUM",
 				id: response.browseId,
 				private: true,
-				saved: true,			
+				saved: true,
+				compilation,
 				_itemsIsContinuation: false, // THIS SCOPE ALWAYS CALLED FROM CachePage(store.state), WHICH IS ALWAYS FULL CONTENTS
 				_itemsHasContinuation: false,
 				...subtitleData
@@ -523,7 +530,7 @@ export class CacheService {
 
 			return v;
 		});
-		
+
 		return [
 			{
 				name, wideThumb, saved,
@@ -584,10 +591,10 @@ export class CacheService {
 
 
 	/**
-	 * 
+	 *
 	 * @param {*} response
 	 * provide: `undefined` to use polymerController.store.getState(), your own store.state, or a response from an api call.
-	 * @returns 
+	 * @returns
 	 */
 	static CachePageContents(response) {
 		if (!response) response = polymerController.store.getState();

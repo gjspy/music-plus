@@ -4,7 +4,8 @@ finally fixed continuation list data append/overwrite logic.
 added favourites page
 with functionality to remove items from season
 updated primary guide button icons
-
+various artists is now respected properly
+player panel still updates artist to private counterpart, but does not remove features
 
 
 
@@ -19,18 +20,10 @@ can easily edit utils.GetSVG() to look in youtube's SVG store. so we could auto-
 do something to default yt "New platlist" button, beore sidebarEditfeatures appear. make it flex: 50% and let it be big until we change it and put max_width: (dpo we rlly need that?)
 
 CACHING NOW DOES artists NOT artist FOR ALBUM, and list of them => {type: MUSIC_PAGE_TYPE_ARTIST} not {type: ARTIST}, __FULL_CONTENTS -> contData
-make it not overwrite album/pl.items if items is a list length 0 (bkg)
-dont store if id is undefined/null etc.
-ensure only stores playlistSetVideoId if has come from album page
-popups: try to load one on top of other
 
-REWRITE SIDEBAR EDIT SERVICE, havent yet:
-allow more than 1 of each album/pl/paper item.
-sections; surrounded by separators, movable as one like a folder
 REWRITE MIDDLEWARE, HAVENT DONE THAT.
 fix mpad not having custom uploads, allow to remove from
 artist page, when auto sets to sort by date, do this before first load?
-more popup: have settings page and tab-specific buttons on popup?
 
 install node.js to get npm and npx
 add this to settings.json:
@@ -60,8 +53,11 @@ install eslint vs code extension
 
 install disable ts errors extension
 npm install tsc-silent --save-dev
+n3rds-inc.time
 
 MAKE 'FIX MODE', SEE EVERY PLAYLIST WHICH CONTAINS A VIDEO. MAYBE A MULTISELECT CMD, ANY THAT INCLUDES ANY OF THE FOLLOWING.
+
+search - find what playlist contains video
 
 TODO: auto add tag when playlist cache comes in (make sure only happens once, duplicate tags bad)
 TODO: make it completely fine to reload, eventDriven runs twice when reloaded, old listener not cancelled
@@ -79,20 +75,12 @@ TODO caching continuation NO LONGER ADDS TO PLAYLIST / ALBUM "ITEMS" AS HERE WE 
 
 validate user account, so if switch to other yt channel doesnt show all elems from old one?
 
-sections that are draggable, another variant of folder
-titles for sidebar, variant for separators
-spacing elements for sidebar, instead of putting carousels everywhere
-something for dfining "Related" albums for playlists
-
 middleware grid pages, cache sort option so can edit before getting first resp!
 
 playerBar -> musicApp (already done? see fixer.getPolymerControll)
-TAB IGNORING DOES NOT WORK :(
 
 for songs with too many plays (we are never ever getting back together 1b tv), see video detail from playerResponse.
 	- this returns viewCount for this instance, not including non-explicit/deluxe album/other alts of song. (for "we are never." the original is included in the sum with tv.)
-
-on select lyric (css:select) in lyrics pane,, popup window like spotify thing that people always tweet
 
 FIX PLAYER PAGE SIZING
 UPGRADE QUALITY OF FULLSCREEN VIDEO?
@@ -114,9 +102,6 @@ ONLY EVER ONE PRIVATE COUNTERPART, AS IF ALBUM HAS SAME NAME THEN WOULD BE ADDED
 hide master-buttons on player page!! (no, make it a thing - editing lyrics!!)
 
 shuffling with two albums?
-
-LOAD MWUTILS AS A MODULESCRIPT IN MAIN WORLD, LIKE EDITMODE. DONT SEND OVER FUNC BY FUNC ANYMORE, NO NEED FOR EVAL. ? INJECT WITH contentScript
-n3rds-inc.time
 
 update eventdriven & playerPageFeatures.
 
@@ -151,24 +136,15 @@ LIGHT ROTATING almost works, does 4 clicks then jumps one (cw), test acw
 
 CLEAN POPUP DROPDOWN: HAVE DROPDOWN FOR "Queue", "Playlist", "Other": Report, Share, ..
 
-STAGE CACHE UPDATE, ONLY PUBLISH TO SERVER EVERY MINUTE
-EG, ON UPDATE FOR WHATEVER, ADD TO QUEUE, TIMEOUT 60 SECONDS, GET MOST RECENT FROM LOCAL STORAGE AND GO?
-
-
 WHEN DO LYRIC EDITING, STORE THEM AS TXT FILES, NOT IN JSON.
-MOVE CACHE TO SEPARATE TXT FILE, SHOULD RLLY HAVE CACHE FOLDER WITH A FILE PER ID.
-YES DO THIS SUPER GOOD. EXPORT BUTTON TO RECEIVE A ZIP OF THEM!
 
 yt.config_.EXPERIMENT_FLAGS.wug_networking_gzip_request !!!!!
 
-LYRIC EDTING! PRIVATE SONGS ALL HAVE A UNIQUE LYRIC ENDPOINT!!
 SOUNDS LIKE LINKS!!
 
 tag playlist thumbnails!!
 
 MAKE IT NOT ADD TAGS TWICE WHEN UPDATING
-CHECK VOERFLOW ON POPUP
-RATINGS NEXT.
 edit album artist, check work yes?
 
 want "recently most played" to give a queue full of ur top songs, nto a radio of that song
@@ -176,9 +152,6 @@ for when we track plays.
 
 tloas deluxe doesnt have playlistSetVideoIds? //NOT THIS, INDEX issue. (NOW PROBLEM WITH BREACH)
 albumify playlist.
-folder icons
-
-
 
 NEED PUBLIC COUNTERPARTS FOR PUBLIC ARTISTS.
 each artist has tons of different topic channels. twent yone pilots channel generated with capitals for The Line, ending in Gw, normal ends with Cw?
@@ -205,14 +178,6 @@ TODO: popup, get brightness from lightApi for slider.
 
 
 
-
-
-PLAYLIST EDIT MODE:
- - Set "Period Archive"
- - Set "Period Replay"
- - Set Related Albums
-
-Show related albums in carousel below!
 
 MAKE THIS AVAILABLE over on mymusicarchive, then have BUTTON there to "Backup", manually downloads everything that doesnt already exist.
 
