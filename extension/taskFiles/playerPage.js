@@ -224,12 +224,12 @@ function NiceColours() {
 		};
 
 		// now using apis for details
-		let playerResponse = playerBar.playerApi.getPlayerResponse();
+		let playerResponse = polymerController.queue.playerApi.getPlayerResponse();
 		if (!playerResponse) return;
 
 		let videoDetails = playerResponse.videoDetails;
 
-		let currentTime = playerBar.playerApi.getCurrentTime();
+		let currentTime = polymerController.queue.playerApi.getCurrentTime();
 		let totalTime = Number(videoDetails.lengthSeconds);
 
 		let v = currentTime / totalTime;
