@@ -242,7 +242,7 @@ export class CacheService {
 	static CollectContinuationData(response) {
 		function GetItems() {
 			const appendItems = ext.SafeDeepGet(response, ext.Structures.continuationAppendItems);
-			if (appendItems) return [appendItems, !!ext.ArrayNLast(items).continuationItemRenderer];
+			if (appendItems) return [appendItems, !!ext.ArrayNLast(appendItems).continuationItemRenderer];
 
 			const sectionList = ext.SafeDeepGet(response, ext.Structures.continuationSectionListGrid);
 			if (sectionList) return [sectionList.items, !!sectionList.continuations];

@@ -2404,13 +2404,16 @@ ytmusic-search-box:not([opened]):not([has-query]) input.ytmusic-search-box {
 	display: none;
 }
 
+ytmusic-search-box {
+	pointer-events: all !important;
+}
+
 
 ytmusic-search-box .search-box.ytmusic-search-box {
 	z-index: 0;
 	border-bottom-right-radius: 0 !important;
 	border-bottom-left-radius: 8px !important;
 	background: var(--ytmusic-search-background);
-	pointer-events: all;
 }
 
 yt-icon-button.ytmusic-search-box {
