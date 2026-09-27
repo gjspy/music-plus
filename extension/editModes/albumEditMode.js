@@ -64,31 +64,46 @@ export class AlbumEditMode extends baseEditMode {
 	HideSongs = (state, pageId) => this._ToggleSongs(state, pageId, "hidden");
 	SkipSongs = (state, pageId) => this._ToggleSongs(state, pageId, "skipped");
 
-	/*Importance(state, pageId) {
-		const OnSubmit = (popup) => {
-			const year = Number(popup.querySelector("#year input").value);
-			const season = popup.querySelector("#season input").value;
+	Importance = (state, pageId) => (new playlistEditMode()).Importance.call(this, state, pageId);
+
+
+	EditMetadata(state, pageId) {
+		function OnSubmit(popup) {
+			let data = {resets: [], changes: {}};
+
+			for (let text of popup.querySelectorAll(".c-text-input")) {
+				let id = text.getAttribute("id");
+				let reset = popup.querySelector(`.c-check-input#def_${id} input`).checked;
+
+				if (reset) {
+					data.resets.push(id);
+					continue;
+				};
+
+				let value = text.querySelector("input").value;
+				if (value !== "") data.changes[id] = value;
+			};
 
 			ext.DispatchFunctionToEW({
 				func: "storage",
-				storageFunc: "importance",
-				data: {
-					data: {
-						id: pageId,
-						year,
-						season,
-						seasonCode: `${year}-${season}`,
-						description: popup.querySelector("#description input").value
-					}, // TODO need to swap. index describes browseId : [seasonCodes], normal files are seasonCode: browseIds. shit then, cant have description per entry?
-					_saveBackup: true
+				storageFunc: "edit-metadata",
+				"data": {
+					"data": data
 				}
-			});
+			})
+
+			popup.remove();
+			this.disableEditMode();
 		};
 
-		(new popupService("modal", popupTemplates.PlaylistImportance(OnSubmit))).Load();
-	};*/
 
-	Importance = (state, pageId) => (new playlistEditMode()).Importance.call(this, state, pageId);
+
+
+
+
+		(new popupService("modal", popupTemplates.NewFolder(OnSubmit))).Load();
+	};
+
 
 
 

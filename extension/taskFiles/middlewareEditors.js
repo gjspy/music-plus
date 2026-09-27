@@ -960,8 +960,12 @@ export class MainPOSTEditors {
 			ext.ModifyListItemRendererForAnyPage(lir, newList.albumData, newList.artistData, "MUSIC_PAGE_TYPE_ALBUM", visibleIndex);
 
 			newItemOrder.push(lir);
-			newLengthSec += newData.newData.lengthSec;
-			if (!(newData.hidden || newData.skipped)) playableSongs ++;
+			
+			if (!(newData.hidden || newData.skipped)) {
+				playableSongs ++;
+				newLengthSec += newData.newData.lengthSec;
+			};
+
 			if (!newData.hidden) visibleIndex++;
 			
 			// AddListItemReplacements sets lir.cData = newData, has hidden and skipped in it.
@@ -1026,10 +1030,10 @@ export class MainPOSTEditors {
 			}
 		};
 
-		if (originalLengthSec !== newLengthSec && newLengthSec) headerRenderer.cThirdSubtitle = {runs: [
+		/*if (originalLengthSec !== newLengthSec && newLengthSec) headerRenderer.cThirdSubtitle = {runs: [
 			{text: "(" + headerRenderer.secondSubtitle.runs[0].text},
 			{text: `${ext.SecondsToWordyHMS(originalLengthSec, 2)} - originally)`}
-		]};
+		]};*/
 
 		headerRenderer.secondSubtitle.runs[0].text = `${playableSongs} songs`;
 		headerRenderer.secondSubtitle.runs[2].text = ext.SecondsToWordyHMS(newLengthSec, 2);

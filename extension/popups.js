@@ -70,7 +70,7 @@ export class PopupService {
 			const btn = ext.CreateButtonElem(v.icon, v.text, v.style, v.id);
 
 			if (v.defaultAction === "close") btn.addEventListener("click", () => this.ClearPopups());
-			if (v.action) btn.addEventListener("click", () => v.action(this.contents));
+			if (v.action) btn.addEventListener(v.action.e, () => v.action.f(this.contents));
 
 			actionsCont.append(btn);
 		});
