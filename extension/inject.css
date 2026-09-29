@@ -751,14 +751,6 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 	height: 100%;
 
 	background-color: #0000006e;
-
-	/*opacity: 0;
-	transition: opacity 0.3s ease;
-
-	&.active {
-		opacity: 1;
-		transition: opacity 0.05s ease;
-	}*/
 }
 
 .c-popup-bkg:has(.c-dropdown) {
@@ -1323,7 +1315,7 @@ ytmusic-app-layout#layout:not([player-page-open]) #guide #items > :not(.c-carous
 	opacity: 0 !important;
 }
 
-:root:not([c-tab-visible="true"]) #progress-bar #primaryProgress,
+/*:root:not([c-tab-visible="true"]) #progress-bar #primaryProgress,
 tp-yt-paper-slider#progress-bar[changing-song] #primaryProgress {
 	transition: none;
 }
@@ -1331,13 +1323,13 @@ tp-yt-paper-slider#progress-bar[changing-song] #primaryProgress {
 :root:not([c-tab-visible="true"]) #progress-bar .slider-knob.tp-yt-paper-slider,
 tp-yt-paper-slider#progress-bar[changing-song] .slider-knob.tp-yt-paper-slider {
 	transition: none;
-}
+}*/
 
 #progress-bar #primaryProgress {
 	transform: scaleX(var(--v)) !important;
-	transition: 
+	/*transition: 
 		transform 0.5s linear,
-		background-size 0.5s linear;
+		background-size 0.5s linear;*/
 
 	border-radius: 20px;
 
@@ -1353,7 +1345,7 @@ tp-yt-paper-slider#progress-bar[changing-song] .slider-knob.tp-yt-paper-slider {
 
 #progress-bar .slider-knob.tp-yt-paper-slider {
 	left: calc(100% * calc(var(--v))) !important;
-	transition: left 0.5s linear;
+	/*transition: left 0.5s linear;*/
 }
 
 #progress-bar .slider-knob.tp-yt-paper-slider .slider-knob-inner {
@@ -2358,6 +2350,11 @@ ytmusic-app-layout[player-page-open] ytmusic-nav-bar .ytmusic-nav-bar.center-con
 	pointer-events: none;
 }
 
+ytmusic-app-layout ytmusic-nav-bar[guide-collapsed]:not([is-search-page]) .ytmusic-nav-bar.center-content ytmusic-search-box,
+ytmusic-app-layout[player-page-open] ytmusic-nav-bar[guide-collapsed] .ytmusic-nav-bar.center-content ytmusic-search-box {
+	margin-left: var(--ytmusic-guide-width);
+}
+
 ytmusic-app-layout ytmusic-nav-bar:not([is-search-page]) .ytmusic-nav-bar.center-content ytmusic-search-box,
 ytmusic-app-layout[player-page-open] ytmusic-nav-bar .ytmusic-nav-bar.center-content ytmusic-search-box {
 	margin-left: calc(var(--ytmusic-guide-width) - var(--ytmusic-search-box-button-size) - var(--ytmusic-scrollbar-width) - 3%);
@@ -2532,4 +2529,3 @@ ytmusic-browse-response[c-page-type="C_GALLERY"] #items.ytmusic-carousel {
   grid-auto-flow: row !important;
   --ytmusic-carousel-num-items-per-row: 6 !important;
 }
-

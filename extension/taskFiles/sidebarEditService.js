@@ -325,7 +325,7 @@ export class SidebarEditFeatures {
 
 			isHidden = !isHidden;
 
-			vis.replaceWith(this.svgs[(isHidden) ? "invisible" : "visible"].cloneNode(true));
+			vis.firstElementChild.replaceWith(this.svgs[(isHidden) ? "invisible" : "visible"].cloneNode(true).firstElementChild);
 
 			if (isHidden) ext.HideElem(elem);
 			else ext.UnhideElem(elem);

@@ -190,14 +190,14 @@ export class PopupTemplates {
 				},
 				{
 					class: "c-text-input",
-					id: "title",
+					id: "name",
 					text: "Title"
 				},
 				{
 					class: "c-check-input",
-					id: "def_title",
+					id: "def_name",
 					text: "Reset to default",
-					action: {e: "change", f: (parent) => uninteractable(parent, "title")}
+					action: {e: "change", f: (parent) => uninteractable(parent, "name")}
 				},
 				{
 					class: "c-text-input",
@@ -221,7 +221,7 @@ export class PopupTemplates {
 					text: "Reset to default",
 					action: {e: "change", f: (parent) => uninteractable(parent, "thumb")}
 				},
-				{
+				/*{
 					class: "c-text-input",
 					id: "bkg",
 					text: "Custom Page Background URL"
@@ -231,17 +231,17 @@ export class PopupTemplates {
 					id: "def_bkg",
 					text: "Reset to default",
 					action: {e: "change", f: (parent) => uninteractable(parent, "bkg")}
-				},
+				},*/
 				{
 					class: "c-text-input",
-					id: "type",
+					id: "subType",
 					text: "Release Type (Album, Single, EP)"
 				},
 				{
 					class: "c-check-input",
-					id: "def_type",
+					id: "def_subType",
 					text: "Reset to default",
-					action: {e: "change", f: (parent) => uninteractable(parent, "type")}
+					action: {e: "change", f: (parent) => uninteractable(parent, "subType")}
 				},
 				{
 					class: "c-text-input",

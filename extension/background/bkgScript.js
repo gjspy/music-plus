@@ -172,6 +172,11 @@ async function Big(request, sender) {
 	} else if (func === "unlink-season") {
 		api.route = `${EWUtils.STORAGE_API}userdata/archive/${request.data.season}/${EWUtils.STORAGE_MOD}`;
 		meth = "set";
+	
+	} else if (func === "edit-metadata") {
+		api.route = `${EWUtils.STORAGE_API}customisation/metadata/${EWUtils.STORAGE_SET}`;
+		meth = "set";
+
 	};
 
 	if (Object.keys(api).length === 0 && resp === undefined) throw "FUNC NOT RECOGNISED";

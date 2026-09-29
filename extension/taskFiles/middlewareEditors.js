@@ -895,7 +895,7 @@ export class MainPOSTEditors {
 		};
 
 		secondaryContents.contents = newContents;
-		secondaryContents.contents.push(...carouselContents.map(v => ext.BuildCarousel(v.seasonName, v.contents)));
+		secondaryContents.contents.push(...carouselContents.map(v => ext.BuildCarousel(v.seasonName, v.contents, v.description, undefined, v.id)));
 	};
 
 
@@ -978,7 +978,7 @@ export class MainPOSTEditors {
 		// EDIT HEADER DETAILS, AUTOMATICALLY, BASED ON NEW CONTENTS.
 		const headerRenderer = ext.SafeDeepGet(response, ext.Structures.listPageHeaderRenderer());
 
-		if (newList.albumData.title) headerRenderer.title.runs = [ { text: newList.albumData.title } ];
+		if (newList.albumData.name) headerRenderer.title.runs = [ { text: newList.albumData.name } ];
 		if (newList.albumData.desc) {
 			headerRenderer.description.musicDescriptionShelfRenderer.description.runs = [
 				{ text: newList.albumData.desc }

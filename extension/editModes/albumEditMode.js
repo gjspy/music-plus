@@ -69,25 +69,26 @@ export class AlbumEditMode extends baseEditMode {
 
 	EditMetadata(state, pageId) {
 		function OnSubmit(popup) {
-			let data = {resets: [], changes: {}};
+			let data = {"id": pageId, "type":"METADATA"};
 
 			for (let text of popup.querySelectorAll(".c-text-input")) {
 				let id = text.getAttribute("id");
 				let reset = popup.querySelector(`.c-check-input#def_${id} input`).checked;
 
 				if (reset) {
-					data.resets.push(id);
+					data[id] = "";
 					continue;
 				};
 
 				let value = text.querySelector("input").value;
-				if (value !== "") data.changes[id] = value;
+				if (value !== "") data[id] = value;
 			};
 
 			ext.DispatchFunctionToEW({
 				func: "storage",
 				storageFunc: "edit-metadata",
 				"data": {
+					"_emptyStringOverwrites": true,
 					"data": data
 				}
 			})
@@ -96,12 +97,7 @@ export class AlbumEditMode extends baseEditMode {
 			this.disableEditMode();
 		};
 
-
-
-
-
-
-		(new popupService("modal", popupTemplates.NewFolder(OnSubmit))).Load();
+		(new popupService("modal", popupTemplates.EditMetadata(OnSubmit))).Load();
 	};
 
 
