@@ -307,6 +307,7 @@ export class CacheService {
 			if (album) {
 				album.artists = v.artists?.map(v => v.id);
 				album.thumb = v.thumb;
+				album.type = "ALBUM";
 				these.push(album);
 			};
 
