@@ -398,7 +398,7 @@ export class CacheService {
 
 		const itemsStorable = items.map( v => {
 			v.album = response.browseId;
-			v.artists = artistIds;
+			v.artists = v.artists.map(v => v.id);
 
 			if (v.lengthStr) {
 				v.lengthSec = ext.LengthStrToSeconds(v.lengthStr);

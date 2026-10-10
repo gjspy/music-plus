@@ -565,7 +565,7 @@ export class MWUtils {
 				};
 			};
 			if (opts.playlistSetVideoId) v.watchEndpoint.playlistSetVideoId = opts.playlistSetVideoId;
-			if (opts.index) v.watchEndpoint.index = opts.index;
+			if (opts.index || opts.index === 0) v.watchEndpoint.index = opts.index;
 
 			if (opts.shuffle === true) v.watchEndpoint.params = this.YT_PLAYER_PARAMS.shuffle;
 			//else v.watchEndpoint.params = this.YT_PLAYER_PARAMS.normal;
@@ -758,6 +758,8 @@ export class MWUtils {
 
 			item.setAttribute("c-skipped", "true");
 			item.setAttribute("unplayable", "true");
+
+			if (item.querySelector(".c-skip-icon")) return;
 
 			const icon = this.GetSVG("no-circle");
 			this.AddToClass(icon, "c-skip-icon");

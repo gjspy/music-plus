@@ -799,7 +799,7 @@ export class MainPOSTEditors {
 			if (!newData.id) continue; // PLACEHOLDERS OF {}
 			if ((newData.hidden || newData.skipped) && (videoIdToSelect !== newData.id) && (queueDataRequestIds.indexOf(newData.id) === -1)) continue;
 
-			let item = vrByIndex[newData.playIndex];
+			let item = vrByIndex[newData.originalIndex - newList.minIndex];
 			let vr;
 
 			if (item && !newData.changed) {

@@ -1,6 +1,10 @@
 export class AlbumEditMode extends baseEditMode {
 	affectsBrowsePage = true;
 
+	_HideIcons() {
+		document.querySelectorAll(".c-skip-icon").forEach(v => v.remove());
+	};
+
 	async _ToggleSongs(state, pageId, action) {
 		const hideSong = action === "hidden";
 		// const skipSong =  action === "skipped";
@@ -28,7 +32,7 @@ export class AlbumEditMode extends baseEditMode {
 		};
 
 		this.browsePage.setAttribute("c-editing", "hideSongs");
-		document.querySelectorAll(".c-skip-icon").forEach(v => v.remove());
+		this._HideIcons();
 
 		const listItems = document.querySelectorAll(ext.HELPFUL_SELECTORS.listItemRenderersOfCurrentBrowseResponse);
 
@@ -100,7 +104,10 @@ export class AlbumEditMode extends baseEditMode {
 		(new popupService("modal", popupTemplates.EditMetadata(OnSubmit, () => this.disableEditMode()))).Load();
 	};
 
-
+	disableEditMode() {
+		this._HideIcons();
+		super.disableEditMode();
+	}
 
 
 
