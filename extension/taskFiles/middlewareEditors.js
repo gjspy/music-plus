@@ -252,7 +252,7 @@ export class SmallPOSTEditors {
 
 		let [newContents, currentVideoWE, currentData] = await middlewareEditors.MainPOSTEditors._EditQueueContentsFromResponse(
 			playlistPanel.contents,
-			(request.cParams || {}).buildQueueFrom || response.currentVideoEndpoint.watchEndpoint.playlistId,//|| request.body.playlistId,
+			(request.cParams || {}).buildQueueFrom || (response.currentVideoEndpoint.watchEndpoint.playlistId),//|| request.body.playlistId,
 			response.currentVideoEndpoint.watchEndpoint.videoId,//request.body.videoId,
 			false
 		);
@@ -762,18 +762,22 @@ export class MainPOSTEditors {
 		if (!id) return [undefined, undefined, undefined];
 		if (!queueDataRequestIds) queueDataRequestIds = [];
 
+		if (id.startsWith("PL")) id = "VL"+id;
+
 		if (id.startsWith("OL")) {
-			id = await ext.StorageGet({ storageFunc: "mfId-to-id", id });
+			id = (await ext.StorageGet({ storageFunc: "mfId-to-id", id }))[0];
 		};
 		if (!id) return [undefined, undefined, undefined];
 		
 		const newList = await ext.StorageGet({ storageFunc: "edit-list", id });
 		if (!newList.listItems) return [undefined, undefined, undefined];
 
+		const buildFromType = ext.GetBrowsePageTypeFromBrowseId(id);
+		const buildingFromAlbum = ext.BrowsePageTypes.isAnyAlbum(buildFromType);
+
 		const newItemOrder = [];
 		let currentWatchEndpoint;
 		let currentData;
-		let indexOffset = newList.minIndex;
 
 		console.log("queueContents now", structuredClone(queueContents));
 
@@ -793,20 +797,16 @@ export class MainPOSTEditors {
 
 		for (const newData of newList.listItems) {
 			if (!newData.id) continue; // PLACEHOLDERS OF {}
-			if ((newData.hidden || newData.skipped) && (videoIdToSelect !== newData.id) && (queueDataRequestIds.indexOf(newData.id) === -1)) {
-				indexOffset ++;
-				continue;
-			}; // DON'T CREATE SKIPPED. ADD INDEX OFFSET. TODO: USE INDEXOFFSET TO SET watchEndpoint indexes.
+			if ((newData.hidden || newData.skipped) && (videoIdToSelect !== newData.id) && (queueDataRequestIds.indexOf(newData.id) === -1)) continue;
 
-			let item = vrByIndex[newData.displayIndex - newList.minIndex];
+			let item = vrByIndex[newData.playIndex];
 			let vr;
 
 			if (item && !newData.changed) {
-
-				// MODIFY, not REPLACE **BYLINE**.
+				// MODIFY, not REPLACE BYLINE.
 				vr = ext.GetPPVR(item);
 
-				const cameFromArtists = (newData.cameFrom?.artists) ? newData.cameFrom.artists.map(v => v.id) : [];
+				const cameFromArtists = (newData.cameFrom?.artists?.length) ? newData.cameFrom.artists.map(v => v.id) : [];
 				let hasYearText = false;
 
 				for (const run of vr.longBylineText.runs) {
@@ -817,6 +817,8 @@ export class MainPOSTEditors {
 
 						continue;
 					};
+					if (!buildingFromAlbum) continue;
+
 					const browseType = ext.GetBrowsePageType(run.navigationEndpoint);
 					if (!browseType) continue;
 
@@ -832,19 +834,19 @@ export class MainPOSTEditors {
 					};
 				};
 
-				if ((!hasYearText) && (newList.albumData.year)) {
-					vr.longBylineText.runs.concat(
+				if ((!hasYearText) && ((newList.albumData || newData.cameFrom).year)) {
+					vr.longBylineText.runs = vr.longBylineText.runs.concat(
 						{text: ext.YT_DOT},
-						{text: newList.albumData.year}
+						{text: (newList.albumData || newData.cameFrom).year}
 					);
 				};
 
-			} else item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId, newList.minIndex);
+			} else item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId);
 
 			
 			if (!vr) vr = ext.GetPPVR(item);
 			vr.cData = {
-				albumData: newList.albumData,
+				albumData: newList.albumData || newData.cameFrom,
 				artistData: newList.artistData,
 				thisData: newData
 			};
@@ -934,30 +936,30 @@ export class MainPOSTEditors {
 		const newItemOrder = [];
 		let newLengthSec = 0;
 		let playableSongs = 0;
-		let visibleIndex = newList.minIndex;
 
 		for (const newData of newList.listItems) {
 			if (!newData.id) continue; // PLACEHOLDERS OF {}
 
-			let lir = lirByIndex[newData.displayIndex];
+			let lir = lirByIndex[Number(newData.originalIndex)];
 
-			if (lir) ext.AddListItemReplacements(lir, newData, newList.albumData, newList.artistData, newList.minIndex);
-			else lir = ext.BuildListItemRendererFromDataForAlbumPage(newData, newList.albumData, newList.artistData, newList.minIndex);
+			if (lir) ext.AddListItemReplacements(lir, newData, newList.albumData, newList.artistData);
+			else lir = ext.BuildListItemRendererFromDataForAlbumPage(newData, newList.albumData, newList.artistData);
 
 			const thisCData = {
 				albumData: newList.albumData,
 				artistData: newList.artistData,
 				thisData: newData,
 				indexData: {
-					"displayIndex": newData.displayIndex, // NOT index to display, just the base unedited ish?
-					"visibleIndex": visibleIndex
+					"originalIndex": newData.originalIndex, // NOT index to display, just the base unedited ish?
+					"visibleIndex": newData.displayIndex,
+					"playIndex": newData.playIndex
 				}
 			};
 
 			if (lir.musicResponsiveListItemRenderer) lir.musicResponsiveListItemRenderer.cData = thisCData;
 			else lir.cData = thisCData;
 
-			ext.ModifyListItemRendererForAnyPage(lir, newList.albumData, newList.artistData, "MUSIC_PAGE_TYPE_ALBUM", visibleIndex);
+			ext.ModifyListItemRendererForAnyPage(lir, newList.albumData, newList.artistData, "MUSIC_PAGE_TYPE_ALBUM", newData.displayIndex);
 
 			newItemOrder.push(lir);
 			
@@ -965,8 +967,6 @@ export class MainPOSTEditors {
 				playableSongs ++;
 				newLengthSec += newData.newData.lengthSec;
 			};
-
-			if (!newData.hidden) visibleIndex++;
 			
 			// AddListItemReplacements sets lir.cData = newData, has hidden and skipped in it.
 		};

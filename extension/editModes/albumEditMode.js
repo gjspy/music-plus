@@ -47,7 +47,7 @@ export class AlbumEditMode extends baseEditMode {
 			let playable = !Boolean(listItem.getAttribute(attr));
 
 			listItem.removeAttribute("unplayable");
-			listItem.querySelector(".left-items .index").textContent = data.cData.indexData.displayIndex;
+			listItem.querySelector(".left-items .index").textContent = data.cData.indexData.originalIndex;
 
 			let newButton = ((playable) ? icon : undoIcon).cloneNode(true);
 			if (videoId) newButton.onclick = () => {
@@ -97,7 +97,7 @@ export class AlbumEditMode extends baseEditMode {
 			this.disableEditMode();
 		};
 
-		(new popupService("modal", popupTemplates.EditMetadata(OnSubmit))).Load();
+		(new popupService("modal", popupTemplates.EditMetadata(OnSubmit, () => this.disableEditMode()))).Load();
 	};
 
 

@@ -283,4 +283,52 @@ export class PopupTemplates {
 			]
 		};		
 	};
+
+
+	static EditMetadata(OnSubmit, OnClose) {
+
+		return {
+			content:  [
+				{
+					class: "c-popup-title",
+					text: "Insert extra song to album",
+					icon: "album"
+				},
+				{
+					class: "c-text-input",
+					text: "Youtube Video ID",
+					id: "vid"
+				},
+				{
+					class: "c-text-input",
+					text: "Index",
+					id: "index"
+				},
+				{
+					class: "c-popup-text-line",
+					text: "Index should be based on the list before any custom deletions are applied [originalIndex], after other extra songs are added, and relative to the first item (0 or 1, depending)."
+				},
+				{
+					class: "c-check-input",
+					text: "Overwrite?",
+					id: "overwrite"
+				}
+			],
+			actions: [
+				{
+					icon: null,
+					text: "Cancel",
+					style: "text-only",
+					defaultAction: "close",
+					action: {f: OnClose, e: "click"}
+				},
+				{
+					icon: null,
+					text: "Apply",
+					style: "light",
+					action: {f: OnSubmit, e: "click"}
+				}
+			]
+		};
+	};
 };

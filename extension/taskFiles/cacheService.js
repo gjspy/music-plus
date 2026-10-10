@@ -509,14 +509,14 @@ export class CacheService {
 		const songsShelf = this.GetShelfFromTitle(shelves, "Songs") || this.GetShelfFromTitle(shelves, "Top songs");
 		const albumsShelf = this.GetShelfFromTitle(shelves, "Albums");
 		const singlesShelf = this.GetShelfFromTitle(shelves, "Singles and EPs");
-		const libraryShelf = this.GetShelfFromTitle(shelves, "From your library");
+		//const libraryShelf = this.GetShelfFromTitle(shelves, "From your library");
 		const artistsShelf = this.GetShelfFromTitle(shelves, "Fans might also like");
 
 		const items = [
 		//	...(songsShelf?.contents || []).map( v => this.GetInfoFromLIR(v) ),
 			...(albumsShelf?.contents || []).map( v => this.GetInfoFromTRIR(v, loadedPageType) ),
 			...(singlesShelf?.contents || []).map( v => this.GetInfoFromTRIR(v, loadedPageType) ),
-			...(libraryShelf?.contents || []).map( v => this.GetInfoFromTRIR(v, loadedPageType) ),
+		//	...(libraryShelf?.contents || []).map( v => this.GetInfoFromTRIR(v, loadedPageType) ), don't do: albums show up for artists that only contribute. eg anitta "from your library" shows hurry up tomorrow
 			...(artistsShelf?.contents || []).map( v => this.GetInfoFromTRIR(v, loadedPageType) )
 		].filter( v => v !== undefined );
 

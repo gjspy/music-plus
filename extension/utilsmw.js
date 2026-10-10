@@ -228,6 +228,12 @@ export class MWUtils {
 		);
 	};
 
+	static Unload() {
+		for (const [name, service] of Object.entries(window.cMusicFixerRunningServices)) {
+			service.unload();
+		};
+	};
+
 	static GetTemplateElem = (className) => this.state.TemplateElements[className].cloneNode(true);
 	static GetSVG = (icon) => this.GetTemplateElem(icon);
 
@@ -562,7 +568,7 @@ export class MWUtils {
 			if (opts.index) v.watchEndpoint.index = opts.index;
 
 			if (opts.shuffle === true) v.watchEndpoint.params = this.YT_PLAYER_PARAMS.shuffle;
-			else v.watchEndpoint.params = this.YT_PLAYER_PARAMS.normal;
+			//else v.watchEndpoint.params = this.YT_PLAYER_PARAMS.normal;
 
 			return v;
 		};
@@ -1256,8 +1262,8 @@ export class MWUtils {
 									},
 									"navigationEndpoint": {
 										"watchPlaylistEndpoint": {
-											"playlistId": "RDAMPL" + data.mfId,
-											"params": this.YT_PLAYER_PARAMS.normal
+											"playlistId": "RDAMPL" + data.mfId//,
+										//	"params": this.YT_PLAYER_PARAMS.normal
 										}
 									}
 								}
@@ -1499,7 +1505,7 @@ export class MWUtils {
 		};
 	};
 
-	static AddListItemReplacements(lir, newData, albumData, artistData, minIndex) {
+	static AddListItemReplacements(lir, newData, albumData, artistData) {
 		if (lir.musicResponsiveListItemRenderer) lir = lir.musicResponsiveListItemRenderer;
 		const playButton = this.SafeDeepGet(lir, this.Structures.playButtonFromLIRData());
 
@@ -1514,7 +1520,7 @@ export class MWUtils {
 				type: (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
 			},
 			playlistSetVideoId: plSetId,
-			index: newData.displayIndex - minIndex
+			index: newData.playIndex
 		});
 
 		playButton.accessibilityPlayData.accessibilityData.label = "Play " + newData.newData.name;
@@ -1537,9 +1543,10 @@ export class MWUtils {
 		};
 
 		lir.playlistItemData = {
-			videoId: vId,
-			playlistSetVideoId: plSetId
+			videoId: vId
 		};
+
+		if (plSetId) lir.playlistItemData.playlistSetVideoId = plSetId;
 
 		lir.menu.menuRenderer.items = [
 			{
@@ -1759,9 +1766,8 @@ export class MWUtils {
 	
 
 
-	static BuildListItemRendererFromDataForAlbumPage(newData, albumData, artistData, minIndex) {
+	static BuildListItemRendererFromDataForAlbumPage(newData, albumData, artistData) {
 		const video = newData.newData;
-		const index = newData.displayIndex - minIndex;
 
 		const playEndp = this.BuildEndpoint({
 			navType: "watch",
@@ -1770,602 +1776,608 @@ export class MWUtils {
 				id: video.id,
 				type: (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
 			},
-			index: index,
+			index: newData.playIndex,
 			playlistSetVideoId: newData.newData.albumPlSetVideoId
 		});
 
-		return {
-			musicResponsiveListItemRenderer: {
-				overlay: {
-					musicItemThumbnailOverlayRenderer: {
-						background: { verticalGradient: { gradientLayerColors: ["0", "0"] } },
-						content: {
-							"musicPlayButtonRenderer": {
-								"playNavigationEndpoint": playEndp,
-								"playIcon": {
-									"iconType": "PLAY_ARROW"
+		const lir = {
+			overlay: {
+				musicItemThumbnailOverlayRenderer: {
+					background: { verticalGradient: { gradientLayerColors: ["0", "0"] } },
+					content: {
+						"musicPlayButtonRenderer": {
+							"playNavigationEndpoint": playEndp,
+							"playIcon": {
+								"iconType": "PLAY_ARROW"
+							},
+							"pauseIcon": {
+								"iconType": "PAUSE"
+							},
+							"iconColor": 4294967295,
+							"backgroundColor": 0,
+							"activeBackgroundColor": 0,
+							"loadingIndicatorColor": 14745645,
+							"playingIcon": {
+								"iconType": "VOLUME_UP"
+							},
+							"iconLoadingColor": 0,
+							"activeScaleFactor": 1,
+							"buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+							"rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+							"accessibilityPlayData": {
+								"accessibilityData": {
+									"label": "Play " + video.name
+								}
+							},
+							"accessibilityPauseData": {
+								"accessibilityData": {
+									"label": "Pause " + video.name
+								}
+							}
+						}
+					},
+					contentPosition: "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+					displayStyle: "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+				}
+			},
+			flexColumns: [
+				{
+					musicResponsiveListItemFlexColumnRenderer: {
+						text: {
+							runs: [{
+								text: video.name,
+								navigationEndpoint: playEndp
+							}]
+						},
+						displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+					}
+				},
+				{
+					musicResponsiveListItemFlexColumnRenderer: {
+						text: {},
+						displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+					}
+				},
+				{
+					musicResponsiveListItemFlexColumnRenderer: {
+						text: {
+							runs: [{
+								text: this.BigNumToStr(video.views) + " plays"
+							}]
+						},
+						displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+					}
+				}
+			],
+			fixedColumns: [
+				{
+					musicResponsiveListItemFixedColumnRenderer: {
+						text: {
+							runs: [{
+								text: this.SecondsToHMSStr(video.lengthSec)
+							}],
+							accessibility: {
+								accessibilityData: {
+									label: this.SecondsToWordyHMS(video.lengthSec)
+								}
+							}
+						},
+						displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH",
+						size: "MUSIC_RESPONSIVE_LIST_ITEM_FIXED_COLUMN_SIZE_SMALL"
+					}
+				}
+			],
+			"menu": {
+				"menuRenderer": {
+					"items": [
+						{
+							"menuServiceItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Play next"
+										}
+									]
 								},
-								"pauseIcon": {
-									"iconType": "PAUSE"
+								"icon": {
+									"iconType": "QUEUE_PLAY_NEXT"
 								},
-								"iconColor": 4294967295,
-								"backgroundColor": 0,
-								"activeBackgroundColor": 0,
-								"loadingIndicatorColor": 14745645,
-								"playingIcon": {
-									"iconType": "VOLUME_UP"
-								},
-								"iconLoadingColor": 0,
-								"activeScaleFactor": 1,
-								"buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
-								"rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
-								"accessibilityPlayData": {
-									"accessibilityData": {
-										"label": "Play " + video.name
-									}
-								},
-								"accessibilityPauseData": {
-									"accessibilityData": {
-										"label": "Pause " + video.name
+								"serviceEndpoint": {
+									"queueAddEndpoint": {
+										"queueTarget": {
+											"videoId": video.id,
+											"onEmptyQueue": {
+												"watchEndpoint": {
+													"videoId": video.id
+												}
+											}
+										},
+										"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+										"commands": [
+											{
+												"addToToastAction": {
+													"item": {
+														"notificationTextRenderer": {
+															"successResponseText": {
+																"runs": [
+																	{
+																		"text": "Song will play next"
+																	}
+																]
+															}
+														}
+													}
+												}
+											}
+										]
 									}
 								}
 							}
 						},
-						contentPosition: "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
-						displayStyle: "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
-					}
-				},
-				flexColumns: [
-					{
-						musicResponsiveListItemFlexColumnRenderer: {
-							text: {
-								runs: [{
-									text: video.name,
-									navigationEndpoint: playEndp
-								}]
-							},
-							displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-						}
-					},
-					{
-						musicResponsiveListItemFlexColumnRenderer: {
-							text: {},
-							displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-						}
-					},
-					{
-						musicResponsiveListItemFlexColumnRenderer: {
-							text: {
-								runs: [{
-									text: this.BigNumToStr(video.views) + " plays"
-								}]
-							},
-							displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-						}
-					}
-				],
-				fixedColumns: [
-					{
-						musicResponsiveListItemFixedColumnRenderer: {
-							text: {
-								runs: [{
-									text: this.SecondsToHMSStr(video.lengthSec)
-								}],
-								accessibility: {
-									accessibilityData: {
-										label: this.SecondsToWordyHMS(video.lengthSec)
-									}
-								}
-							},
-							displayPriority: "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH",
-							size: "MUSIC_RESPONSIVE_LIST_ITEM_FIXED_COLUMN_SIZE_SMALL"
-						}
-					}
-				],
-				"menu": {
-					"menuRenderer": {
-						"items": [
-							{
-								"menuServiceItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Play next"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "QUEUE_PLAY_NEXT"
-									},
-									"serviceEndpoint": {
-										"queueAddEndpoint": {
-											"queueTarget": {
-												"videoId": video.id,
-												"onEmptyQueue": {
-													"watchEndpoint": {
-														"videoId": video.id
-													}
-												}
-											},
-											"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
-											"commands": [
-												{
-													"addToToastAction": {
-														"item": {
-															"notificationTextRenderer": {
-																"successResponseText": {
-																	"runs": [
-																		{
-																			"text": "Song will play next"
-																		}
-																	]
-																}
-															}
-														}
-													}
-												}
-											]
-										}
-									}
-								}
-							},
-							{
-								"menuServiceItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Add to queue"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ADD_TO_REMOTE_QUEUE"
-									},
-									"serviceEndpoint": {
-										"queueAddEndpoint": {
-											"queueTarget": {
-												"videoId": video.id,
-												"onEmptyQueue": {
-													"watchEndpoint": {
-														"videoId": video.id
-													}
-												}
-											},
-											"queueInsertPosition": "INSERT_AT_END",
-											"commands": [
-												{
-													"addToToastAction": {
-														"item": {
-															"notificationTextRenderer": {
-																"successResponseText": {
-																	"runs": [
-																		{
-																			"text": "Song added to queue"
-																		}
-																	]
-																}
-															}
-														}
-													}
-												}
-											]
-										}
-									}
-								}
-							},
-							{
-								"menuServiceItemDownloadRenderer": {
-									"serviceEndpoint": {
-										"offlineVideoEndpoint": {
-											"videoId": video.id,
-											"onAddCommand": {
-												"getDownloadActionCommand": {
-													"videoId": video.id,
-													"params": "CAI%3D"
-												}
-											}
-										}
-									}
-								}
-							},
-							{
-								"menuNavigationItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Save to playlist"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ADD_TO_PLAYLIST"
-									},
-									"navigationEndpoint": {
-										"addToPlaylistEndpoint": {
-											"videoId": video.id
-										}
-									}
-								}
-							},
-							{
-								"menuNavigationItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Go to artist"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ARTIST"
-									},
-									"navigationEndpoint": this.BuildEndpoint({
-										navType: "browse",
-										id: artistData.id
-									})
-								}
-							}
-						],
-						"topLevelButtons": [
-							{
-								"likeButtonRenderer": {
-									"target": {
-										"videoId": video.id
-									},
-									"likeStatus": video.liked || "INDIFFERENT",
-									"likesAllowed": true,
-									"serviceEndpoints": [
+						{
+							"menuServiceItemRenderer": {
+								"text": {
+									"runs": [
 										{
-											"likeEndpoint": {
-												"status": "LIKE",
-												"target": {
-													"videoId": video.id
-												}
-											}
-										},
-										{
-											"likeEndpoint": {
-												"status": "DISLIKE",
-												"target": {
-													"videoId": video.id
-												}
-											}
-										},
-										{
-											"likeEndpoint": {
-												"status": "INDIFFERENT",
-												"target": {
-													"videoId": video.id
-												}
-											}
+											"text": "Add to queue"
 										}
 									]
+								},
+								"icon": {
+									"iconType": "ADD_TO_REMOTE_QUEUE"
+								},
+								"serviceEndpoint": {
+									"queueAddEndpoint": {
+										"queueTarget": {
+											"videoId": video.id,
+											"onEmptyQueue": {
+												"watchEndpoint": {
+													"videoId": video.id
+												}
+											}
+										},
+										"queueInsertPosition": "INSERT_AT_END",
+										"commands": [
+											{
+												"addToToastAction": {
+													"item": {
+														"notificationTextRenderer": {
+															"successResponseText": {
+																"runs": [
+																	{
+																		"text": "Song added to queue"
+																	}
+																]
+															}
+														}
+													}
+												}
+											}
+										]
+									}
 								}
 							}
-						],
-						"accessibility": {
-							"accessibilityData": {
-								"label": "Action menu"
+						},
+						{
+							"menuServiceItemDownloadRenderer": {
+								"serviceEndpoint": {
+									"offlineVideoEndpoint": {
+										"videoId": video.id,
+										"onAddCommand": {
+											"getDownloadActionCommand": {
+												"videoId": video.id,
+												"params": "CAI%3D"
+											}
+										}
+									}
+								}
+							}
+						},
+						{
+							"menuNavigationItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Save to playlist"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "ADD_TO_PLAYLIST"
+								},
+								"navigationEndpoint": {
+									"addToPlaylistEndpoint": {
+										"videoId": video.id
+									}
+								}
+							}
+						},
+						{
+							"menuNavigationItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Go to artist"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "ARTIST"
+								},
+								"navigationEndpoint": this.BuildEndpoint({
+									navType: "browse",
+									id: artistData.id
+								})
 							}
 						}
-					}
-				},
-				playlistItemData: {
-					playlistSetVideoId: video.albumPlSetVideoId,
-					videoId: video.id
-				},
-				itemHeight: "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_MEDIUM",
-				index: {
-					runs: [ { text: String(index) } ]
-				}
-			}
-		};
-	};
-
-	static BuildPlaylistPanelRendererFromData(newData, albumData, artistData, queuePlaylistId, minIndex) {
-		const video = newData.newData;
-		const index = newData.displayIndex - minIndex;
-
-		const thumb = newData.cameFrom?.thumb || albumData.thumb;
-
-		return {
-			"playlistPanelVideoRenderer": {
-				"title": {
-					"runs": [
+					],
+					"topLevelButtons": [
 						{
-							"text": video.name
-						}
-					]
-				},
-				"longBylineText": {
-					"runs": this.CreateLongBylineForPlaylistPanel(newData.cameFrom, albumData, artistData)
-				},
-				"thumbnail": {
-					"thumbnails": [
-						{
-							"url": this.UpscaleImgQuality(thumb),
-							"width": this.IMG_HEIGHT,
-							"height": this.IMG_HEIGHT
-						}
-					]
-				},
-				"lengthText": {
-					"runs": [
-						{
-							"text": this.SecondsToHMSStr(video.lengthSec)
+							"likeButtonRenderer": {
+								"target": {
+									"videoId": video.id
+								},
+								"likeStatus": video.liked || "INDIFFERENT",
+								"likesAllowed": true,
+								"serviceEndpoints": [
+									{
+										"likeEndpoint": {
+											"status": "LIKE",
+											"target": {
+												"videoId": video.id
+											}
+										}
+									},
+									{
+										"likeEndpoint": {
+											"status": "DISLIKE",
+											"target": {
+												"videoId": video.id
+											}
+										}
+									},
+									{
+										"likeEndpoint": {
+											"status": "INDIFFERENT",
+											"target": {
+												"videoId": video.id
+											}
+										}
+									}
+								]
+							}
 						}
 					],
 					"accessibility": {
 						"accessibilityData": {
-							"label": this.SecondsToWordyHMS(video.lengthSec)
+							"label": "Action menu"
 						}
-					}
-				},
-				"selected": false,
-				"navigationEndpoint": {
-					"watchEndpoint": {
-						"videoId": video.id,
-						"playlistId": albumData.mfId,
-						"index": index,
-						"playlistSetVideoId": video.albumPlSetVideoId,
-						"watchEndpointMusicSupportedConfigs": {
-							"watchEndpointMusicConfig": {
-								"hasPersistentPlaylistPanel": true,
-								"musicVideoType": (newData.cameFrom?.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
-							}
-						}
-					}
-				},
-				"videoId": video.id,
-				"shortBylineText": {
-					"runs": [
-						{
-							"text": artistData.name
-						}
-					]
-				},
-				"menu": {
-					"menuRenderer": {
-						"items": [
-							{
-								"menuServiceItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Play next"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "QUEUE_PLAY_NEXT"
-									},
-									"serviceEndpoint": {
-										"queueAddEndpoint": {
-											"queueTarget": {
-												"videoId": video.id,
-												"onEmptyQueue": {
-													"watchEndpoint": {
-														"videoId": video.id
-													}
-												},
-												"backingQueuePlaylistId": queuePlaylistId
-											},
-											"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
-											"commands": [
-												{
-													"addToToastAction": {
-														"item": {
-															"notificationTextRenderer": {
-																"successResponseText": {
-																	"runs": [
-																		{
-																			"text": "Song will play next"
-																		}
-																	]
-																}
-															}
-														}
-													}
-												}
-											]
-										}
-									}
-								}
-							},
-							{
-								"menuServiceItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Add to queue"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ADD_TO_REMOTE_QUEUE"
-									},
-									"serviceEndpoint": {
-										"queueAddEndpoint": {
-											"queueTarget": {
-												"videoId": video.id,
-												"onEmptyQueue": {
-													"watchEndpoint": {
-														"videoId": video.id
-													}
-												},
-												"backingQueuePlaylistId": queuePlaylistId
-											},
-											"queueInsertPosition": "INSERT_AT_END",
-											"commands": [
-												{
-													"addToToastAction": {
-														"item": {
-															"notificationTextRenderer": {
-																"successResponseText": {
-																	"runs": [
-																		{
-																			"text": "Song added to queue"
-																		}
-																	]
-																}
-															}
-														}
-													}
-												}
-											]
-										}
-									}
-								}
-							},
-							this.CreateToggleMenuItemForLikeButton(video),
-							{
-								"menuServiceItemDownloadRenderer": {
-									"serviceEndpoint": {
-										"offlineVideoEndpoint": {
-											"videoId": video.id,
-											"onAddCommand": {
-												"getDownloadActionCommand": {
-													"videoId": video.id,
-													"params": "CAI%3D"
-												}
-											}
-										}
-									}
-								}
-							},
-							{
-								"menuNavigationItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Save to playlist"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ADD_TO_PLAYLIST"
-									},
-									"navigationEndpoint": {
-										"addToPlaylistEndpoint": {
-											"videoId": video.id
-										}
-									}
-								}
-							},
-							{
-								"menuServiceItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Remove from queue"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "REMOVE"
-									},
-									"serviceEndpoint": {
-										"removeFromQueueEndpoint": {
-											"videoId": video.id,
-											"commands": [
-												{
-													"addToToastAction": {
-														"item": {
-															"notificationTextRenderer": {
-																"successResponseText": {
-																	"runs": [
-																		{
-																			"text": "Item removed from queue"
-																		}
-																	]
-																}
-															}
-														}
-													}
-												}
-											]
-										}
-									}
-								}
-							},
-							{
-								"menuNavigationItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Go to album"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ALBUM"
-									},
-									"navigationEndpoint": this.BuildEndpoint({
-										navType: "browse",
-										id: albumData.id
-									}),
-								}
-							},
-							{
-								"menuNavigationItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Go to artist"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "ARTIST"
-									},
-									"navigationEndpoint": this.BuildEndpoint({
-										navType: "browse",
-										id: artistData.id
-									})
-								}
-							},
-							{
-								"menuServiceItemRenderer": {
-									"text": {
-										"runs": [
-											{
-												"text": "Dismiss queue"
-											}
-										]
-									},
-									"icon": {
-										"iconType": "DISMISS_QUEUE"
-									},
-									"serviceEndpoint": {
-										"deletePlaylistEndpoint": {
-											"playlistId": queuePlaylistId,
-											"command": {
-												"dismissQueueCommand": {}
-											}
-										}
-									}
-								}
-							}
-						],
-						"accessibility": {
-							"accessibilityData": {
-								"label": "Action menu"
-							}
-						}
-					}
-				},
-				"playlistSetVideoId": video.albumPlSetVideoId,
-				"canReorder": true,
-				"queueNavigationEndpoint": {
-					"queueAddEndpoint": {
-						"queueTarget": {
-							"videoId": video.id,
-							"backingQueuePlaylistId": queuePlaylistId
-						},
-						"queueInsertPosition": "INSERT_AT_END"
 					}
 				}
+			},
+			playlistItemData: {
+				videoId: video.id
+			},
+			itemHeight: "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_MEDIUM",
+			index: {
+				runs: [ { text: String(newData.displayIndex) } ]
 			}
+		};
+
+		if (video.albumPlSetVideoId) lir.playlistItemData.playlistSetVideoId = video.albumPlSetVideoId;
+
+		return {
+			musicResponsiveListItemRenderer: lir
+		};
+	};
+
+	static BuildPlaylistPanelRendererFromData(newData, albumData, artistData, queuePlaylistId) {
+		const video = newData.newData;
+
+		const thumb = newData.cameFrom?.thumb || albumData.thumb;
+
+		const playEndp = this.BuildEndpoint({
+			navType: "watch",
+			playlistId: albumData.mfId,
+			firstVideo: {
+				id: video.id,
+				type: (newData.cameFrom.private) ? "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK" : "MUSIC_VIDEO_TYPE_ATV"
+			},
+			index: newData.playIndex,
+			playlistSetVideoId: newData.newData.albumPlSetVideoId
+		});
+
+		const ppvr = {
+			"title": {
+				"runs": [
+					{
+						"text": video.name
+					}
+				]
+			},
+			"longBylineText": {
+				"runs": this.CreateLongBylineForPlaylistPanel(newData.cameFrom, albumData, artistData)
+			},
+			"thumbnail": {
+				"thumbnails": [
+					{
+						"url": this.UpscaleImgQuality(thumb),
+						"width": this.IMG_HEIGHT,
+						"height": this.IMG_HEIGHT
+					}
+				]
+			},
+			"lengthText": {
+				"runs": [
+					{
+						"text": this.SecondsToHMSStr(video.lengthSec)
+					}
+				],
+				"accessibility": {
+					"accessibilityData": {
+						"label": this.SecondsToWordyHMS(video.lengthSec)
+					}
+				}
+			},
+			"selected": false,
+			"navigationEndpoint": playEndp,
+			"videoId": video.id,
+			"shortBylineText": {
+				"runs": [
+					{
+						"text": artistData.name
+					}
+				]
+			},
+			"menu": {
+				"menuRenderer": {
+					"items": [
+						{
+							"menuServiceItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Play next"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "QUEUE_PLAY_NEXT"
+								},
+								"serviceEndpoint": {
+									"queueAddEndpoint": {
+										"queueTarget": {
+											"videoId": video.id,
+											"onEmptyQueue": {
+												"watchEndpoint": {
+													"videoId": video.id
+												}
+											},
+											"backingQueuePlaylistId": queuePlaylistId
+										},
+										"queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+										"commands": [
+											{
+												"addToToastAction": {
+													"item": {
+														"notificationTextRenderer": {
+															"successResponseText": {
+																"runs": [
+																	{
+																		"text": "Song will play next"
+																	}
+																]
+															}
+														}
+													}
+												}
+											}
+										]
+									}
+								}
+							}
+						},
+						{
+							"menuServiceItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Add to queue"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "ADD_TO_REMOTE_QUEUE"
+								},
+								"serviceEndpoint": {
+									"queueAddEndpoint": {
+										"queueTarget": {
+											"videoId": video.id,
+											"onEmptyQueue": {
+												"watchEndpoint": {
+													"videoId": video.id
+												}
+											},
+											"backingQueuePlaylistId": queuePlaylistId
+										},
+										"queueInsertPosition": "INSERT_AT_END",
+										"commands": [
+											{
+												"addToToastAction": {
+													"item": {
+														"notificationTextRenderer": {
+															"successResponseText": {
+																"runs": [
+																	{
+																		"text": "Song added to queue"
+																	}
+																]
+															}
+														}
+													}
+												}
+											}
+										]
+									}
+								}
+							}
+						},
+						this.CreateToggleMenuItemForLikeButton(video),
+						{
+							"menuServiceItemDownloadRenderer": {
+								"serviceEndpoint": {
+									"offlineVideoEndpoint": {
+										"videoId": video.id,
+										"onAddCommand": {
+											"getDownloadActionCommand": {
+												"videoId": video.id,
+												"params": "CAI%3D"
+											}
+										}
+									}
+								}
+							}
+						},
+						{
+							"menuNavigationItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Save to playlist"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "ADD_TO_PLAYLIST"
+								},
+								"navigationEndpoint": {
+									"addToPlaylistEndpoint": {
+										"videoId": video.id
+									}
+								}
+							}
+						},
+						{
+							"menuServiceItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Remove from queue"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "REMOVE"
+								},
+								"serviceEndpoint": {
+									"removeFromQueueEndpoint": {
+										"videoId": video.id,
+										"commands": [
+											{
+												"addToToastAction": {
+													"item": {
+														"notificationTextRenderer": {
+															"successResponseText": {
+																"runs": [
+																	{
+																		"text": "Item removed from queue"
+																	}
+																]
+															}
+														}
+													}
+												}
+											}
+										]
+									}
+								}
+							}
+						},
+						{
+							"menuNavigationItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Go to album"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "ALBUM"
+								},
+								"navigationEndpoint": this.BuildEndpoint({
+									navType: "browse",
+									id: albumData.id
+								}),
+							}
+						},
+						{
+							"menuNavigationItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Go to artist"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "ARTIST"
+								},
+								"navigationEndpoint": this.BuildEndpoint({
+									navType: "browse",
+									id: artistData.id
+								})
+							}
+						},
+						{
+							"menuServiceItemRenderer": {
+								"text": {
+									"runs": [
+										{
+											"text": "Dismiss queue"
+										}
+									]
+								},
+								"icon": {
+									"iconType": "DISMISS_QUEUE"
+								},
+								"serviceEndpoint": {
+									"deletePlaylistEndpoint": {
+										"playlistId": queuePlaylistId,
+										"command": {
+											"dismissQueueCommand": {}
+										}
+									}
+								}
+							}
+						}
+					],
+					"accessibility": {
+						"accessibilityData": {
+							"label": "Action menu"
+						}
+					}
+				}
+			},
+			"canReorder": true,
+			"queueNavigationEndpoint": {
+				"queueAddEndpoint": {
+					"queueTarget": {
+						"videoId": video.id,
+						"backingQueuePlaylistId": queuePlaylistId
+					},
+					"queueInsertPosition": "INSERT_AT_END"
+				}
+			}
+		};
+
+		if (video.albumPlSetVideoId) {
+			ppvr.playlistSetVideoId = video.albumPlSetVideoId;
+			ppvr.navigationEndpoint.watchEndpoint.playlistSetVideoId = video.albumPlSetVideoId;
+		};
+
+		return {
+			"playlistPanelVideoRenderer": ppvr
 		};
 	};
 

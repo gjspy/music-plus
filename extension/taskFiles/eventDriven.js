@@ -192,6 +192,34 @@ export class EventDriven {
 		} else {
 			window.cMusicFixerRunningServices.activeEditMode = new playerEditMode();
 		};
+
+		window.cMusicFixerRunningServices.activeEditMode?.init();
+	};
+
+	OnDraggingListItem(changes) {
+		const lir = changes[0].addedNodes?.[0];
+		if (!lir?.matches("ytmusic-responsive-list-item-renderer")) return;
+		lir.style.mouseEvents = "none";
+
+		const windowTop = window.innerHeight * 0.2;
+		const windowBtm = window.innerHeight * 0.7;
+		const scrollingPane = document.querySelector("#secondary ytmusic-section-list-renderer.ytmusic-two-column-browse-results-renderer > #contents:not(.ytmusic-shelf-renderer)");
+
+		const intervalHandler = () => {
+			if (!lir.isConnected) {
+				clearInterval(interval);
+				return;
+			};
+
+			const top = Number(lir.style.top.replace("px", ""));
+
+			console.log("b", windowTop, windowBtm, top, lir.style.top);
+
+			if (top <= windowTop) scrollingPane.scrollBy({top: -100, behavior: "smooth"});
+			else if (top >= windowBtm) scrollingPane.scrollBy({top: 100, behavior: "smooth"});
+		};
+
+		const interval = setInterval(intervalHandler, 100);
 	};
 
 	async LoadNavProgressObserver() {
@@ -246,14 +274,32 @@ export class EventDriven {
 		});
 	};
 
+	async LoadDraggingListItemObserver() {
+		this.observers.dragListItem = new MutationObserver(this.OnDraggingListItem.bind(this));
+
+		this.observers.dragListItem.observe(document.body, {
+			childList: true,
+			subtree: false,
+			attributes: false
+		});
+	};
+
 	async init() {
 		await ext.WaitForPolymerController();
 
 		this.LoadDropdownObserver();
+		this.LoadDraggingListItemObserver();
+		this.LoadPlayerPageObserver();
 
 		// WAIT FOR browsePage BEFORE INIT.
 		await this.LoadNavProgressObserver();
 		this.ModifyPage(); // INITIAL
+	};
+
+	async unload() {
+		for (const [name, observer] of Object.entries(this.observers)) {
+			observer.disconnect();
+		};
 	};
 
 	constructor() {

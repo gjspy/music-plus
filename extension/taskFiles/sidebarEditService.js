@@ -508,6 +508,8 @@ export class SidebarEditFeatures {
 		this.GenerateSVGs();
 	};
 
+	async unload() {};
+
 
 	constructor() {
 		this.svgs = {};

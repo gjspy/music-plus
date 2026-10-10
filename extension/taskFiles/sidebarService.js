@@ -648,6 +648,10 @@ export class InjectMyPaperItems {
 		});
 	};
 
+	async unload() {
+		clearInterval(window.cMusicFixerPlayerBarInterval);
+	};
+
 
 	constructor() {
 		this.ytLoadedPlaylists = {};

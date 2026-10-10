@@ -3,18 +3,6 @@
 AlbumEditMode = class AlbumEditMode {
 	static buttons = [
 		{
-			type: "skip", // "type" IS THE ID!
-			icon: "no-circle",
-			text: "Define Skips",
-			onclick: this.HideSongs
-		},
-		{
-			type: "hide",
-			icon: "visible",
-			text: "Hide Songs",
-			onclick: this.HideSongs
-		},
-		{
 			type: "explicit",
 			icon: "MUSIC_EXPLICIT_BADGE",
 			text: "Define Explicit Songs"
@@ -56,40 +44,6 @@ AlbumEditMode = class AlbumEditMode {
 			onclick: this.DefineVersion
 		}
 	];
-
-	static async HideSongs(state, browsePage, id, buttonType) {
-		function OnClickItem(item, clickedId, isDeleted) {
-			UDispatchEventToEW({
-				func: (buttonType === "hide") ? "setDeletion" : "setSkip",
-				videoId: clickedId,
-				deleted: isDeleted,
-				album: id
-			});
-
-			let attr = (buttonType === "hide") ? "c-hidden" : "c-skipped";
-			if (isDeleted) item.setAttribute(attr, isDeleted);
-			else item.removeAttribute(attr);
-
-			let current = item.querySelector("div.fixed-columns .c-edit-btn");
-			if (isDeleted) current.innerHTML = undoIcon.innerHTML;
-			else current.innerHTML = icon.innerHTML;
-
-			let data = item.controllerProxy.__data.data;
-			if (!data) return;
-
-			if (buttonType === "hide") {
-				if (!data.cData) data.cData = { changedByDeletion: {} }
-				if (!data.cData.changedByDeletion) data.cData.changedByDeletion = {};
-
-				data.cData.changedByDeletion.isDeleted = isDeleted;
-			};
-		};
-
-		
-		
-
-		
-	};
 
 	static async InsertSongs(state, browsePage, id) {
 		let popup = UCreatePopup({

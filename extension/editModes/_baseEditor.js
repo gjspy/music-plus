@@ -48,12 +48,12 @@ export class BaseEditMode {
 
 	clearButtonsFromListItems() {
 		const listItems = document.querySelectorAll(ext.HELPFUL_SELECTORS.listItemRenderersOfCurrentBrowseResponse);
-	
+
 		let visibleIndex;
 		for (const listItem of listItems) {
 			const data = listItem.data?.cData;
 
-			if (visibleIndex === undefined) visibleIndex = data.indexData.displayIndex;
+			if (visibleIndex === undefined) visibleIndex = data.indexData.originalIndex;
 			if ((!data) || data.thisData.hidden) continue;
 
 			listItem.querySelector(".left-items .index").textContent = String(visibleIndex);
@@ -79,6 +79,12 @@ export class BaseEditMode {
 		});
 	};
 
+	addUnloadButton() {
+		this.addButton("undo", (e) => {
+			ext.Unload();
+		})
+	};
+
 
 	close() {
 		this.buttonCont?.remove();
@@ -97,6 +103,11 @@ export class BaseEditMode {
 
 		if (this.affectsBrowsePage) this.browsePageInit(polymerController.store.getState());
 		this.addEditButton();
+		this.addUnloadButton();
+	};
+
+	async unload() {
+		this.close();
 	};
 
 
