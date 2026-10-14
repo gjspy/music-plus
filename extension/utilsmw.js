@@ -300,7 +300,7 @@ export class MWUtils {
 		return imgUrl.replace(/=s\d+/g, `=s${this.IMG_HEIGHT}`);
 	};
 
-	static ChooseBestThumbnail = (thumbnails) => thumbnails ? thumbnails[this.ArrayGetIndexOfMaxValue(thumbnails.map((v) => (v.width || 1) * (v.height || 1)))]?.url : "";
+	static ChooseBestThumbnail = (thumbnails) => thumbnails ? this.UpscaleImgQuality(thumbnails[this.ArrayGetIndexOfMaxValue(thumbnails.map((v) => (v.width || 1) * (v.height || 1)))]?.url) : "";
 	static GetEndpointByNameFromArray = (arrayofOuterEndps, endpName) => (arrayofOuterEndps.filter( v => v[endpName] )[0] || {})[endpName];
 
 	static CreateButtonElem(icon, textContent, style, id) {
