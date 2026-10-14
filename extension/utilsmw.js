@@ -328,6 +328,7 @@ export class MWUtils {
 		(badges || []).forEach((badge) => cont.append(this.GetSVG(badge)));
 		
 		runs = (runs || []).filter(v => v.text && v.text !== this.YT_DOT);
+		//runs = this.AddDotsToSubtitle(runs);
 
 		for (let [i,v] of runs.entries()) {
 			const a = document.createElement("a");
@@ -340,11 +341,6 @@ export class MWUtils {
 			};
 
 			cont.append(a);
-			if (i === runs.length - 1) continue; // DON'T DRAW DOT IF IS LAST RUN.
-
-			const dot = document.createElement("a");
-			dot.textContent = " " + this.YT_DOT + " ";
-			cont.append(dot);
 		};
 
 		return cont;
@@ -943,8 +939,7 @@ export class MWUtils {
 		return (cache || {})[data.privateCounterparts[0]];
 	};
 
-
-
+	static AddDotsToSubtitle = (data) => data.map(v => (v.text === " & " || v.text === ", ") ? [v] : [{text: ext.YT_DOT}, v]).flat(1).splice(1);
 
 	static CreateLongBylineForPlaylistPanel(cameFrom, albumData, artistData) {
 		return [
@@ -1223,7 +1218,7 @@ export class MWUtils {
 					]
 				},
 				"subtitle": {
-					"runs": data.subtitle.map(v => [{text: ext.YT_DOT}, v]).flat(1).splice(1)
+					"runs": data.subtitle//this.AddDotsToSubtitle(data.subtitle)
 				},
 				"subtitleBadges": data.badges?.map(v => ({ musicInlineBadgeRenderer: { icon: { iconType: v } } })),
 				"navigationEndpoint": navEndp,

@@ -206,9 +206,10 @@ export class CacheService {
 
 		let data = { name, thumb, id, type };
 
-		if (ext.BrowsePageTypes.isLibraryPage(loadedPageType)) data["saved"] = true;
-		if (ext.BrowsePageTypes.isPrivatePage(loadedPageType) && !ext.BrowsePageTypes.isPlaylist(type)) data["private"] = true;
+		const isPrivatePage = ext.BrowsePageTypes.isPrivatePage(loadedPageType);
 
+		if (ext.BrowsePageTypes.isLibraryPage(loadedPageType)) data["saved"] = true;
+		else if (isPrivatePage && !ext.BrowsePageTypes.isPlaylist(type)) data["private"] = true;
 
 		if (ext.BrowsePageTypes.isArtist(type)) return data; // LEAVE
 
@@ -218,6 +219,7 @@ export class CacheService {
 
 		if (!data.artists) data.artists = this.GetArtistIdsFromMenuItems(ext.SafeDeepGet(trir, ext.Structures.menuItems));
 		else if (data.artists.map(v => v.id).includes(ext.VARIOUS_ARTISTS_ID)) data["compilation"] = true;
+		else if (isPrivatePage) data.artists.forEach(v => v.private = true);
 
 		const playNavEndp = ext.SafeDeepGet(trir, ext.Structures.playButtonFromTRIRData())?.playNavigationEndpoint;
 		data.mfId = (playNavEndp?.watchPlaylistEndpoint || playNavEndp?.watchEndpoint)?.playlistId;
@@ -458,7 +460,11 @@ export class CacheService {
 
 		if (artists.map(v => v.id).includes(ext.VARIOUS_ARTISTS_ID)) compilation = true;
 
-		artists.forEach( v => v.discography = [response.browseId]);
+		artists.forEach( v => {
+			v.discography = [response.browseId];
+			v.private = true;
+		});
+
 		subtitleData.artists = artists.map( v => v.id );
 
 		const otherStorables = items.map( v => {

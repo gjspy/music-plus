@@ -843,7 +843,6 @@ export class MainPOSTEditors {
 
 			} else item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId);
 
-			
 			if (!vr) vr = ext.GetPPVR(item);
 			vr.cData = {
 				albumData: newList.albumData || newData.cameFrom,
@@ -1005,14 +1004,20 @@ export class MainPOSTEditors {
 		if (newList.albumData.year) headerRenderer.subtitle.runs[2].text = newList.albumData.year;
 
 
-		if (newList.artistData.name && !newList.albumData.compilation) headerRenderer.straplineTextOne = {
-			runs: [{
-				text: newList.artistData.name,
+		if (newList.artistData.name && !newList.albumData.compilation) {
+			let newRuns = newList.albumData.artists.map(v => ({
+				text: v.name,
 				navigationEndpoint: ext.BuildEndpoint({
 					navType: "browse",
-					id: newList.artistData.id
+					id: v.id
 				})
-			}]
+			}));
+
+			newRuns = newRuns.map((v,i) => [v, ((newRuns.length - i) > 2) ? {text: ", "} : ((newRuns.length - i) == 2) ? {text: " & "} : undefined]).flat().splice(0, (newRuns.length * 2) - 1);
+
+			headerRenderer.straplineTextOne = {
+				runs: newRuns
+			};
 		};
 
 	
