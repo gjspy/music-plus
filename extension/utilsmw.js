@@ -327,7 +327,7 @@ export class MWUtils {
 	static CreateTextElemFromRuns(cont, runs, badges) {
 		(badges || []).forEach((badge) => cont.append(this.GetSVG(badge)));
 		
-		runs = (runs || []).filter(v => v.text && v.text !== this.YT_DOT);
+		runs = (runs || []).filter(v => !!v.text);
 		//runs = this.AddDotsToSubtitle(runs);
 
 		for (let [i,v] of runs.entries()) {

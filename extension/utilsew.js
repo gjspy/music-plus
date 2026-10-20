@@ -65,7 +65,8 @@ export class EWUtils {
 	static SIDEBAR_API = this.API_ENDPOINT + "music/sidebar/";
 	static EDITOR_API = this.API_ENDPOINT + "music/edit/";
 	static USER_API = this.API_ENDPOINT + "music/user/";
-	static STORAGE_GET = "bulkget";
+	static ARCHIVE_API = this.API_ENDPOINT + "archive/"
+	static STORAGE_GET = "get";
 	static STORAGE_GETPOPULATED = "getpopulated";
 	static STORAGE_GETCOMPILED = "compile";
 	static STORAGE_GETWITHCACHE = "getwithcache";
@@ -106,7 +107,7 @@ export class EWUtils {
 		return this.CheckHasKeys(storage, this.DEFAULT_STORAGE.local);
 	};
 
-	static async StorageGetExternal({route, localStorage = undefined, body = undefined, extraParams = undefined}) {
+	static async StorageGetExternal({route, localStorage = undefined, body = undefined, extraParams = undefined, respType = undefined}) {
 			if (!localStorage) localStorage = await this.StorageGetLocal();
 
 			const username = localStorage.username;
@@ -126,17 +127,17 @@ export class EWUtils {
 			};
 
 			if (body) {
-				response = await fetch(fullRoute, {method: "POST", body});
+				response = await fetch(fullRoute, {method: "POST", body: JSON.stringify(body), headers: {"Content-Type": "application/json"}});
 			} else {
 				response = await fetch(fullRoute);
 			};
 			
-			if (response.status !== 200) {
+			if (!response.status.toString().startsWith("2")) {
 				fconsole.error(response);
 				throw Error(`External response was ${response.status} for ${route}.`);
 			};
 
-			return await response.json();
+			return {data: (respType === "plain") ? await response.text() : await response.json(), code: response.status};
 	};
 
 	static async StorageSetLocal(toStore) {
@@ -152,7 +153,7 @@ export class EWUtils {
 		await browser.storage.local.set(toStore);
 	};
 
-	static async StorageSetExternal({route, data, localStorage = undefined}) {
+	static async StorageSetExternal({route, data, localStorage = undefined, respType = undefined}) {
 		if (!localStorage) {
 			localStorage = await this.StorageGetLocal();
 		};
@@ -172,11 +173,11 @@ export class EWUtils {
 			headers: {"Content-Type": "application/json"}
 		});
 
-		if (response.status !== 200) {
+		if (!response.status.toString().startsWith("2")) {
 			fconsole.error(response);
 			throw Error(`External response was ${response.status} for ${route}].`);
 		};
 		
-		return await response.json();
+		return {data: (respType === "plain") ? await response.text() : await response.json(), code: response.status};
 	};
 };

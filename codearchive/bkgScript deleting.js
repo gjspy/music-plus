@@ -230,14 +230,6 @@ async function EWOMRemoveLink(request) {
 	await utils.UStorageSetExternal(storage);
 };
 
-async function EWOMSetPrimaryAlbum(request) {
-	let storage = await utils.UStorageGetExternal(false);
-
-	storage.customisation.primaryAlbums[request.chosen] = request.alts;
-
-	await utils.UStorageSetExternal(storage);
-};
-
 async function EWOMHideSongFromAlbum(request) {
 	let storage = await utils.UStorageGetExternal(false);
 
@@ -328,18 +320,6 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "get-template-elements")		EWOMGetTemplateElems(request, sender);
 	else if (f === "reinit-sidebar")			EWInitSidebarThings({"tabId": sender.tab.id}); //TODO: UGLY, WHY?
 	else if (f === "save-account-info")         EWOMSaveAccountInfo(request);
-	else if (f === "sidebar-save-changes")      EWOMSidebarSaveChanges(request);
-	else if (f === "sidebar-new-folder")        EWOMSidebarNewFolder(request, sender);
-	else if (f === "sidebar-delete-folder")     EWOMSidebarDeleteFolder(request);
-	else if (f === "sidebar-rename-folder")     EWOMSidebarRenameFolder(request);
-	else if (f === "sidebar-visibility-change") EWOMSidebarVisibilityChange(request);
-	else if (f === "sidebar-new-sep")           EWOMSidebarNewSep(request, sender);
-	else if (f === "sidebar-delete-sep")        EWOMSidebarDeleteSep(request);
-	else if (f === "sidebar-new-carousel")      EWOMSidebarNewCarousel(request, sender);
-	else if (f === "sidebar-delete-carousel")   EWOMSidebarDeleteFolder(request);
-	else if (f === "get-hidden-song-details")   EWOMGetHiddenSongDetails(request);
-	else if (f === "get-storage")				EWOMGetStorage(request, sender);
-	else if (f === "cache-data")				EWOMOnPostCacheData(request, sender);
 	else if (f === "playlist-create")			EWOMOnNewPlaylist(request, sender);
 	else if (f === "playlist-delete")			EWOMOnDeletePlaylist(request, sender);
 	else if (f === "defineLink")				EWOMDefineLink(request, sender);

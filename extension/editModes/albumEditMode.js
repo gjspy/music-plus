@@ -69,10 +69,11 @@ export class AlbumEditMode extends baseEditMode {
 	SkipSongs = (state, pageId) => this._ToggleSongs(state, pageId, "skipped");
 
 	Importance = (state, pageId) => (new playlistEditMode()).Importance.call(this, state, pageId);
+	Archive = (state, pageId) => (new playlistEditMode()).Archive.call(this, state, pageId);
 
 
 	EditMetadata(state, pageId) {
-		function OnSubmit(popup) {
+		const OnSubmit = (popup) => {
 			let data = {"id": pageId, "type":"METADATA"};
 
 			for (let text of popup.querySelectorAll(".c-text-input")) {
@@ -103,6 +104,60 @@ export class AlbumEditMode extends baseEditMode {
 
 		(new popupService("modal", popupTemplates.EditMetadata(OnSubmit, () => this.disableEditMode()))).Load();
 	};
+
+
+	DefinePrimVersion(state, pageId) {
+		const OnClickItem = (chosenId) => {
+			ext.DispatchEventToEW({
+				func: "storage",
+				storageFunc: "set-prim-ver",
+				data: {
+					_saveBackup: true,
+					data: {
+						id: pageId,
+						_itemsHasContinuation: false,
+						_itemsIsContinuation: false,
+						primaryAlbums: [chosenId]
+					}
+				}
+			});
+
+			this.disableEditMode();
+		};
+
+		const LoadGrid = (papers) => {
+			const ps = new popupService("grid", {
+				title: "Album Versions",
+				subtitle: "Choose the album to apply to this one. If page = non-deluxe, select deluxe. If page = deluxe, select non-deluxe.",
+				items: papers.storage
+			});
+
+			ps.Load().then(children => children.forEach(child => child.addEventListener("click", () => OnClickItem(
+				child.getAttribute("plid")
+			))));
+		};
+
+		ext.DispatchFunctionToEW({
+			func: "storage",
+			storageFunc: "get-cache",
+			id: pageId
+		}).then(v => {
+			const ids = v.storage.alternate;
+			if (!ids) LoadGrid([]);
+
+			ext.DispatchFunctionToEW({
+				func: "storage",
+				storageFunc: "get-papers",
+				data: ids
+			}).then(LoadGrid)
+		});
+	};
+
+
+
+
+
+
 
 	disableEditMode() {
 		this._HideIcons();
@@ -144,6 +199,12 @@ export class AlbumEditMode extends baseEditMode {
 			onclick: this.Importance
 		},
 		{
+			type: "archive",
+			icon: "note",
+			text: "Archive Album",
+			onclick: this.Archive
+		},
+		{
 			type: "explicit",
 			icon: "MUSIC_EXPLICIT_BADGE",
 			text: "Define Explicit Songs"
@@ -182,7 +243,7 @@ export class AlbumEditMode extends baseEditMode {
 			type: "versions",
 			icon: "album",
 			text: "Define Primary Version",
-			onclick: this.DefineVersion
+			onclick: this.DefinePrimVersion
 		}
 	];
 };

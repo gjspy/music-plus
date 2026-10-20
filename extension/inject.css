@@ -882,6 +882,18 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
 	}
 }
 
+.c-popup-text-block-scroll label {
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 13px;
+  height: 50vh;
+  overflow: scroll;
+  display: block;
+  white-space: pre;
+  padding: 6px 0;
+  color: var(--secondary-text-color);
+}
+
 .c-popup-actions {
 	width: inherit;
 	height: 35px;

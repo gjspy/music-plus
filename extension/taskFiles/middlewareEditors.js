@@ -1365,7 +1365,7 @@ export class EntirelyCustomResponses {
 						endpoint: thisPageEndp,
 						content: {
 							sectionListRenderer: {
-								contents: seasons.rows.map(v => ext.BuildCarousel(v.seasonName, v.contents, v.description, Math.max(1, Math.ceil(v.contents.length / 7), v.id))),
+								contents: seasons.rows.map(v => ext.BuildCarousel(v.seasonName, v.contents, v.description, Math.max(1, Math.ceil(v.contents.length / 7)), v.id)),
 								continuations: sectionContinuation,
 								header: {
 									chipCloudRenderer: {

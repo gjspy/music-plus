@@ -332,7 +332,13 @@ export class InjectMyPaperItems {
 
 
 	AddInteractionToPaperItem(elem, id, mfId) {
-		const navVerifyFunc = (e) => (!document.querySelector("#guide .c-editing, .c-popup-elem-overflow") && !elem.matches(".c-ovf-elem") && !(e.target.getAttribute("href") && e.target.closest(".c-paper-subtitle")));
+		const navVerifyFunc = (e) => (
+			!document.querySelector("#guide .c-editing, ytmusic-browse-response[c-editing]") &&
+			!(
+				e.target.getAttribute("href") &&
+				e.target.closest(".c-paper-subtitle")
+			)
+		);
 
 		ext.NavigateOnClick({
 			elem,

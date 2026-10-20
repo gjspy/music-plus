@@ -166,6 +166,38 @@ export class PopupTemplates {
 		};
 	};
 
+
+	static ArchiveProcess(OnSubmit, OnClose) {
+		return {
+			content:  [
+				{
+					class: "c-popup-title",
+					text: "Archiving List Page...",
+					icon: "note"
+				},
+				{
+					class: "c-popup-text-block-scroll",
+					text: "Waiting for server log..."
+				}
+			],
+			actions: [
+				{
+					icon: null,
+					text: "Close",
+					style: "text-only",
+					defaultAction: "close",
+					action: {f: OnClose, e: "click"}
+				},
+				{
+					icon: null,
+					text: "Confirm",
+					style: "light",
+					action: {f: OnSubmit, e: "click"}
+				}
+			]
+		};
+	};
+
 	
 
 
@@ -285,7 +317,7 @@ export class PopupTemplates {
 	};
 
 
-	static EditMetadata(OnSubmit, OnClose) {
+	static AddSongs(OnSubmit, OnClose) {
 
 		return {
 			content:  [

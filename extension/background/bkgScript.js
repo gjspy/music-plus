@@ -89,6 +89,9 @@ async function Big(request, sender) {
 	if 		(func === "getlocal") resp = await EWUtils.StorageGetLocal();
 	else if (func === "getsidebar") {
 		api.route = `${EWUtils.SIDEBAR_API}${EWUtils.STORAGE_GETWITHCACHE}`;
+
+	} else if (func === "get-cache") {
+		api.route = `${EWUtils.STORAGE_API}cache/${request.id}/${EWUtils.STORAGE_GET}`;
 	
 	} else if (func === "get-populated") {
 		api.route = `${EWUtils.STORAGE_API}cache/${request.id}/${EWUtils.STORAGE_GETPOPULATED}`;
@@ -109,7 +112,23 @@ async function Big(request, sender) {
 		if (request.params.season) api.extraParams.season = request.params.season;
 		if (request.params.dataType) api.extraParams.dataType = request.params.dataType;
 		if (request.params.continuationI) api.extraParams.continuationI = request.params.continuationI;
+	
+	} else if (func === "get-papers") {
+		api.route = `${EWUtils.SIDEBAR_API}get-papers-of-ids`;
+		api.body = request.data;
+	
+	} else if (func === "start-archive") {
+		api.route = `${EWUtils.ARCHIVE_API}create`;
+		api.extraParams = {id_: request.id};
+	
+	} else if (func === "check-archive") {
+		api.route = `${EWUtils.ARCHIVE_API}progress`;
+		api.extraParams = {tracker_id: request.trackerId};
+		api.respType = "plain";
 
+	} else if (func === "archive-usage") {
+		api.route = `${EWUtils.ARCHIVE_API}usage`;
+	
 
 
 
@@ -176,6 +195,10 @@ async function Big(request, sender) {
 	} else if (func === "edit-metadata") {
 		api.route = `${EWUtils.STORAGE_API}customisation/metadata/${EWUtils.STORAGE_SET}`;
 		meth = "set";
+	
+	} else if (func === "set-prim-ver") {
+		api.route = `${EWUtils.STORAGE_API}customisation/listEdits/${EWUtils.STORAGE_SET}`;
+		meth = "set";
 
 	};
 
@@ -188,9 +211,9 @@ async function Big(request, sender) {
 
 		browser.tabs.sendMessage(sender.tab.id, {
 			functionResponseCorrelation: request.functionResponseCorrelation,
-			storage: resp
+			storage: resp.data,
+			code: resp.code
 		});
-
 
 	} else if (meth === "set" || meth === "setWithResp") {
 		api.data = request.data;
@@ -199,7 +222,8 @@ async function Big(request, sender) {
 
 		if (meth === "setWithResp") browser.tabs.sendMessage(sender.tab.id, {
 			functionResponseCorrelation: request.functionResponseCorrelation,
-			storage: resp
+			storage: resp.data,
+			code: resp.code
 		});
 
 	};	

@@ -40,9 +40,8 @@ export class BaseEditMode {
 		popupService.ClearAllPopups();
 
 		if (this.affectsBrowsePage && this.browsePage.getAttribute("c-editing")) {
+			this.browsePage.removeAttribute("c-editing");
 			this.clearButtonsFromListItems();
-
-			this.browsePage.removeAttribute("c-editing"); // do AFTER to show success
 		};
 	};
 
@@ -53,8 +52,8 @@ export class BaseEditMode {
 		for (const listItem of listItems) {
 			const data = listItem.data?.cData;
 
-			if (visibleIndex === undefined) visibleIndex = data.indexData.originalIndex;
-			if ((!data) || data.thisData.hidden) continue;
+			if (visibleIndex === undefined) visibleIndex = data.indexData?.originalIndex;
+			if ((!data) || data.thisData?.hidden) continue;
 
 			listItem.querySelector(".left-items .index").textContent = String(visibleIndex);
 			visibleIndex++;

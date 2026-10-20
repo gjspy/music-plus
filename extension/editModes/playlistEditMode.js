@@ -58,6 +58,59 @@ export class PlaylistEditMode extends baseEditMode {
 		(new popupService("modal", popupTemplates.PlaylistImportance(OnSubmit, () => this.disableEditMode()))).Load();
 	};
 
+	Archive(state, pageId) {
+		const Confirm = (popup) => {
+			popup.querySelector("#confirm")?.remove();
+
+			ext.DispatchFunctionToEW({
+				func: "storage",
+				storageFunc: "start-archive",
+				id: pageId
+			}).then(v => {
+				const followupId = v.storage.progress_tracking_id;
+				const textElem = popup.querySelector(".c-popup-text-block-scroll label");
+
+				let prevBackedUp = false;
+				let clearNext = false;
+
+				const interval = setInterval(() => {
+					if (prevBackedUp) return;
+					prevBackedUp = true;
+
+					if (clearNext) {
+						ext.DispatchFunctionToEW({
+							func: "storage",
+							storageFunc: "archive-usage"
+						}).then(v => {
+							textElem.textContent += `\r\nUsed ${v.storage.usedMB}MB / ${v.storage.totalMB}MB (${v.storage.usedPERC}%)`
+						});
+
+						clearInterval(interval);
+						return;
+					};
+
+					ext.DispatchFunctionToEW({
+						func: "storage",
+						storageFunc: "check-archive",
+						trackerId: followupId
+					}).then(v => {
+						if (v.code === 200) {
+							clearNext = true;
+							textElem.textContent += "\r\n" + v.storage;
+
+						} else textElem.textContent = v.storage;
+
+						prevBackedUp = false;
+					});
+					
+				}, 1000);
+
+			});
+		};
+
+		(new popupService("modal", popupTemplates.ArchiveProcess(Confirm, () => this.disableEditMode()))).Load();
+	};
+
 
 
 
@@ -86,6 +139,12 @@ export class PlaylistEditMode extends baseEditMode {
 			icon: "note",
 			text: "Define as Related",
 			onclick: this.Importance
+		},
+		{
+			type: "archive",
+			icon: "note",
+			text: "Archive Playlist",
+			onclick: this.Archive
 		}
 	];
 };
