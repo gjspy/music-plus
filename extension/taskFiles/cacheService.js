@@ -307,7 +307,7 @@ export class CacheService {
 
 			const album = structuredClone(v.album);
 			if (album) {
-				album.artists = v.artists?.map(v => v.id);
+				//album.artists = v.artists?.map(v => v.id);
 				album.thumb = v.thumb;
 				album.type = "ALBUM";
 				these.push(album);
