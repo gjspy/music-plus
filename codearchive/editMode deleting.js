@@ -19,12 +19,6 @@ AlbumEditMode = class AlbumEditMode {
 			text: "Remove Extra Songs",
 			onclick: this.RemoveInsertedSongs
 		},
-		{ // change name, cover, single/ep/album!!, exact release date!!
-			type: "details",
-			icon: "pencil",
-			text: "Edit Album Metadata",
-			onclick: this.EditMetadata
-		},
 		{ // when linking other albums, use the longest ver as base. eg folklore: base = folklore, "link" deluxe version, not base = deluxe and link folklore.
 			type: "link",
 			icon: "album",
@@ -45,86 +39,6 @@ AlbumEditMode = class AlbumEditMode {
 		}
 	];
 
-	static async InsertSongs(state, browsePage, id) {
-		let popup = UCreatePopup({
-			title: {
-				text: "Insert extra song to album",
-				icon: "album"
-			},
-			content: [
-				{
-					class: "c-text-input",
-					id: "vid",
-					config: [
-						["label", "textContent", "YouTube Video ID"]
-					]
-				},
-				{
-					class: "c-popup-text-line",
-					config: [
-						["label", "innerHTML", "Video ID must only be the 11 character id, and cache entries must exist of the song and its album."],
-						["label", "style", "font-size: 13px; line-height: 13px; display: block; margin-top: 3px;"],
-						
-					]
-				},
-				{
-					class: "c-text-input",
-					id: "index",
-					config: [
-						["label", "textContent", "Index"]
-					]
-				},
-				{
-					class: "c-popup-text-line",
-					config: [
-						["label", "innerHTML", "Index should be relative to first song in list, 0 or 1, and based on the list before any custom song deletions change it."],
-						["label", "style", "font-size: 13px; line-height: 13px; display: block; margin-top: 3px;"],
-						
-					]
-				},
-				{
-					class: "c-check-input",
-					id: "overwrite",
-					config: [
-						["label", "textContent", "Overwrite existing item at index? (If it exists)"]
-					]
-				}
-			],
-			actions: [
-				{
-					icon: null,
-					text: "Cancel",
-					id: "cancel",
-					style: "text-only",
-					defaultAction: "close"
-				},
-				{
-					icon: null,
-					text: "Submit",
-					id: "submit",
-					style: "light"
-				}
-			]
-		});
-
-		popup.querySelector("#submit").addEventListener("click", function(e) {
-			let data = {
-				videoId: popup.querySelector(".c-text-input#vid input").value,
-				index: popup.querySelector(".c-text-input#index input").value,
-				overwrite: popup.querySelector(".c-check-input#overwrite input").checked
-			};
-
-			UDispatchEventToEW({
-				func: "insert-song",
-				"data": data,
-				"id": id
-			});
-
-			URemovePopup(popup, true);
-		});
-
-		popup.querySelector("#cancel").addEventListener("click", () => ButtonBar.CancelAll());
-	};
 
 	static async RemoveInsertedSongs(state, browsePage, id) {
 		let storage = await UMWStorageGet();
@@ -330,51 +244,6 @@ AlbumEditMode = class AlbumEditMode {
 
 };
 
-AlbumButtons = class AlbumButtons {
-	static buttons = [
-		{
-			type: "hide",
-			icon: "album",
-			text: "Go To Linked",
-			onclick: this.SelectLinked
-		},
-	];
-
-	static async SelectLinked(state, browsePage, id) {
-		function OnClickItem(chosenId) {
-			ButtonBar.CancelAll();
-
-			setTimeout(() => UNavigate(
-				UBuildEndpoint({
-					navType: "browse",
-					"id": chosenId
-				})
-			), 70);
-			
-		};
-
-		let storage = await UMWStorageGet();
-		let thisAlbumData = storage.cache[id];
-		let primaryVersions = UGetPrimaryVersions(storage, id) || []; // other versions (eg non-deluxe)
-		let linkedAlbums = storage.customisation.albumLinks[id] || []; // linked versions (eg 3am)
-		let counterparts = thisAlbumData.privateCounterparts || []; // private uploaded versions
-
-		let gridCont = UShowGridOfMusicItems(
-			(v) => (
-				primaryVersions.indexOf(v.id) !== -1 ||
-				linkedAlbums.indexOf(v.id) !== -1 || 
-				counterparts.indexOf(v.id) !== -1				
-			),
-			[], false, false, OnClickItem, storage, "link-albums", "Linked Albums",
-			"Current albums linked with \"" + thisAlbumData.name + "\"."
-		);
-
-		gridCont.ovf.style.marginRight = "250px";
-		gridCont.ovf.style.marginLeft = "initial";
-		gridCont.ovf.style.right = "0";
-		gridCont.ovf.style.setProperty("--height", "700px");
-	};
-};
 
 PlaylistEditMode = class AlbumEditMode {
 	static buttons = [
@@ -392,168 +261,13 @@ PlaylistEditMode = class AlbumEditMode {
 		}
 	];
 
-	static async EditMetadata(state, browsePage, id) {
-		let popup = UCreatePopup({
-			title: {
-				text: "Edit Playlist Metadata",
-				icon: "album"
-			},
-			content: [
-				{
-					class: "c-text-input",
-					id: "title",
-					config: [
-						["label", "textContent", "Title"]
-					]
-				},
-				{
-					class: "c-check-input",
-					id: "def_title",
-					config: [
-						["label", "textContent", "Reset to default"]
-					]
-				},
-				{
-					class: "c-text-input",
-					id: "thumb",
-					config: [
-						["label", "textContent", "Thumbnail URL"]
-					]
-				},
-				{
-					class: "c-check-input",
-					id: "def_thumb",
-					config: [
-						["label", "textContent", "Reset to default"]
-					]
-				},
-				{
-					class: "c-text-input",
-					id: "bkg",
-					config: [
-						["label", "textContent", "Custom Page Background URL"]
-					]
-				},
-				{
-					class: "c-check-input",
-					id: "def_bkg",
-					config: [
-						["label", "textContent", "Reset to default"]
-					]
-				},
-				{
-					class: "c-text-input",
-					id: "year",
-					config: [
-						["label", "textContent", "Year"]
-					]
-				},
-				{
-					class: "c-check-input",
-					id: "def_year",
-					config: [
-						["label", "textContent", "Reset to default"]
-					]
-				}
-			],
-			actions: [
-				{
-					icon: null,
-					text: "Cancel",
-					id: "cancel",
-					style: "text-only",
-					defaultAction: "close"
-				},
-				{
-					icon: null,
-					text: "Submit",
-					id: "submit",
-					style: "light"
-				}
-			]
-		});
-
-		for (let check of popup.querySelectorAll(".c-check-input")) {
-			let id = check.getAttribute("id").replace("def_", "");
-			let textInput = popup.querySelector(`#${id}`);
-
-			check.addEventListener("change", function(e) {
-				if (e.target.checked) UAddToClass(textInput, "c-uninteractable");
-				else URemoveFromClass(textInput, "c-uninteractable");
-			});
-		};
-
-		popup.querySelector("#submit").addEventListener("click", function(e) {
-			let data = {};
-
-			for (let text of popup.querySelectorAll(".c-text-input")) {
-				let id = text.getAttribute("id");
-				let reset = popup.querySelector(`.c-check-input#def_${id} input`).checked;
-
-				if (reset) {
-					data["reset_" + id] = true;
-					continue;
-				};
-
-				let value = text.querySelector("input").value;
-				if (value !== "") data[id] = value;
-			};
-
-			UDispatchEventToEW({
-				func: "edit-metadata",
-				"data": data,
-				"id": id
-			});
-
-			URemovePopup(popup, true);
-
-			setTimeout(() => UNavigate(
-				UBuildEndpoint({
-					navType: "browse",
-					"id": id
-				})
-			), 2000);
-		});
-	};
-
 	static async CreateTagFrom(state, browsePage, id) {
 		let handler = new CustomEndpointHandler({}, undefined);
 		handler.CreateTag(id);
 	};
 };
 
-window.ButtonBar = class MasterEditMode {
-	
-	static ShowButton(type) {
-		this.buttonCont.setAttribute(type, true);
-		UUnHideElem(this.buttonCont.__data.buttons[type]);
-	};
 
-	static HideButton(type) {
-		this.buttonCont.setAttribute(type, false);
-		UHideElem(this.buttonCont.__data.buttons[type]);
-
-		this.buttonCont.__data.buttons[type].onclick = undefined;
-	};
-
-
-	static UpdateButtons(stateOrNone) {
-		
-		let buttonsForType = this.specificButtons[browseType];
-		
-		if (buttonsForType) {
-			this.ShowButton("DOTS");
-
-			this.buttonCont.__data.buttons.DOTS.onclick = function(e) {
-				if (document.querySelector(".c-dropdown")) return; // delete and move on
-
-				let browsePage = document.querySelector("#content ytmusic-browse-response#browse-page");
-
-				UDrawDropdown(buttonsForType.buttons, e, buttonsForType, [state, browsePage, browseId]);
-			};
-		};
-	};
-};
 
 
 

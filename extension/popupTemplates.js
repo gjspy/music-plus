@@ -338,7 +338,7 @@ export class PopupTemplates {
 				},
 				{
 					class: "c-popup-text-line",
-					text: "Index should be based on the list before any custom deletions are applied [originalIndex], after other extra songs are added, and relative to the first item (0 or 1, depending)."
+					text: "Index should be where the song should eventually end up. ExtraSongs are applied first, placed in these indexes, and other songs are added around them."
 				},
 				{
 					class: "c-check-input",

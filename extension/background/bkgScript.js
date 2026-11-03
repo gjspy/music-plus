@@ -196,7 +196,7 @@ async function Big(request, sender) {
 		api.route = `${EWUtils.STORAGE_API}customisation/metadata/${EWUtils.STORAGE_SET}`;
 		meth = "set";
 	
-	} else if (func === "set-prim-ver") {
+	} else if (func === "list-edit") {
 		api.route = `${EWUtils.STORAGE_API}customisation/listEdits/${EWUtils.STORAGE_SET}`;
 		meth = "set";
 

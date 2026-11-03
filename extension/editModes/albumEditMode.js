@@ -89,7 +89,7 @@ export class AlbumEditMode extends baseEditMode {
 				if (value !== "") data[id] = value;
 			};
 
-			ext.DispatchFunctionToEW({
+			ext.DispatchEventToEW({
 				func: "storage",
 				storageFunc: "edit-metadata",
 				"data": {
@@ -98,7 +98,6 @@ export class AlbumEditMode extends baseEditMode {
 				}
 			})
 
-			popup.remove();
 			this.disableEditMode();
 		};
 
@@ -110,11 +109,12 @@ export class AlbumEditMode extends baseEditMode {
 		const OnClickItem = (chosenId) => {
 			ext.DispatchEventToEW({
 				func: "storage",
-				storageFunc: "set-prim-ver",
+				storageFunc: "list-edit",
 				data: {
 					_saveBackup: true,
 					data: {
 						id: pageId,
+						type: "LIST_EDIT",
 						_itemsHasContinuation: false,
 						_itemsIsContinuation: false,
 						primaryAlbums: [chosenId]
@@ -151,6 +151,34 @@ export class AlbumEditMode extends baseEditMode {
 				data: ids
 			}).then(LoadGrid)
 		});
+	};
+
+
+	InsertSongs(state, pageId) {
+		const OnSubmit = (popup) => {
+			ext.DispatchEventToEW({
+				func: "storage",
+				storageFunc: "list-edit",
+				data: {
+					_saveBackup: true,
+					data: {
+						id: pageId,
+						type: "LIST_EDIT",
+						_itemsHasContinuation: true,
+						_itemsIsContinuation: true,
+						extraSongs: [{
+							videoId: popup.querySelector("#vid input").value,
+							index: popup.querySelector("#index input").value,
+							overwrite: popup.querySelector("#overwrite input").checked
+						}]
+					}
+				}
+			});
+
+			this.disableEditMode();
+		};
+
+		(new popupService("modal", popupTemplates.AddSongs(OnSubmit, () => this.disableEditMode()))).Load();
 	};
 
 

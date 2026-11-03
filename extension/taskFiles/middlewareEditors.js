@@ -764,7 +764,7 @@ export class MainPOSTEditors {
 
 		if (id.startsWith("PL")) id = "VL"+id;
 
-		if (id.startsWith("OL")) {
+		if (id.startsWith("OL") || id.startsWith("MLPRb")) {
 			id = (await ext.StorageGet({ storageFunc: "mfId-to-id", id }))[0];
 		};
 		if (!id) return [undefined, undefined, undefined];

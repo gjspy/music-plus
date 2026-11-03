@@ -219,7 +219,7 @@ export class EventDriven {
 			else if (top >= windowBtm) scrollingPane.scrollBy({top: 100, behavior: "smooth"});
 		};
 
-		const interval = setInterval(intervalHandler, 100);
+		// const interval = setInterval(intervalHandler, 100);
 	};
 
 	async LoadNavProgressObserver() {

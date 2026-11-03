@@ -118,25 +118,6 @@ async function main(request, sender, sendResponse) {
                                                                                    
 */
 
-async function EWOMGetTemplateElems(request, sender) {
-	const file = await fetch(TEMPLATE_ELEMS_FP);
-	const text = (await file.text()).replaceAll(/[\t\n]/g, "");
-
-	browser.tabs.sendMessage(sender.tab.id, {
-		functionResponseCorrelation: request.functionResponseCorrelation,
-		HTMLString: text,
-		csAction: "init-template-elems" // CSP REQUIRED SETTING .innerHTML IN ISO WORLD ONLY.
-	});
-};
-
-async function EWOMSaveAccountInfo(request) {
-	let storage = await utils.UStorageGetLocal();
-
-	storage.accountInfo = request.accountInfo;
-
-	await utils.UStorageSetLocal(storage);
-};
-
 
 async function EWAddTagToStorage(request, storage) {
 	storage.customisation.tags.tags[request.cacheData.id] = {
@@ -230,49 +211,6 @@ async function EWOMRemoveLink(request) {
 	await utils.UStorageSetExternal(storage);
 };
 
-async function EWOMHideSongFromAlbum(request) {
-	let storage = await utils.UStorageGetExternal(false);
-
-	let hiddenSongs = (request.func === "setDeletion") ? storage.customisation.hiddenSongs : storage.customisation.skippedSongs;
-	if (!hiddenSongs[request.album]) hiddenSongs[request.album] = [];
-
-	if (request.deleted) hiddenSongs[request.album].push(request.videoId);
-	else hiddenSongs[request.album] = hiddenSongs[request.album].filter( v => v !== request.videoId );
-
-	await utils.UStorageSetExternal(storage);
-};
-
-async function EWOMEditMetadata(request) {
-	let storage = await utils.UStorageGetExternal(false);
-
-	let metadata = storage.customisation.metadata[request.id] || {};
-
-	for (let [k, v] of Object.entries(request.data)) {
-		if (k.startsWith("reset_")) {
-			let id = k.replace("reset_", "");
-			delete metadata[id];
-			continue;
-		};
-
-		metadata[k] = v;
-	};
-
-	storage.customisation.metadata[request.id] = metadata;
-
-	await utils.UStorageSetExternal(storage);
-};
-
-async function EWOMInsertSongToAlbum(request) {
-	let storage = await utils.UStorageGetExternal(false);
-
-	let extraSongs = storage.customisation.extraSongs[request.id] || [];
-
-	extraSongs.push(request.data);
-
-	storage.customisation.extraSongs[request.id] = extraSongs;
-
-	await utils.UStorageSetExternal(storage);
-};
 
 async function EWOMRemoveInsertedSong(request) {
 	let storage = await utils.UStorageGetExternal(false);
@@ -324,13 +262,9 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "playlist-delete")			EWOMOnDeletePlaylist(request, sender);
 	else if (f === "defineLink")				EWOMDefineLink(request, sender);
 	else if (f === "removeLink")				EWOMRemoveLink(request, sender);
-	else if (f === "setPrimaryAlbum")			EWOMSetPrimaryAlbum(request, sender);
-	else if (f === "setDeletion")				EWOMHideSongFromAlbum(request, sender);
-	else if (f === "setSkip")					EWOMHideSongFromAlbum(request, sender);
-	else if (f === "edit-metadata")				EWOMEditMetadata(request, sender);
-	else if (f === "insert-song")				EWOMInsertSongToAlbum(request);
+	
 	else if (f === "remove-inserted-song")		EWOMRemoveInsertedSong(request);
-	else if (f === "auto-lights")				EWOMAutoLights(request);
+
 	else if (f === "add-note")					EWOMAddNote(request);
 	else if (f === "add-video-to-tag")			EWOMAddVideoToTag(request);
 	else if (f === "remove-video-from-tag")		EWOMRemoveVideoFromTag(request);

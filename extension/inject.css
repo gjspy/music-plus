@@ -888,7 +888,8 @@ ytmusic-guide-section-renderer:has(.c-editing) .c-sidebar-sep {
   line-height: 13px;
   height: 50vh;
   overflow: scroll;
-  display: block;
+  display: flex;
+  flex-direction: column-reverse;
   white-space: pre;
   padding: 6px 0;
   color: var(--secondary-text-color);

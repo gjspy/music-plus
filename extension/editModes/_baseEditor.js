@@ -23,6 +23,11 @@ export class BaseEditMode {
 			cParams: { returnOriginal: true }
 		})));
 
+		this.addButton("reload", () => ext.Navigate(ext.BuildEndpoint({
+			navType: "browse",
+			id: browseId
+		})));
+
 		this.browsePage = document.querySelector("ytmusic-browse-response");
 	};
 
