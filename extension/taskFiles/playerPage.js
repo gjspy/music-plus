@@ -276,7 +276,8 @@ function NiceColours() {
 					id: thisVId,
 					pfId: pf,
 					isAlbum,
-					paused
+					paused,
+					func: "dcrpc"
 				}
 			});
 		};

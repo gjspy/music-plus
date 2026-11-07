@@ -23,6 +23,8 @@ const MODULESCRIPTS = {
 
 const TEMPLATE_ELEMS_FP = "../templateElements.html";
 
+const TAB_PLAYPAUSE_FRC = {};
+
 
 async function EWInit(injectionTarget) {
 	// ?t=... to force refresh of script every time! so can reload ext and not need to reload page when testing.
@@ -277,6 +279,16 @@ async function EWOMAutoLights(request) {
 function _createWS(storage) {
 	ws = new WebSocket(storage.winApi.ws);
 
+	ws.addEventListener("message", (event) => {
+		const data = JSON.parse(event.data);
+
+		if (data.func === "playpause") {
+			browser.tabs.sendMessage(playingFromTab, {
+				functionResponseCorrelation: TAB_PLAYPAUSE_FRC[playingFromTab],
+				func: "playpause"
+			});
+		};
+	});
 	ws.onerror = () => ws.close();
 };
 
@@ -296,6 +308,10 @@ async function RichPresence(request, sender) {
 	ws.send(JSON.stringify(request.data));
 };
 
+async function DeclarePlayPauseFRC(request, sender) {
+	TAB_PLAYPAUSE_FRC[sender.tab.id] = request.frc;
+};
+
 
 function OnMessage(request, sender, sendResponse) {
 	fconsole.log("received in EW", JSON.stringify(request), sender, sendResponse);
@@ -306,6 +322,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "storage")				    Big(request, sender);
 	else if (f === "auto-lights")				EWOMAutoLights(request);
 	else if (f === "rpc")						RichPresence(request, sender);
+	else if (f === "declare-playpause-frc")		DeclarePlayPauseFRC(request, sender);
 	/*else if (f === "save-account-info")         EWOMSaveAccountInfo(request);
 	else if (f === "playlist-create")			EWOMOnNewPlaylist(request, sender);
 	else if (f === "playlist-delete")			EWOMOnDeletePlaylist(request, sender);

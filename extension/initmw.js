@@ -69,6 +69,26 @@ export function MWInit(moduleScriptsEntries) {
 		});
 
 		document.documentElement.setAttribute("c-tab-visible", String(!document.hidden));
+
+		const playpauseFRC = ext.RegisterEWFunction({
+			detail: {
+				name: "playpause"
+			},
+			once: false,
+			resolve: () => {
+				const player = polymerController.queue.playerApi
+				if (player.getPlayerStateObject().isPlaying) {
+					player.pauseVideo();
+				} else {
+					player.playVideo();
+				};
+			}
+		});
+
+		ext.DispatchEventToEW({
+			func: "declare-playpause-frc",
+			frc: playpauseFRC
+		})
 		
 
 		// START EXTENSION FEATURES
