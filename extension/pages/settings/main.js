@@ -148,6 +148,16 @@ async function init() {
 		dcCheck.checked = lclStorage.winApi.enabled;
 	};
 
+	const dcRefresh = document.querySelector("#ref-ws");
+	if (dcRefresh) {
+		dcRefresh.onclick = () => {
+			browser.runtime.sendMessage({
+				func: "rpc-ws-refresh"
+			});
+			showLog("REtrying ws..");
+		}
+	};
+
 	if (lclStorage.lightApi.endpoint) {
 		const lightCont = document.querySelector(".btn-cont#lights");
 		const checkBox = lightCont.querySelector("input");

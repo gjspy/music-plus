@@ -277,6 +277,7 @@ async function EWOMAutoLights(request) {
 };
 
 function _createWS(storage) {
+	console.warn("trying to create ws..");
 	ws = new WebSocket(storage.winApi.ws);
 
 	ws.addEventListener("message", (event) => {
@@ -289,7 +290,11 @@ function _createWS(storage) {
 			});
 		};
 	});
-	ws.onerror = () => ws.close();
+
+	ws.onerror = () => {
+		console.warn("ws error, closing");
+		ws.close();
+	};
 };
 
 async function RichPresence(request, sender) {
@@ -302,7 +307,11 @@ async function RichPresence(request, sender) {
 
 	if (!(storage.winApi.ws && storage.winApi.enabled)) return;
 
-	if (ws && ws.readyState === ws.CONNECTING) return;
+	if (ws && ws.readyState === ws.CONNECTING) {
+		console.warn("ws connecting...");
+		return;
+	};
+
 	if ((!ws) || ws.readyState !== ws.OPEN) _createWS(storage);
 
 	ws.send(JSON.stringify(request.data));
@@ -310,6 +319,17 @@ async function RichPresence(request, sender) {
 
 async function DeclarePlayPauseFRC(request, sender) {
 	TAB_PLAYPAUSE_FRC[sender.tab.id] = request.frc;
+};
+
+async function RefreshRPCWS() {
+	if (ws) {
+		console.warn("FORCE CLOSING WS USER INPUT.");
+		ws.close();
+	};
+
+	let storage = await EWUtils.StorageGetLocal();
+
+	_createWS(storage);
 };
 
 
@@ -323,6 +343,7 @@ function OnMessage(request, sender, sendResponse) {
 	else if (f === "auto-lights")				EWOMAutoLights(request);
 	else if (f === "rpc")						RichPresence(request, sender);
 	else if (f === "declare-playpause-frc")		DeclarePlayPauseFRC(request, sender);
+	else if (f === "rpc-ws-refresh")			RefreshRPCWS();
 	/*else if (f === "save-account-info")         EWOMSaveAccountInfo(request);
 	else if (f === "playlist-create")			EWOMOnNewPlaylist(request, sender);
 	else if (f === "playlist-delete")			EWOMOnDeletePlaylist(request, sender);
