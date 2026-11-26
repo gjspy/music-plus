@@ -363,4 +363,37 @@ export class PopupTemplates {
 			]
 		};
 	};
+
+	static LinkOtherAlbum(OnSubmit, OnClose) {
+
+		return {
+			content:  [
+				{
+					class: "c-popup-title",
+					text: "Link Other Album",
+					icon: "album"
+				},
+				{
+					class: "c-text-input",
+					text: "Youtube Album ID",
+					id: "albumid"
+				}
+			],
+			actions: [
+				{
+					icon: null,
+					text: "Cancel",
+					style: "text-only",
+					defaultAction: "close",
+					action: {f: OnClose, e: "click"}
+				},
+				{
+					icon: null,
+					text: "Apply",
+					style: "light",
+					action: {f: OnSubmit, e: "click"}
+				}
+			]
+		};
+	};
 };

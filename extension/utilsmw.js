@@ -2068,6 +2068,52 @@ export class MWUtils {
 		};
 	};
 
+	static EditListItem(vr, newData, buildingFromAlbum, newList) {
+		const cameFromArtists = (newData.cameFrom?.artists?.length) ? newData.cameFrom.artists.map(v => v?.id) : [];
+		let hasYearText = false;
+
+		for (const run of vr.longBylineText.runs) {
+			if (!run.navigationEndpoint) {
+				if (!isNaN(Number(run.text))) {
+					hasYearText = true;
+				};
+
+				continue;
+			};
+			if (!buildingFromAlbum) {
+				const isPrivate = newData.cameFrom?.private;
+
+				if (isPrivate) {
+					const artistData = newList.multiArtistData[newData.cameFrom.artists[0]]; // TODO: multiple, and split them by &
+					if (artistData?.privateCounterpart) run.navigationEndpoint.browseEndpoint.browseId = artistData.privateCounterpart;
+				};
+
+				continue;
+			};
+
+			const browseType = ext.GetBrowsePageType(run.navigationEndpoint);
+			if (!browseType) continue;
+
+			const bId = run.navigationEndpoint.browseEndpoint.browseId;
+
+			if (ext.BrowsePageTypes.isAnyArtist(browseType) && cameFromArtists.includes(bId)) {
+				run.navigationEndpoint.browseEndpoint.browseId = newList.artistData.id;
+				run.text = newList.artistData.name;
+			
+			} else if (ext.BrowsePageTypes.isAnyAlbum(browseType)) {
+				run.navigationEndpoint.browseEndpoint.browseId = newList.albumData.id;
+				run.text = newList.albumData.name;
+			};
+		};
+
+		if ((!hasYearText) && ((newList.albumData || newData.cameFrom).year)) {
+			vr.longBylineText.runs = vr.longBylineText.runs.concat(
+				{text: ext.YT_DOT},
+				{text: (newList.albumData || newData.cameFrom).year}
+			);
+		};
+	};
+
 	static BuildPlaylistPanelRendererFromData(newData, albumData, artistData, queuePlaylistId) {
 		const video = newData.newData;
 

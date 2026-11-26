@@ -72,7 +72,9 @@ export class SmallPOSTEditors {
 		return;
 	}; PUT IN WHEN SIDEBAR EDITABLE AGAIN. */
 
-	static async CacheVideoViews(request, response) {
+	static async EditPlayerResponse(request, response) {
+
+		// cache VIEWS, not user watchtime stats.
 		let gathered = {
 			id: response.videoDetails.videoId,
 			views: Number(response.videoDetails.viewCount),
@@ -85,7 +87,9 @@ export class SmallPOSTEditors {
 			data: [{"data": gathered}]
 		});
 
-		return;
+		(((response.playabilityStatus ??= {}).miniplayer ??= {}).miniplayerRenderer ??= {}).playbackMode = "PLAYBACK_MODE_ALLOW"
+
+		return response;
 	};
 
 	/* DELETED DUE TO BINARY REQUESTS static async CacheDislike(request, reponse) {
@@ -318,7 +322,7 @@ export class SmallPOSTEditors {
 	static endpointToTask = {
 //		"/youtubei/v1/playlist/create": this.PlaylistCreateCommand,
 //		"/youtubei/v1/playlist/delete": this.PlaylistDeleteCommand,
-		"/youtubei/v1/player": this.CacheVideoViews,
+		"/youtubei/v1/player": this.EditPlayerResponse,
 		"/youtubei/v1/like/dislike": this.CacheDislike,
 		"/youtubei/v1/browse/edit_playlist": this.OnPlaylistEdit,
 		//"/youtubei/v1/subscription/subscribe"
@@ -762,7 +766,12 @@ export class MainPOSTEditors {
 		if (!id) return [undefined, undefined, undefined];
 		if (!queueDataRequestIds) queueDataRequestIds = [];
 
-		if (id.startsWith("PL")) id = "VL"+id;
+		let isPlaylist = false;
+
+		if (id.startsWith("PL")) {
+			id = "VL"+id;
+			isPlaylist = true;
+		}
 
 		if (id.startsWith("OL") || id.startsWith("MLPRb")) {
 			id = (await ext.StorageGet({ storageFunc: "mfId-to-id", id }))[0];
@@ -775,91 +784,83 @@ export class MainPOSTEditors {
 		const buildFromType = ext.GetBrowsePageTypeFromBrowseId(id);
 		const buildingFromAlbum = ext.BrowsePageTypes.isAnyAlbum(buildFromType);
 
-		const newItemOrder = [];
+		console.log("queueContents now", structuredClone(queueContents));
+
+		let newItemOrder = [];
 		let currentWatchEndpoint;
 		let currentData;
 
-		console.log("queueContents now", structuredClone(queueContents));
+		if (buildingFromAlbum) {
+			const vrByIndex = {};
+			let backingPlaylistId;
 
-		const vrByIndex = {};
-		let backingPlaylistId;
+			for (const item of queueContents) {
+				const vr = ext.GetPPVR(item);
+				if (!vr) continue; // AUTOPLAY
 
-		for (const item of queueContents) {
-			const vr = ext.GetPPVR(item);
-			if (!vr) continue; // AUTOPLAY
+				const thisIndex = vr.navigationEndpoint?.watchEndpoint?.index; // ALWAYS ZERO-BASED, NUMBER.
 
-			const thisIndex = vr.navigationEndpoint?.watchEndpoint?.index; // ALWAYS ZERO-BASED, NUMBER.
+				vrByIndex[thisIndex] = item; // NOT vr
 
-			vrByIndex[thisIndex] = item; // NOT vr
-
-			if (!backingPlaylistId) backingPlaylistId = ext.SafeDeepGet(vr, ext.Structures.backingPlaylistIdFromVideoRenderer);
-		};
-
-		for (const newData of newList.listItems) {
-			if (!newData.id) continue; // PLACEHOLDERS OF {}
-			if ((newData.hidden || newData.skipped) && (videoIdToSelect !== newData.id) && (queueDataRequestIds.indexOf(newData.id) === -1)) continue;
-
-			let item = vrByIndex[newData.originalIndex - newList.minIndex];
-			let vr;
-
-			if (item && !newData.changed) {
-				// MODIFY, not REPLACE BYLINE.
-				vr = ext.GetPPVR(item);
-
-				const cameFromArtists = (newData.cameFrom?.artists?.length) ? newData.cameFrom.artists.map(v => v.id) : [];
-				let hasYearText = false;
-
-				for (const run of vr.longBylineText.runs) {
-					if (!run.navigationEndpoint) {
-						if (!isNaN(Number(run.text))) {
-							hasYearText = true;
-						};
-
-						continue;
-					};
-					if (!buildingFromAlbum) continue;
-
-					const browseType = ext.GetBrowsePageType(run.navigationEndpoint);
-					if (!browseType) continue;
-
-					const bId = run.navigationEndpoint.browseEndpoint.browseId;
-
-					if (ext.BrowsePageTypes.isAnyArtist(browseType) && cameFromArtists.includes(bId)) {
-						run.navigationEndpoint.browseEndpoint.browseId = newList.artistData.id;
-						run.text = newList.artistData.name;
-					
-					} else if (ext.BrowsePageTypes.isAnyAlbum(browseType)) {
-						run.navigationEndpoint.browseEndpoint.browseId = newList.albumData.id;
-						run.text = newList.albumData.name;
-					};
-				};
-
-				if ((!hasYearText) && ((newList.albumData || newData.cameFrom).year)) {
-					vr.longBylineText.runs = vr.longBylineText.runs.concat(
-						{text: ext.YT_DOT},
-						{text: (newList.albumData || newData.cameFrom).year}
-					);
-				};
-
-			} else item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId);
-
-			if (!vr) vr = ext.GetPPVR(item);
-			vr.cData = {
-				albumData: newList.albumData || newData.cameFrom,
-				artistData: newList.artistData,
-				thisData: newData
+				if (!backingPlaylistId) backingPlaylistId = ext.SafeDeepGet(vr, ext.Structures.backingPlaylistIdFromVideoRenderer);
 			};
 
-			this._DeleteRemoveFromPlaylistButtonFromPPVR(vr);
+			for (const newData of newList.listItems) {
+				if (!newData.id) continue; // PLACEHOLDERS OF {}
+				if ((newData.hidden || newData.skipped) && (videoIdToSelect !== newData.id) && (queueDataRequestIds.indexOf(newData.id) === -1)) continue;
 
-			const isCurrent = vr.videoId === videoIdToSelect;
-			if (videoIdToSelect) vr.selected = isCurrent;
-			if (isCurrent) {
-				currentWatchEndpoint = vr.navigationEndpoint.watchEndpoint;
-				currentData = newData;
+				let item = vrByIndex[newData.originalIndex - newList.minIndex];
+				let vr;
+
+				if (item && !newData.changed) {
+					// MODIFY, not REPLACE BYLINE.
+					vr = ext.GetPPVR(item);
+
+					ext.EditListItem(vr, newData, buildingFromAlbum, newList)
+
+				} else if (!isPlaylist) item = ext.BuildPlaylistPanelRendererFromData(newData, newList.albumData, newList.artistData, backingPlaylistId);
+
+				if (!vr) vr = ext.GetPPVR(item);
+				vr.cData = {
+					albumData: newList.albumData || newData.cameFrom,
+					artistData: newList.artistData,
+					thisData: newData
+				};
+
+				this._DeleteRemoveFromPlaylistButtonFromPPVR(vr);
+
+				const isCurrent = vr.videoId === videoIdToSelect;
+				if (videoIdToSelect) vr.selected = isCurrent;
+				if (isCurrent) {
+					currentWatchEndpoint = vr.navigationEndpoint.watchEndpoint;
+					currentData = newData;
+				};
+
+				newItemOrder.push((areQueueDatas) ? { content: item } : item);
 			};
 
-			newItemOrder.push((areQueueDatas) ? { content: item } : item);
+
+		} else {
+			const newDataToId = Object.fromEntries(newList.listItems.map(v => [v.id, v]));
+
+			for (const item of queueContents) {
+				const vr = ext.GetPPVR(item);
+				const id = vr.navigationEndpoint?.watchEndpoint?.videoId;
+				if (!id) continue;
+
+				const newData = newDataToId[id];
+
+				if (id === videoIdToSelect) {
+					currentWatchEndpoint = vr.navigationEndpoint.watchEndpoint;
+					currentData = newData;
+				};
+
+				if (!newData) continue;
+
+				ext.EditListItem(vr, newData, buildingFromAlbum, newList);
+			};
+
+			newItemOrder = queueContents;
 		};
 
 		console.log("newContents", newItemOrder);
@@ -1211,11 +1212,22 @@ export class MainPOSTEditors {
 	};
 
 	static async MUSIC_PAGE_TYPE_PLAYLIST(response, id) {
+		const newList = await ext.StorageGet({ storageFunc: "edit-list", id });
+		const newDataToId = Object.fromEntries((newList.listItems || []).map(v => [v.id, v]));
 		const listItems = ext.SafeDeepGet(response, ext.Structures.playlistListItems()) || [];
 
 		for (let lir of listItems) {
 			lir = lir.musicResponsiveListItemRenderer;
 			if (!lir) continue;
+
+			const id = lir.playlistItemData?.videoId;
+			const newData = id ? newDataToId[id] : undefined;
+			const isPrivate = newData?.cameFrom?.private;
+
+			if (isPrivate) {
+				const artistData = newList.multiArtistData[newData.cameFrom.artists[0]]; // TODO: multiple, and split them by &
+				if (artistData?.privateCounterpart) lir.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint.browseEndpoint.browseId = artistData.privateCounterpart;
+			};
 
 			ext.ModifyListItemRendererForAnyPage(lir, undefined, undefined, "MUSIC_PAGE_TYPE_PLAYLIST");
 
@@ -1261,7 +1273,9 @@ export class MainPOSTEditors {
 			menuItems.splice(indexToAddNew, 1, toAdd);
 		};
 
-		const newList = await ext.StorageGet({ storageFunc: "edit-list", id });
+		
+
+		
 
 		MainPOSTEditors._AddCustomCarouselShelfToListPageForRelated(response, newList.related);
 

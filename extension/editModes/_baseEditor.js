@@ -107,7 +107,7 @@ export class BaseEditMode {
 
 		if (this.affectsBrowsePage) this.browsePageInit(polymerController.store.getState());
 		this.addEditButton();
-		this.addUnloadButton();
+		// this.addUnloadButton();
 	};
 
 	async unload() {

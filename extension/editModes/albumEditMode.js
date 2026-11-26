@@ -153,6 +153,29 @@ export class AlbumEditMode extends baseEditMode {
 		});
 	};
 
+	LinkOtherAlbum(state, pageId) {
+		const OnSubmit = (popup) => {
+			ext.DispatchEventToEW({
+				func: "storage",
+				storageFunc: "list-edit",
+				data: {
+					_saveBackup: true,
+					data: {
+						id: pageId,
+						type: "LIST_EDIT",
+						_itemsHasContinuation: false,
+						_itemsIsContinuation: false,
+						albumLinks: [popup.querySelector("#albumid input").value]
+					}
+				}
+			});
+
+			this.disableEditMode();
+		};
+
+		(new popupService("modal", popupTemplates.LinkOtherAlbum(OnSubmit, () => this.disableEditMode()))).Load();
+	};
+
 
 	InsertSongs(state, pageId) {
 		const OnSubmit = (popup) => {
@@ -259,7 +282,7 @@ export class AlbumEditMode extends baseEditMode {
 			type: "link",
 			icon: "album",
 			text: "Link Other Album",
-			onclick: this.LinkMode
+			onclick: this.LinkOtherAlbum
 		},
 		{
 			type: "editlink",
